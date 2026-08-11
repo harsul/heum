@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/frontend/frontend.esproj">
+      <Build />
+      <Deploy />
+    </Project>
+    <Project Path="src/Heum.AppHost/Heum.AppHost.csproj" />
+    <Project Path="src/Heum.Server/Heum.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Heum.Server.xIntegration/Heum.Server.xIntegration.csproj" />
+    <Project Path="tests/Heum.Server.xUnit/Heum.Server.xUnit.csproj" />
+  </Folder>
+</Solution>
