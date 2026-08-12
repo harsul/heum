@@ -7,14 +7,8 @@ var postgres = builder.AddPostgres("postgres")
 
 var database = postgres.AddDatabase("heumdb");
 
-var keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak", "25.0")
-    .WithEnvironment("KEYCLOAK_ADMIN", "admin")
-    .WithEnvironment("KEYCLOAK_ADMIN_PASSWORD", "admin")
-    .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", "admin")
-    .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", "admin")
-    .WithVolume("keycloak-data", "/opt/keycloak/data")
-    .WithHttpEndpoint(port: 8080, targetPort: 8080, name: "http")
-    .WithArgs("start-dev");
+var keycloak = builder.AddKeycloak("keycloak", 8080)
+    .WithRealmImport("./KeycloakImport");
 
 var mailpit = builder.AddMailPit("mailpit");
 
