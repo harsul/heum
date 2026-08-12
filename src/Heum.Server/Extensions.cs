@@ -1,7 +1,6 @@
 using Heum.Server.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -110,12 +109,7 @@ public static class Extensions
 
     public static TBuilder AddDatabase<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
-        builder.Services.AddDbContext<HeumdDbContext>((sp, options) =>
-        {
-            var connectionString = builder.Configuration.GetConnectionString("heumdb")
-                ?? throw new InvalidOperationException("Connection string 'heumdb' not found");
-            options.UseNpgsql(connectionString);
-        });
+        builder.AddNpgsqlDbContext<HeumdDbContext>("heumdb");
 
         return builder;
     }
