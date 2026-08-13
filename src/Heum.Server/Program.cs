@@ -1,5 +1,7 @@
 using Heum.Server.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,15 +12,45 @@ builder.AddRedisClientBuilder("cache")
     .WithOutputCache();
 
 builder.Services.AddAuthentication()
-    .AddKeycloakJwtBearer("keycloak", realm: "saas-app");
+    .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>
+    {
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+    });
 
 builder.Services.AddAuthorization();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+var keycloakUrl = builder.Configuration.GetConnectionString("keycloak") ?? "http://localhost:8080";
+var keycloakRealmUrl = $"{keycloakUrl.TrimEnd('/')}/realms/saas-app";
+
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, ct) =>
+    {
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.OAuth2,
+            Flows = new OpenApiOAuthFlows
+            {
+                Password = new OpenApiOAuthFlow
+                {
+                    TokenUrl = new Uri($"{keycloakRealmUrl}/protocol/openid-connect/token"),
+                    Scopes = new Dictionary<string, string>
+                    {
+                        { "openid", "OpenID Connect" },
+                        { "profile", "Profile" },
+                        { "email", "Email" }
+                    }
+                }
+            }
+        };
+        return Task.CompletedTask;
+    });
+});
 
 var app = builder.Build();
 
@@ -38,6 +70,20 @@ app.UseAuthorization();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference(options =>
+    {
+        options
+            .AddPreferredSecuritySchemes("oauth2")
+            .AddOAuth2Flows("oauth2", flows =>
+            {
+                flows.WithPassword(password =>
+                {
+                    password
+                        .WithClientId("react-frontend")
+                        .WithTokenUrl($"{keycloakRealmUrl}/protocol/openid-connect/token");
+                });
+            });
+    });
 }
 
 app.UseOutputCache();
