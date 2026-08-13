@@ -9,6 +9,11 @@ builder.AddDatabase();
 builder.AddRedisClientBuilder("cache")
     .WithOutputCache();
 
+builder.Services.AddAuthentication()
+    .AddKeycloakJwtBearer("keycloak", realm: "saas-app");
+
+builder.Services.AddAuthorization();
+
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
@@ -26,6 +31,9 @@ await using (var scope = app.Services.CreateAsyncScope())
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
@@ -50,7 +58,8 @@ api.MapGet("weatherforecast", () =>
     return forecast;
 })
 .CacheOutput(p => p.Expire(TimeSpan.FromSeconds(5)))
-.WithName("GetWeatherForecast");
+.WithName("GetWeatherForecast")
+.RequireAuthorization();
 
 app.MapDefaultEndpoints();
 
