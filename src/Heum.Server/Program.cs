@@ -1,5 +1,6 @@
 using Heum.Server.Data;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,10 +10,16 @@ builder.AddDatabase();
 builder.AddRedisClientBuilder("cache")
     .WithOutputCache();
 
+builder.Services.AddAuthentication()
+    .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>
+    {
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+    });
+
+builder.Services.AddAuthorization();
+
 // Add services to the container.
 builder.Services.AddProblemDetails();
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -27,9 +34,13 @@ await using (var scope = app.Services.CreateAsyncScope())
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseOutputCache();
@@ -50,7 +61,8 @@ api.MapGet("weatherforecast", () =>
     return forecast;
 })
 .CacheOutput(p => p.Expire(TimeSpan.FromSeconds(5)))
-.WithName("GetWeatherForecast");
+.WithName("GetWeatherForecast")
+.RequireAuthorization();
 
 app.MapDefaultEndpoints();
 

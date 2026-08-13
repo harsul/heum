@@ -2,7 +2,7 @@
   "realm": "saas-app",
   "displayName": "SaaS App",
   "enabled": true,
-  "sslRequired": "external",
+  "sslRequired": "none",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -37,17 +37,19 @@
       "publicClient": true,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "fullScopeAllowed": true,
       "protocol": "openid-connect",
       "redirectUris": [
         "http://localhost:5173/*",
-        "http://localhost:4173/*"
+        "http://localhost:4173/*",
+        "*"
       ],
       "webOrigins": [
         "http://localhost:5173",
-        "http://localhost:4173"
+        "http://localhost:4173",
+        "*"
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256"
