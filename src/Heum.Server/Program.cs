@@ -36,8 +36,9 @@ builder.Services.AddOpenApi(options =>
             Type = SecuritySchemeType.OAuth2,
             Flows = new OpenApiOAuthFlows
             {
-                Password = new OpenApiOAuthFlow
+                AuthorizationCode = new OpenApiOAuthFlow
                 {
+                    AuthorizationUrl = new Uri($"{keycloakRealmUrl}/protocol/openid-connect/auth"),
                     TokenUrl = new Uri($"{keycloakRealmUrl}/protocol/openid-connect/token"),
                     Scopes = new Dictionary<string, string>
                     {
@@ -76,11 +77,10 @@ if (app.Environment.IsDevelopment())
             .AddPreferredSecuritySchemes("oauth2")
             .AddOAuth2Flows("oauth2", flows =>
             {
-                flows.WithPassword(password =>
+                flows.WithAuthorizationCode(code =>
                 {
-                    password
-                        .WithClientId("react-frontend")
-                        .WithTokenUrl($"{keycloakRealmUrl}/protocol/openid-connect/token");
+                    code.WithClientId("react-frontend")
+                        .WithPkce(Pkce.Sha256);
                 });
             });
     });
