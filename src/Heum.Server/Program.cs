@@ -1,6 +1,5 @@
 using Heum.Server.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,37 +20,7 @@ builder.Services.AddAuthorization();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
-
-var keycloakUrl = builder.Configuration.GetConnectionString("keycloak") ?? "http://localhost:8080";
-var keycloakRealmUrl = $"{keycloakUrl.TrimEnd('/')}/realms/saas-app";
-
-builder.Services.AddOpenApi(options =>
-{
-    options.AddDocumentTransformer((document, context, ct) =>
-    {
-        document.Components ??= new OpenApiComponents();
-        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-        document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
-        {
-            Type = SecuritySchemeType.OAuth2,
-            Flows = new OpenApiOAuthFlows
-            {
-                AuthorizationCode = new OpenApiOAuthFlow
-                {
-                    AuthorizationUrl = new Uri($"{keycloakRealmUrl}/protocol/openid-connect/auth"),
-                    TokenUrl = new Uri($"{keycloakRealmUrl}/protocol/openid-connect/token"),
-                    Scopes = new Dictionary<string, string>
-                    {
-                        { "openid", "OpenID Connect" },
-                        { "profile", "Profile" },
-                        { "email", "Email" }
-                    }
-                }
-            }
-        };
-        return Task.CompletedTask;
-    });
-});
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
@@ -71,19 +40,7 @@ app.UseAuthorization();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference(options =>
-    {
-        options
-            .AddPreferredSecuritySchemes("oauth2")
-            .AddOAuth2Flows("oauth2", flows =>
-            {
-                flows.WithAuthorizationCode(code =>
-                {
-                    code.WithClientId("react-frontend")
-                        .WithPkce(Pkce.Sha256);
-                });
-            });
-    });
+    app.MapScalarApiReference();
 }
 
 app.UseOutputCache();
