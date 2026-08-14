@@ -1,4 +1,5 @@
 using Heum.Server.Data;
+using Heum.Server.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 builder.AddDatabase();
+builder.AddKeycloakAdmin();
 builder.AddRedisClientBuilder("cache")
     .WithOutputCache();
 
@@ -49,6 +51,9 @@ app.UseOutputCache();
 string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
 
 var api = app.MapGroup("/api");
+
+api.MapTenantsEndpoints();
+
 api.MapGet("weatherforecast", () =>
 {
     var forecast = Enumerable.Range(1, 5).Select(index =>
