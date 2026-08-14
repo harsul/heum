@@ -1,8 +1,7 @@
+using Heum.Data;
 using Heum.Infrastructure.Keycloak;
 using Heum.Server;
-using Heum.Server.Data;
 using Heum.Server.Features.Tenants;
-using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,12 +35,7 @@ builder.Services.AddValidation();
 
 var app = builder.Build();
 
-await using (var scope = app.Services.CreateAsyncScope())
-{
-    await scope.ServiceProvider
-        .GetRequiredService<HeumdDbContext>()
-        .Database.MigrateAsync();
-}
+// Migrations are applied by the Heum.MigrationService worker before this service starts.
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();

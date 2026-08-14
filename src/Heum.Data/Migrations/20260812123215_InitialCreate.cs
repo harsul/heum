@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Heum.Server.Migrations
+namespace Heum.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
