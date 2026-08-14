@@ -6,8 +6,12 @@
     </Project>
     <Project Path="src/Heum.AppHost/Heum.AppHost.csproj" />
     <Project Path="src/Heum.Contracts/Heum.Contracts.csproj" />
+    <Project Path="src/Heum.Data/Heum.Data.csproj" />
     <Project Path="src/Heum.Functions/Heum.Functions.csproj" />
+    <Project Path="src/Heum.Infrastructure/Heum.Infrastructure.csproj" />
+    <Project Path="src/Heum.MigrationService/Heum.MigrationService.csproj" />
     <Project Path="src/Heum.Server/Heum.Server.csproj" />
+    <Project Path="src/Heum.ServiceDefaults/Heum.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Heum.Server.xIntegration/Heum.Server.xIntegration.csproj" />

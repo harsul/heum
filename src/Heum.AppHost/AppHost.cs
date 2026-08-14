@@ -29,6 +29,11 @@ tenantEventsTopic.AddServiceBusSubscription("db-seeding-sub");
 
 var keycloakAdminSecret = builder.AddParameter("KeycloakAdminSecret", secret: true);
 
+// Applies EF Core migrations before the services that depend on the schema start.
+var migrations = builder.AddProject<Projects.Heum_MigrationService>("migrations")
+    .WithReference(database)
+    .WaitFor(database);
+
 var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithReference(cache)
     .WithReference(database)
@@ -40,6 +45,7 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WaitFor(keycloak)
     .WaitFor(mailpit)
     .WaitFor(messaging)
+    .WaitForCompletion(migrations)
     .WithEnvironment("KeycloakAdmin__Realm", "saas-app")
     .WithEnvironment("KeycloakAdmin__ClientId", "tenant-provisioning-service")
     .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)

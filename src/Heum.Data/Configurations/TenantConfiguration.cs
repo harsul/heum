@@ -1,8 +1,8 @@
-using Heum.Server.Data.Models;
+using Heum.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Heum.Server.Data.Configurations;
+namespace Heum.Data.Configurations;
 
 public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
 {

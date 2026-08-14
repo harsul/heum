@@ -1,4 +1,4 @@
-﻿namespace Heum.Server.Services.Keycloak;
+namespace Heum.Infrastructure.Keycloak;
 
 public class KeycloakAdminOptions
 {

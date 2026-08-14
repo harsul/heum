@@ -1,6 +1,6 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Heum.Contracts.Events;
-using Heum.Server.Services.Keycloak;
+using Heum.Infrastructure.Keycloak;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 

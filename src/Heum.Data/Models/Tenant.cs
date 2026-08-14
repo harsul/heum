@@ -1,4 +1,4 @@
-namespace Heum.Server.Data.Models;
+namespace Heum.Data.Models;
 
 public class Tenant
 {
