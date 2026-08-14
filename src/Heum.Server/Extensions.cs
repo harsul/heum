@@ -1,15 +1,12 @@
 using Heum.Server.Data;
-using Microsoft.AspNetCore.Builder;
+using Heum.Server.Services.Keycloak;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.ServiceDiscovery;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
-namespace Microsoft.Extensions.Hosting;
+namespace Heum.Server;
 
 // Adds common Aspire services: service discovery, resilience, health checks, and OpenTelemetry.
 // This project should be referenced by each service project in your solution.
@@ -110,6 +107,21 @@ public static class Extensions
     public static TBuilder AddDatabase<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         builder.AddNpgsqlDbContext<HeumdDbContext>("heumdb");
+
+        return builder;
+    }
+
+    public static TBuilder AddKeycloakAdmin<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services
+            .AddOptions<KeycloakAdminOptions>()
+            .Bind(builder.Configuration.GetSection(KeycloakAdminOptions.SectionName))
+            .ValidateDataAnnotations();
+
+        builder.Services.AddHttpClient<IKeycloakAdminClient, KeycloakAdminClient>(client =>
+        {
+            client.BaseAddress = new Uri("http+https://keycloak");
+        });
 
         return builder;
     }
