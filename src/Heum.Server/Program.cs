@@ -1,3 +1,4 @@
+using Heum.Infrastructure.Keycloak;
 using Heum.Server;
 using Heum.Server.Data;
 using Heum.Server.Features.Tenants;

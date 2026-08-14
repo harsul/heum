@@ -3,7 +3,7 @@ using Heum.Contracts.Events;
 using Heum.Server.Data;
 using Heum.Server.Data.Models;
 using Heum.Server.Features.Tenants.Models;
-using Heum.Server.Services.Keycloak;
+using Heum.Infrastructure.Keycloak;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

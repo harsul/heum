@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Heum.Contracts\Heum.Contracts.csproj" />
+    <ProjectReference Include="..\Heum.Infrastructure\Heum.Infrastructure.csproj" />
     <ProjectReference Include="..\Heum.ServiceDefaults\Heum.ServiceDefaults.csproj" />
   </ItemGroup>
 

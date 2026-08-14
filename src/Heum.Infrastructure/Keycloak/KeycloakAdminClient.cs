@@ -1,8 +1,9 @@
-﻿using Heum.Server.Services.Keycloak.Models;
+﻿using System.Net.Http.Json;
+using Heum.Infrastructure.Keycloak.Models;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
-namespace Heum.Server.Services.Keycloak;
+namespace Heum.Infrastructure.Keycloak;
 
 /// <summary>
 /// Talks to the Keycloak Admin REST API to provision users as part of tenant onboarding.
