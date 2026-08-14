@@ -4,6 +4,7 @@ import { useAuth } from 'react-oidc-context';
 import { Dashboard } from './pages/Dashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { setTokenCookie, clearTokenCookie } from './utils/cookie';
+import { setAccessToken } from './lib/apiClient';
 
 function App() {
   const auth = useAuth();
@@ -11,8 +12,10 @@ function App() {
   useEffect(() => {
     if (auth.user?.access_token) {
       setTokenCookie(auth.user.access_token);
+      setAccessToken(auth.user.access_token);
     } else if (!auth.isLoading && !auth.isAuthenticated) {
       clearTokenCookie();
+      setAccessToken(undefined);
     }
   }, [auth.user?.access_token, auth.isAuthenticated, auth.isLoading]);
 

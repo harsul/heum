@@ -1,46 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from 'react-oidc-context';
 import aspireLogo from '/Aspire.png';
 import '../App.css';
-
-interface WeatherForecast {
-  date: string;
-  temperatureC: number;
-  temperatureF: number;
-  summary: string;
-}
+import { useWeatherForecast } from '../hooks/useWeatherForecast';
 
 export function Dashboard() {
   const auth = useAuth();
-  const [weatherData, setWeatherData] = useState<WeatherForecast[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [useCelsius, setUseCelsius] = useState(false);
 
-  const fetchWeatherForecast = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch('/api/weatherforecast', {
-        headers: {
-          Authorization: `Bearer ${auth.user?.access_token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data: WeatherForecast[] = await response.json();
-      setWeatherData(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch weather data');
-    } finally {
-      setLoading(false);
-    }
-  }, [auth.user?.access_token]);
+  const { data: weatherData = [], isFetching, isError, error, refetch } = useWeatherForecast();
 
-  useEffect(() => {
-    fetchWeatherForecast();
-  }, [fetchWeatherForecast]);
+  const loading = isFetching;
+  const fetchWeatherForecast = refetch;
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString(undefined, {
@@ -136,14 +107,14 @@ export function Dashboard() {
               </div>
             </div>
 
-            {error && (
+            {isError && (
               <div className="error-message" role="alert" aria-live="polite">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
-                <span>{error}</span>
+                <span>{error?.message ?? 'Failed to fetch weather data'}</span>
               </div>
             )}
 
