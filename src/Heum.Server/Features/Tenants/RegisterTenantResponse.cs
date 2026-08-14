@@ -1,4 +1,4 @@
-﻿namespace Heum.Server.Fatures.Tenants;
+﻿namespace Heum.Server.Features.Tenants;
 
 public class RegisterTenantResponse
 {

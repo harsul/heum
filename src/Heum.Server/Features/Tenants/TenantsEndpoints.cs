@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Heum.Server.Fatures.Tenants;
+namespace Heum.Server.Features.Tenants;
 
 public static class TenantsEndpoints
 {

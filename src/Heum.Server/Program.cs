@@ -1,6 +1,6 @@
 using Heum.Server;
 using Heum.Server.Data;
-using Heum.Server.Fatures.Tenants;
+using Heum.Server.Features.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
