@@ -81,5 +81,39 @@
     "address",
     "phone",
     "microprofile-jwt"
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@heum.dev",
+      "firstName": "Admin",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["Admin", "User"]
+    },
+    {
+      "username": "user",
+      "email": "user@heum.dev",
+      "firstName": "Regular",
+      "lastName": "User",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["User"]
+    }
   ]
 }
