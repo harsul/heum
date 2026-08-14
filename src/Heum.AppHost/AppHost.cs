@@ -20,6 +20,13 @@ var keycloak = builder.AddKeycloak("keycloak", 8080)
     .WithEnvironment("KC_SMTP_HOST", smtpEndpoint.Property(EndpointProperty.Host))
     .WithEnvironment("KC_SMTP_PORT", smtpEndpoint.Property(EndpointProperty.Port));
 
+var messaging = builder.AddAzureServiceBus("messaging")
+    .RunAsEmulator();
+
+var tenantEventsTopic = messaging.AddServiceBusTopic("tenant-events");
+tenantEventsTopic.AddServiceBusSubscription("email-verification-sub");
+tenantEventsTopic.AddServiceBusSubscription("db-seeding-sub");
+
 var keycloakAdminSecret = builder.AddParameter("KeycloakAdminSecret", secret: true);
 
 var server = builder.AddProject<Projects.Heum_Server>("server")
@@ -27,10 +34,12 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithReference(database)
     .WithReference(mailpit)
     .WithReference(keycloak)
+    .WithReference(messaging)
     .WaitFor(cache)
     .WaitFor(database)
     .WaitFor(keycloak)
     .WaitFor(mailpit)
+    .WaitFor(messaging)
     .WithEnvironment("KeycloakAdmin__Realm", "saas-app")
     .WithEnvironment("KeycloakAdmin__ClientId", "tenant-provisioning-service")
     .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)

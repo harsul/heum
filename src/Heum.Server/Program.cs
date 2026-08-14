@@ -14,6 +14,11 @@ builder.AddRedisClientBuilder("cache")
     .WithDistributedCache()
     .WithOutputCache();
 
+builder.AddAzureServiceBusClient("messaging");
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<Azure.Messaging.ServiceBus.ServiceBusClient>()
+      .CreateSender("tenant-events"));
+
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>
     {
