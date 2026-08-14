@@ -12,6 +12,8 @@ var keycloak = builder.AddKeycloak("keycloak", 8080)
 
 var mailpit = builder.AddMailPit("mailpit");
 
+var keycloakAdminSecret = builder.AddParameter("KeycloakAdminSecret", secret: true);
+
 var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithReference(cache)
     .WithReference(database)
@@ -21,6 +23,9 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WaitFor(database)
     .WaitFor(keycloak)
     .WaitFor(mailpit)
+    .WithEnvironment("KeycloakAdmin__Realm", "saas-app")
+    .WithEnvironment("KeycloakAdmin__ClientId", "tenant-provisioning-service")
+    .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints();
 
