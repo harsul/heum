@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Heum.Server.Tenants;
+namespace Heum.Server.Fatures.Tenants;
 
 public class RegisterTenantRequest
 {

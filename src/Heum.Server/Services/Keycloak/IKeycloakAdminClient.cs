@@ -1,4 +1,4 @@
-﻿namespace Heum.Server.Keycloak;
+﻿namespace Heum.Server.Services.Keycloak;
 
 public interface IKeycloakAdminClient
 {

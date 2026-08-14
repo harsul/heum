@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Heum.Server.Keycloak;
+namespace Heum.Server.Services.Keycloak;
 
 internal sealed class KeycloakTokenResponse
 {
