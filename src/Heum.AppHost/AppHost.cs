@@ -3,12 +3,15 @@ var builder = DistributedApplication.CreateBuilder(args);
 var cache = builder.AddRedis("cache");
 
 var postgres = builder.AddPostgres("postgres")
-    .WithDataVolume();
+    .WithDataVolume("heum-postgres-data")
+    .WithLifetime(ContainerLifetime.Persistent);;
 
 var database = postgres.AddDatabase("heumdb");
 
 var keycloak = builder.AddKeycloak("keycloak", 8080)
-    .WithRealmImport("./KeycloakImport");
+    .WithDataVolume("heum-keycloak-data")
+    .WithRealmImport("./KeycloakImport")
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var mailpit = builder.AddMailPit("mailpit");
 
