@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Heum.Server.Services.Keycloak.Models;
+using Microsoft.Extensions.Options;
 
 namespace Heum.Server.Services.Keycloak;
 

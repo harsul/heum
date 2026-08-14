@@ -1,5 +1,6 @@
 ﻿using Heum.Server.Data;
 using Heum.Server.Data.Models;
+using Heum.Server.Features.Tenants.Models;
 using Heum.Server.Services.Keycloak;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

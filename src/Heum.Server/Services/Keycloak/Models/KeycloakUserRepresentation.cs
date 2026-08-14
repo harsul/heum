@@ -1,12 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Heum.Server.Services.Keycloak;
-
-internal sealed class KeycloakTokenResponse
-{
-    [JsonPropertyName("access_token")]
-    public string AccessToken { get; set; } = string.Empty;
-}
+namespace Heum.Server.Services.Keycloak.Models;
 
 internal sealed class KeycloakUserRepresentation
 {
@@ -34,16 +28,3 @@ internal sealed class KeycloakUserRepresentation
     [JsonPropertyName("credentials")]
     public List<KeycloakCredentialRepresentation> Credentials { get; set; } = [];
 }
-
-internal sealed class KeycloakCredentialRepresentation
-{
-    [JsonPropertyName("type")]
-    public string Type { get; set; } = "password";
-
-    [JsonPropertyName("value")]
-    public string Value { get; set; } = string.Empty;
-
-    [JsonPropertyName("temporary")]
-    public bool Temporary { get; set; }
-}
-
