@@ -1,4 +1,6 @@
-﻿using Heum.Server.Data;
+﻿using Azure.Messaging.ServiceBus;
+using Heum.Contracts.Events;
+using Heum.Server.Data;
 using Heum.Server.Data.Models;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.Services.Keycloak;
@@ -25,6 +27,7 @@ public static class TenantsEndpoints
         RegisterTenantRequest request,
         HeumdDbContext dbContext,
         IKeycloakAdminClient keycloakAdminClient,
+        ServiceBusSender sender,
         CancellationToken cancellationToken)
     {
         var slugTaken = await dbContext.Tenants.AnyAsync(t => t.Slug == request.Slug, cancellationToken);
@@ -58,6 +61,23 @@ public static class TenantsEndpoints
                 password: request.AdminPassword,
                 tenantId: tenant.Id,
                 cancellationToken: cancellationToken);
+
+            var @event = new TenantCreatedEvent(
+                TenantId: tenant.Id,
+                Slug: tenant.Slug,
+                AdminEmail: request.AdminEmail,
+                AdminFirstName: request.AdminFirstName,
+                AdminLastName: request.AdminLastName,
+                KeycloakUserId: keycloakUserId,
+                OccurredAt: DateTimeOffset.UtcNow);
+
+            await sender.SendMessageAsync(
+                new ServiceBusMessage(BinaryData.FromObjectAsJson(@event))
+                {
+                    ContentType = "application/json",
+                    Subject = nameof(TenantCreatedEvent),
+                },
+                cancellationToken);
 
             return TypedResults.Created($"/api/tenants/{tenant.Id}", new RegisterTenantResponse
             {
