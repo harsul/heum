@@ -7,5 +7,4 @@ public class KeycloakAdminOptions
     public string Realm { get; set; } = string.Empty;
     public string ClientId { get; set; } = string.Empty;
     public string ClientSecret { get; set; } = string.Empty;
-    public string AdminRoleName { get; set; } = "Admin";
 }

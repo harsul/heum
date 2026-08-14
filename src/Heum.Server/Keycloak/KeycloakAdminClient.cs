@@ -24,24 +24,18 @@ public class KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakAdminOp
     {
         var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
 
-        var userId = await CreateUserAsync(accessToken, username, email, firstName, lastName, password, tenantId, cancellationToken);
-
-        await AssignRealmRoleAsync(accessToken, userId, _options.AdminRoleName, cancellationToken);
-
-        return userId;
+        return await CreateUserAsync(accessToken, username, email, firstName, lastName, password, tenantId, cancellationToken);
     }
 
     private async Task<string> GetAdminAccessTokenAsync(CancellationToken cancellationToken)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/realms/{_options.Realm}/protocol/openid-connect/token")
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/realms/{_options.Realm}/protocol/openid-connect/token");
+        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
-            Content = new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["grant_type"] = "client_credentials",
-                ["client_id"] = _options.ClientId,
-                ["client_secret"] = _options.ClientSecret,
-            }),
-        };
+            ["grant_type"] = "client_credentials",
+            ["client_id"] = _options.ClientId,
+            ["client_secret"] = _options.ClientSecret,
+        });
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -92,26 +86,5 @@ public class KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakAdminOp
             ?? throw new InvalidOperationException("Keycloak did not return a Location header for the created user.");
 
         return location.Segments[^1].TrimEnd('/');
-    }
-
-    private async Task AssignRealmRoleAsync(string accessToken, string userId, string roleName, CancellationToken cancellationToken)
-    {
-        using var getRoleRequest = new HttpRequestMessage(HttpMethod.Get, $"/admin/realms/{_options.Realm}/roles/{roleName}");
-        getRoleRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-        using var getRoleResponse = await httpClient.SendAsync(getRoleRequest, cancellationToken);
-        getRoleResponse.EnsureSuccessStatusCode();
-
-        var role = await getRoleResponse.Content.ReadFromJsonAsync<KeycloakRoleRepresentation>(cancellationToken: cancellationToken)
-            ?? throw new InvalidOperationException($"Keycloak realm role '{roleName}' was not found.");
-
-        using var assignRoleRequest = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{_options.Realm}/users/{userId}/role-mappings/realm")
-        {
-            Content = JsonContent.Create(new[] { role }),
-        };
-        assignRoleRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-        using var assignRoleResponse = await httpClient.SendAsync(assignRoleRequest, cancellationToken);
-        assignRoleResponse.EnsureSuccessStatusCode();
     }
 }

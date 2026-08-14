@@ -47,11 +47,3 @@ internal sealed class KeycloakCredentialRepresentation
     public bool Temporary { get; set; }
 }
 
-internal sealed class KeycloakRoleRepresentation
-{
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-}

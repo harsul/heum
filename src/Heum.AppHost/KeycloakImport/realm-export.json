@@ -134,7 +134,7 @@
       "enabled": true,
       "serviceAccountClientId": "tenant-provisioning-service",
       "clientRoles": {
-        "realm-management": ["manage-users", "view-users", "query-users", "view-realm"]
+        "realm-management": ["manage-users"]
       }
     }
   ]
