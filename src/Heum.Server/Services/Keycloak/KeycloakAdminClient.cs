@@ -1,4 +1,5 @@
 ﻿using Heum.Server.Services.Keycloak.Models;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
 namespace Heum.Server.Services.Keycloak;
@@ -8,10 +9,15 @@ namespace Heum.Server.Services.Keycloak;
 /// Authenticates using the client-credentials grant for the "tenant-provisioning-service"
 /// confidential client, which has been granted the realm-management "manage-users" role.
 /// </summary>
-public class KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakAdminOptions> options)
+public class KeycloakAdminClient(
+    HttpClient httpClient,
+    IOptions<KeycloakAdminOptions> options,
+    IDistributedCache cache)
     : IKeycloakAdminClient
 {
     private readonly KeycloakAdminOptions _options = options.Value;
+    private const string AccessTokenCacheKey = "keycloak:admin:access_token";
+    private static readonly TimeSpan TokenExpiryBuffer = TimeSpan.FromSeconds(30);
 
     public async Task<string> ProvisionTenantAdminUserAsync(
         string username,
@@ -29,6 +35,10 @@ public class KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakAdminOp
 
     private async Task<string> GetAdminAccessTokenAsync(CancellationToken cancellationToken)
     {
+        var cachedToken = await cache.GetStringAsync(AccessTokenCacheKey, cancellationToken);
+        if (!string.IsNullOrEmpty(cachedToken))
+            return cachedToken;
+
         using var request = new HttpRequestMessage(HttpMethod.Post, $"/realms/{_options.Realm}/protocol/openid-connect/token");
         request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
         {
@@ -42,6 +52,16 @@ public class KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakAdminOp
 
         var token = await response.Content.ReadFromJsonAsync<KeycloakTokenResponse>(cancellationToken: cancellationToken)
             ?? throw new InvalidOperationException("Keycloak did not return an access token.");
+
+        var cacheOptions = new DistributedCacheEntryOptions();
+        if (token.ExpiresIn > 0)
+        {
+            var expiry = TimeSpan.FromSeconds(token.ExpiresIn) - TokenExpiryBuffer;
+            if (expiry > TimeSpan.Zero)
+                cacheOptions.AbsoluteExpirationRelativeToNow = expiry;
+        }
+
+        await cache.SetStringAsync(AccessTokenCacheKey, token.AccessToken, cacheOptions, cancellationToken);
 
         return token.AccessToken;
     }
@@ -72,10 +92,8 @@ public class KeycloakAdminClient(HttpClient httpClient, IOptions<KeycloakAdminOp
             ],
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{_options.Realm}/users")
-        {
-            Content = JsonContent.Create(user),
-        };
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{_options.Realm}/users");
+        request.Content = JsonContent.Create(user);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);

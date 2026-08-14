@@ -11,6 +11,7 @@ builder.AddServiceDefaults();
 builder.AddDatabase();
 builder.AddKeycloakAdmin();
 builder.AddRedisClientBuilder("cache")
+    .WithDistributedCache()
     .WithOutputCache();
 
 builder.Services.AddAuthentication()
