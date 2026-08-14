@@ -14,6 +14,7 @@ builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>
     {
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.TokenValidationParameters.ValidateAudience = false;
     });
 
 builder.Services.AddAuthorization();

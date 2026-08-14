@@ -26,7 +26,9 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
 
 var webfrontend = builder.AddViteApp("webfrontend", "../frontend")
     .WithReference(server)
-    .WaitFor(server);
+    .WithReference(keycloak)
+    .WaitFor(server)
+    .WaitFor(keycloak);
 
 server.PublishWithContainerFiles(webfrontend, "wwwroot");
 
