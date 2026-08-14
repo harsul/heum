@@ -4,16 +4,21 @@ var cache = builder.AddRedis("cache");
 
 var postgres = builder.AddPostgres("postgres")
     .WithDataVolume("heum-postgres-data")
-    .WithLifetime(ContainerLifetime.Persistent);;
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var database = postgres.AddDatabase("heumdb");
+
+var mailpit = builder.AddMailPit("mailpit");
+
+var smtpEndpoint = mailpit.GetEndpoint("smtp");
 
 var keycloak = builder.AddKeycloak("keycloak", 8080)
     .WithDataVolume("heum-keycloak-data")
     .WithRealmImport("./KeycloakImport")
-    .WithLifetime(ContainerLifetime.Persistent);
-
-var mailpit = builder.AddMailPit("mailpit");
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WaitFor(mailpit)
+    .WithEnvironment("KC_SMTP_HOST", smtpEndpoint.Property(EndpointProperty.Host))
+    .WithEnvironment("KC_SMTP_PORT", smtpEndpoint.Property(EndpointProperty.Port));
 
 var keycloakAdminSecret = builder.AddParameter("KeycloakAdminSecret", secret: true);
 
