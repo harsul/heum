@@ -33,6 +33,23 @@ public class KeycloakAdminClient(
         return await CreateUserAsync(accessToken, username, email, firstName, lastName, password, tenantId, cancellationToken);
     }
 
+    public async Task SendRequiredActionsEmailAsync(
+        string userId,
+        IEnumerable<string> actions,
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Put,
+            $"/admin/realms/{_options.Realm}/users/{userId}/execute-actions-email");
+        request.Content = JsonContent.Create(actions.ToArray());
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     private async Task<string> GetAdminAccessTokenAsync(CancellationToken cancellationToken)
     {
         var cachedToken = await cache.GetStringAsync(AccessTokenCacheKey, cancellationToken);

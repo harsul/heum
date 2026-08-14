@@ -15,4 +15,13 @@ public interface IKeycloakAdminClient
         string password,
         Guid tenantId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Asks Keycloak to email the user a link that executes the given required actions
+    /// (for example "VERIFY_EMAIL"). The email is delivered through the realm's SMTP settings.
+    /// </summary>
+    Task SendRequiredActionsEmailAsync(
+        string userId,
+        IEnumerable<string> actions,
+        CancellationToken cancellationToken = default);
 }

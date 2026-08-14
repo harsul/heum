@@ -10,10 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Heum.Functions\Heum.Functions.csproj" />
     <ProjectReference Include="..\Heum.Server\Heum.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.Functions" Version="13.4.6" />
     <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" Version="13.4.6" />
     <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.4.6" />
     <PackageReference Include="Aspire.Hosting.Keycloak" Version="13.4.6-preview.1.26319.6" />

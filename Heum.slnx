@@ -6,6 +6,7 @@
     </Project>
     <Project Path="src/Heum.AppHost/Heum.AppHost.csproj" />
     <Project Path="src/Heum.Contracts/Heum.Contracts.csproj" />
+    <Project Path="src/Heum.Functions/Heum.Functions.csproj" />
     <Project Path="src/Heum.Server/Heum.Server.csproj" />
   </Folder>
   <Folder Name="/tests/">

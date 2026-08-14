@@ -46,6 +46,18 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints();
 
+// Background worker: sends the Keycloak VERIFY_EMAIL action link when a tenant is created.
+builder.AddAzureFunctionsProject<Projects.Heum_Functions>("emailverification")
+    .WithReference(cache)
+    .WithReference(keycloak)
+    .WithReference(messaging)
+    .WaitFor(cache)
+    .WaitFor(keycloak)
+    .WaitFor(messaging)
+    .WithEnvironment("KeycloakAdmin__Realm", "saas-app")
+    .WithEnvironment("KeycloakAdmin__ClientId", "tenant-provisioning-service")
+    .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret);
+
 var webfrontend = builder.AddViteApp("webfrontend", "../frontend")
     .WithReference(server)
     .WithReference(keycloak)
