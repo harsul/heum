@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
-import { Dashboard } from './pages/Dashboard';
+import { DashboardPage } from './pages/DashboardPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { setTokenCookie, clearTokenCookie } from './utils/cookie';
 import { setAccessToken } from './lib/apiClient';
@@ -25,7 +25,7 @@ function App() {
         path="/*"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <DashboardPage />
           </ProtectedRoute>
         }
       />
