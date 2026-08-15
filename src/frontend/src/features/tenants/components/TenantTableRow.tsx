@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
@@ -26,7 +26,7 @@ export function TenantTableRow({ tenant, selected, onSelectRow }: TenantTableRow
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   return (
-    <TableRow hover selected={selected} tabIndex={-1}>
+    <TableRow selected={selected} tabIndex={-1}>
       <TableCell padding="checkbox">
         <Checkbox checked={selected} onChange={onSelectRow} />
       </TableCell>
