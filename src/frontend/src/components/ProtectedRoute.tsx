@@ -1,5 +1,8 @@
 import { useEffect } from 'react';
 import { useAuth } from 'react-oidc-context';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const auth = useAuth();
@@ -12,11 +15,21 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (auth.isLoading) {
     return (
-      <div className="app-container">
-        <div className="main-content">
-          <p style={{ color: 'var(--text-secondary)' }}>Authenticating...</p>
-        </div>
-      </div>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          gap: 2,
+        }}
+      >
+        <CircularProgress />
+        <Typography variant="body2" color="text.secondary">
+          Authenticating…
+        </Typography>
+      </Box>
     );
   }
 
