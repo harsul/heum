@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from 'react-oidc-context';
+import Button from '@mui/material/Button';
 import aspireLogo from '/Aspire.png';
 import '../App.css';
 import { useWeatherForecast } from '../hooks/useWeatherForecast';
@@ -42,13 +43,23 @@ export function Dashboard() {
             <span className="username" aria-label={`Logged in as ${displayName}`}>
               {displayName}
             </span>
-            <button
-              className="logout-button"
+            <Button
+              variant="outlined"
+              size="small"
               onClick={() => auth.signoutRedirect()}
-              type="button"
+              aria-label={`Log out ${displayName}`}
+              sx={{
+                borderColor: 'var(--weather-card-border)',
+                color: 'var(--text-secondary)',
+                '&:hover': {
+                  borderColor: 'var(--text-tertiary)',
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                  color: 'var(--text-primary)',
+                },
+              }}
             >
               Log Out
-            </button>
+            </Button>
           </div>
         </div>
         <h1 className="app-title">Dashboard</h1>
@@ -84,7 +95,7 @@ export function Dashboard() {
                 </fieldset>
                 <button
                   className="refresh-button"
-                  onClick={fetchWeatherForecast}
+                  onClick={() => fetchWeatherForecast()}
                   disabled={loading}
                   aria-label={loading ? 'Loading weather forecast' : 'Refresh weather forecast'}
                   type="button"
