@@ -26,6 +26,12 @@ export function AppWidgetSummary({
         display: 'flex',
         alignItems: 'center',
         gap: 2,
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease',
+        '&:hover': {
+          transform: 'translateY(-2px)',
+          borderColor: 'rgba(124, 146, 245, 0.4)',
+          boxShadow: '0 8px 20px rgba(0, 0, 0, 0.35)',
+        },
         ...sx,
       }}
     >

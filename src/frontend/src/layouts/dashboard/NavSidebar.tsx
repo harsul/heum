@@ -45,11 +45,13 @@ function NavContent() {
             sx={{
               mb: 0.5,
               borderRadius: 1.5,
+              color: 'text.secondary',
+              '& .MuiListItemIcon-root': { color: 'inherit' },
               '&.active': {
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                '& .MuiListItemIcon-root': { color: 'inherit' },
-                '&:hover': { bgcolor: 'primary.dark' },
+                bgcolor: (theme) => `${theme.palette.primary.main}1f`,
+                color: 'primary.main',
+                fontWeight: 700,
+                '&:hover': { bgcolor: (theme) => `${theme.palette.primary.main}29` },
               },
             }}
           >

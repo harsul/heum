@@ -39,17 +39,17 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          backdropFilter: 'blur(10px)',
+          backgroundColor: 'rgba(30, 30, 46, 0.95)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow:
-            '0 4px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25)',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            borderColor: 'rgba(124, 146, 245, 0.4)',
-            boxShadow:
-              '0 12px 24px rgba(0, 0, 0, 0.45), 0 4px 8px rgba(124, 146, 245, 0.15)',
-          },
+          boxShadow: 'none',
+        },
+      },
+    },
+    MuiCardHeader: {
+      styleOverrides: {
+        title: {
+          fontSize: '1rem',
+          fontWeight: 600,
         },
       },
     },
@@ -57,7 +57,8 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          background: 'rgba(26, 26, 46, 0.85)',
+          background: 'rgba(26, 26, 46, 0.9)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           boxShadow: 'none',
         },
       },
@@ -66,15 +67,32 @@ const theme = createTheme({
       styleOverrides: {
         paper: {
           backgroundImage: 'none',
-          background: 'rgba(22, 22, 38, 0.98)',
+          background: '#16162a',
         },
       },
     },
     MuiListItemButton: {
       styleOverrides: {
         root: {
+          transition: 'none',
           '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.06)',
+          },
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+        },
+      },
+    },
+    MuiTableRow: {
+      styleOverrides: {
+        root: {
+          '&:last-child td': {
+            borderBottom: 0,
           },
         },
       },
