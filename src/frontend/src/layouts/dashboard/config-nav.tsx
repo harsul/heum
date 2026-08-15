@@ -18,7 +18,7 @@ export const navConfig: NavItemConfig[] = [
   { title: 'Dashboard', path: '/', icon: DashboardIcon },
   // TODO: remove once the weather sample feature is no longer needed.
   { title: 'Weather', path: '/weather', icon: CloudQueueIcon },
-  { title: 'Users', path: '/users', icon: PeopleAltIcon, disabled: true },
+  { title: 'Tenants', path: '/tenants', icon: PeopleAltIcon },
   { title: 'Orders', path: '/orders', icon: ShoppingCartIcon, disabled: true },
   { title: 'Analytics', path: '/analytics', icon: BarChartIcon, disabled: true },
   { title: 'Settings', path: '/settings', icon: SettingsIcon, disabled: true },

@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { DashboardPage } from './pages/DashboardPage';
 import { WeatherPage } from './pages/WeatherPage';
+import { TenantsPage } from './pages/TenantsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { setTokenCookie, clearTokenCookie } from './utils/cookie';
 import { setAccessToken } from './lib/apiClient';
@@ -35,6 +36,14 @@ function App() {
         element={
           <ProtectedRoute>
             <WeatherPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tenants"
+        element={
+          <ProtectedRoute>
+            <TenantsPage />
           </ProtectedRoute>
         }
       />
