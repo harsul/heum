@@ -26,8 +26,9 @@ export function WeatherCard({ forecast, useCelsius }: WeatherCardProps) {
   return (
     <Card
       component="article"
+      elevation={3}
       aria-label={`Weather for ${formattedDate}`}
-      sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+      sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3 }}
     >
       <CardContent
         sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1 }}

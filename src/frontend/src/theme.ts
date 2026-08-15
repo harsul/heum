@@ -40,6 +40,16 @@ const theme = createTheme({
         root: {
           backgroundImage: 'none',
           backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow:
+            '0 4px 12px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25)',
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            borderColor: 'rgba(124, 146, 245, 0.4)',
+            boxShadow:
+              '0 12px 24px rgba(0, 0, 0, 0.45), 0 4px 8px rgba(124, 146, 245, 0.15)',
+          },
         },
       },
     },

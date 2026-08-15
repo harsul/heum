@@ -20,8 +20,8 @@ export function AppLayout({ children }: AppLayoutProps) {
     'User';
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="sticky" elevation={0} sx={{ backdropFilter: 'blur(12px)' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <AppBar position="static" elevation={0} sx={{ backdropFilter: 'blur(12px)', flexShrink: 0 }}>
         <Toolbar>
           <Link
             href="https://aspire.dev"
@@ -64,7 +64,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </Toolbar>
       </AppBar>
 
-      <Box component="main" sx={{ flex: 1, py: 4 }}>
+      <Box component="main" sx={{ flex: 1, minHeight: 0, overflow: 'auto', py: 4 }}>
         <Container maxWidth="xl">
           {children}
         </Container>
@@ -72,7 +72,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       <Box
         component="footer"
-        sx={{ py: 2, px: 3, backdropFilter: 'blur(10px)', bgcolor: 'rgba(0,0,0,0.2)' }}
+        sx={{ py: 2, px: 3, flexShrink: 0, backdropFilter: 'blur(10px)', bgcolor: 'rgba(0,0,0,0.2)' }}
       >
         <Stack direction="row" spacing={3} sx={{ justifyContent: 'center', alignItems: 'center' }}>
           <Link

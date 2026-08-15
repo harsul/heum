@@ -1,9 +1,16 @@
 /* MuiCssBaseline handles the base reset; only app-specific globals live here */
 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 #root {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Visually hidden utility – used for screen-reader-only text */
