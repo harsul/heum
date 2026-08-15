@@ -9,7 +9,6 @@ import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { AppWidgetSummary } from '../components/widgets/AppWidgetSummary';
 import { AppTasks } from '../components/widgets/AppTasks';
 import { AppOrderTimeline } from '../components/widgets/AppOrderTimeline';
-import { WeatherSection } from '../features/weather/components';
 
 const tasks = [
   { id: '1', name: 'Review pull requests' },
@@ -60,8 +59,6 @@ export function DashboardPage() {
           <AppOrderTimeline title="Recent Activity" list={timelineEvents} />
         </Grid>
       </Grid>
-
-      <WeatherSection />
     </DashboardLayout>
   );
 }
