@@ -5,7 +5,6 @@ import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
-import { NAV_WIDTH } from './NavSidebar';
 import { AccountPopover } from './AccountPopover';
 
 interface HeaderProps {
@@ -18,8 +17,6 @@ export function Header({ onOpenNav }: HeaderProps) {
       position="sticky"
       elevation={0}
       sx={{
-        width: { md: `calc(100% - ${NAV_WIDTH}px)` },
-        ml: { md: `${NAV_WIDTH}px` },
         backdropFilter: 'blur(12px)',
       }}
     >

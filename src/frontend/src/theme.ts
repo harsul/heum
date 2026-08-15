@@ -91,7 +91,7 @@ const theme = createTheme({
     MuiTableRow: {
       styleOverrides: {
         root: {
-          '&:last-child td': {
+          '&:last-child .MuiTableCell-root': {
             borderBottom: 0,
           },
         },
