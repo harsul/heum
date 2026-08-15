@@ -58,6 +58,24 @@ const theme = createTheme({
         root: {
           backgroundImage: 'none',
           background: 'rgba(26, 26, 46, 0.85)',
+          boxShadow: 'none',
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundImage: 'none',
+          background: 'rgba(22, 22, 38, 0.98)',
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+          },
         },
       },
     },
