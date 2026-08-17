@@ -33,6 +33,13 @@
         "composite": false,
         "clientRole": false,
         "containerId": "saas-app"
+      },
+      {
+        "name": "SystemAdmin",
+        "description": "Platform staff who can manage tenants across the whole system",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "saas-app"
       }
     ],
     "client": {}
@@ -137,6 +144,22 @@
         }
       ],
       "realmRoles": ["User"]
+    },
+    {
+      "username": "sysadmin",
+      "email": "sysadmin@heum.dev",
+      "firstName": "System",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "sysadmin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["SystemAdmin"]
     },
     {
       "username": "service-account-tenant-provisioning-service",

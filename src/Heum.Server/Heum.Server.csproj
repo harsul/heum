@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Heum.Server.xUnit" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Heum.Contracts\Heum.Contracts.csproj" />
     <ProjectReference Include="..\Heum.Data\Heum.Data.csproj" />
     <ProjectReference Include="..\Heum.Infrastructure\Heum.Infrastructure.csproj" />
