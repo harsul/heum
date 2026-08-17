@@ -7,6 +7,7 @@ import { TenantsPage } from './pages/TenantsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { setTokenCookie, clearTokenCookie } from './utils/cookie';
 import { setAccessToken } from './lib/apiClient';
+import { SYSTEM_ADMIN_ROLE } from './auth/roles';
 
 function App() {
   const auth = useAuth();
@@ -42,7 +43,7 @@ function App() {
       <Route
         path="/tenants"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireRole={SYSTEM_ADMIN_ROLE}>
             <TenantsPage />
           </ProtectedRoute>
         }

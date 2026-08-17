@@ -11,7 +11,7 @@ export function TenantsPage() {
           Tenants
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Companies onboarded to your platform. Data shown below is mocked for now.
+          Companies onboarded to your platform.
         </Typography>
       </Box>
 

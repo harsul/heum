@@ -1,12 +1,9 @@
 ﻿using Azure.Messaging.ServiceBus;
-using Heum.Contracts.Events;
 using Heum.Data;
-using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak;
 using Heum.Server.Features.Tenants.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Heum.Server.Features.Tenants;
 
@@ -30,8 +27,19 @@ public static class TenantsEndpoints
         ServiceBusSender sender,
         CancellationToken cancellationToken)
     {
-        var slugTaken = await dbContext.Tenants.AnyAsync(t => t.Slug == request.Slug, cancellationToken);
-        if (slugTaken)
+        var result = await TenantProvisioningService.ProvisionTenantAsync(
+            request.CompanyName,
+            request.Slug,
+            request.AdminFirstName,
+            request.AdminLastName,
+            request.AdminEmail,
+            request.AdminPassword,
+            dbContext,
+            keycloakAdminClient,
+            sender,
+            cancellationToken);
+
+        if (result.SlugConflict)
         {
             return TypedResults.Conflict(new ProblemDetails
             {
@@ -41,58 +49,11 @@ public static class TenantsEndpoints
             });
         }
 
-        var tenant = new Tenant
+        return TypedResults.Created($"/api/tenants/{result.Tenant!.Id}", new RegisterTenantResponse
         {
-            Id = Guid.NewGuid(),
-            Name = request.CompanyName,
-            Slug = request.Slug,
-        };
-
-        dbContext.Tenants.Add(tenant);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        try
-        {
-            var keycloakUserId = await keycloakAdminClient.ProvisionTenantAdminUserAsync(
-                username: request.AdminEmail,
-                email: request.AdminEmail,
-                firstName: request.AdminFirstName,
-                lastName: request.AdminLastName,
-                password: request.AdminPassword,
-                tenantId: tenant.Id,
-                cancellationToken: cancellationToken);
-
-            var @event = new TenantCreatedEvent(
-                TenantId: tenant.Id,
-                Slug: tenant.Slug,
-                AdminEmail: request.AdminEmail,
-                AdminFirstName: request.AdminFirstName,
-                AdminLastName: request.AdminLastName,
-                KeycloakUserId: keycloakUserId,
-                OccurredAt: DateTimeOffset.UtcNow);
-
-            await sender.SendMessageAsync(
-                new ServiceBusMessage(BinaryData.FromObjectAsJson(@event))
-                {
-                    ContentType = "application/json",
-                    Subject = nameof(TenantCreatedEvent),
-                },
-                cancellationToken);
-
-            return TypedResults.Created($"/api/tenants/{tenant.Id}", new RegisterTenantResponse
-            {
-                TenantId = tenant.Id,
-                Slug = tenant.Slug,
-                KeycloakUserId = keycloakUserId,
-            });
-        }
-        catch
-        {
-            // Provisioning the Keycloak user failed after the tenant record was committed;
-            // roll back the tenant so registration can be safely retried.
-            dbContext.Tenants.Remove(tenant);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            throw;
-        }
+            TenantId = result.Tenant.Id,
+            Slug = result.Tenant.Slug,
+            KeycloakUserId = result.KeycloakUserId!,
+        });
     }
 }

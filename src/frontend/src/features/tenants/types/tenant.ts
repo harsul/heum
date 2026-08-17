@@ -1,6 +1,6 @@
 ﻿/**
- * Mirrors `Heum.Data.Models.Tenant` on the server, plus a couple of
- * presentation-only fields (avatarColor) used purely for the demo UI.
+ * Mirrors `Heum.Server.Features.Admin.Tenants.Models.TenantResponse` returned by
+ * `GET /api/admin/tenants`.
  */
 export interface Tenant {
   id: string;

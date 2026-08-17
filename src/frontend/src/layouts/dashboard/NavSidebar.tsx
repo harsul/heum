@@ -7,7 +7,9 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import { NavLink } from 'react-router-dom';
-import { navConfig } from './config-nav';
+import { useAuth } from 'react-oidc-context';
+import { getNavConfig } from './config-nav';
+import { isSystemAdmin } from '../../auth/roles';
 
 export const NAV_WIDTH = 280;
 
@@ -17,6 +19,9 @@ interface NavSidebarProps {
 }
 
 function NavContent() {
+  const auth = useAuth();
+  const navConfig = getNavConfig(isSystemAdmin(auth.user));
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 3, py: 3 }}>

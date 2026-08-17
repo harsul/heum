@@ -1,6 +1,10 @@
-﻿using Heum.Data;
+﻿using Azure.Messaging.ServiceBus;
+using Heum.Data;
+using Heum.Infrastructure.Keycloak;
 using Heum.Server.Features.Admin.Tenants.Models;
+using Heum.Server.Features.Tenants;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heum.Server.Features.Admin.Tenants;
@@ -13,6 +17,9 @@ public static class AdminTenantsEndpoints
 
         tenants.MapGet("/", ListTenantsAsync)
             .WithName("AdminListTenants");
+
+        tenants.MapPost("/", CreateTenantAsync)
+            .WithName("AdminCreateTenant");
 
         tenants.MapGet("/{id:guid}", GetTenantAsync)
             .WithName("AdminGetTenant");
@@ -39,6 +46,39 @@ public static class AdminTenantsEndpoints
             .ToListAsync(cancellationToken);
 
         return TypedResults.Ok<IReadOnlyList<TenantResponse>>(tenants);
+    }
+
+    internal static async Task<Results<Created<TenantResponse>, Conflict<ProblemDetails>>> CreateTenantAsync(
+        CreateTenantRequest request,
+        HeumDbContext dbContext,
+        IKeycloakAdminClient keycloakAdminClient,
+        ServiceBusSender sender,
+        CancellationToken cancellationToken)
+    {
+        var result = await TenantProvisioningService.ProvisionTenantAsync(
+            request.CompanyName,
+            request.Slug,
+            request.AdminFirstName,
+            request.AdminLastName,
+            request.AdminEmail,
+            request.AdminPassword,
+            dbContext,
+            keycloakAdminClient,
+            sender,
+            cancellationToken);
+
+        if (result.SlugConflict)
+        {
+            return TypedResults.Conflict(new ProblemDetails
+            {
+                Title = "Slug already in use",
+                Detail = $"A tenant with slug '{request.Slug}' already exists.",
+                Status = StatusCodes.Status409Conflict,
+            });
+        }
+
+        var tenant = result.Tenant!;
+        return TypedResults.Created($"/api/admin/tenants/{tenant.Id}", ToResponse(tenant));
     }
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> GetTenantAsync(

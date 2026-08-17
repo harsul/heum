@@ -12,7 +12,8 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import MoreVertIcon from '@mui/icons-material/MoreVertOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import type { Tenant } from '../types/tenant';
 import { formatDate, tenantInitials } from '../utils';
 
@@ -20,9 +21,19 @@ interface TenantTableRowProps {
   tenant: Tenant;
   selected: boolean;
   onSelectRow: () => void;
+  onEdit: () => void;
+  onToggleActive: () => void;
+  toggleActiveDisabled?: boolean;
 }
 
-export function TenantTableRow({ tenant, selected, onSelectRow }: TenantTableRowProps) {
+export function TenantTableRow({
+  tenant,
+  selected,
+  onSelectRow,
+  onEdit,
+  onToggleActive,
+  toggleActiveDisabled,
+}: TenantTableRowProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   return (
@@ -74,17 +85,33 @@ export function TenantTableRow({ tenant, selected, onSelectRow }: TenantTableRow
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           slotProps={{ paper: { sx: { width: 160 } } }}
         >
-          <MenuItem onClick={() => setAnchorEl(null)} disabled>
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              onEdit();
+            }}
+          >
             <ListItemIcon>
               <EditOutlinedIcon fontSize="small" />
             </ListItemIcon>
             Edit
           </MenuItem>
-          <MenuItem onClick={() => setAnchorEl(null)} disabled sx={{ color: 'error.main' }}>
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              onToggleActive();
+            }}
+            disabled={toggleActiveDisabled}
+            sx={{ color: tenant.isActive ? 'error.main' : 'success.main' }}
+          >
             <ListItemIcon>
-              <DeleteOutlineIcon fontSize="small" color="error" />
+              {tenant.isActive ? (
+                <BlockOutlinedIcon fontSize="small" color="error" />
+              ) : (
+                <CheckCircleOutlineIcon fontSize="small" color="success" />
+              )}
             </ListItemIcon>
-            Delete
+            {tenant.isActive ? 'Deactivate' : 'Reactivate'}
           </MenuItem>
         </Menu>
       </TableCell>
