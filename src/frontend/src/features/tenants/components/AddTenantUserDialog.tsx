@@ -7,6 +7,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import type { AddTenantUserPayload } from '../api/tenantsApi';
 
 interface AddTenantUserDialogProps {
@@ -18,10 +19,7 @@ interface AddTenantUserDialogProps {
 }
 
 const emptyForm: AddTenantUserPayload = {
-  firstName: '',
-  lastName: '',
   email: '',
-  password: '',
 };
 
 export function AddTenantUserDialog({ open, saving, errorMessage, onClose, onAdd }: AddTenantUserDialogProps) {
@@ -32,12 +30,8 @@ export function AddTenantUserDialog({ open, saving, errorMessage, onClose, onAdd
     onClose();
   };
 
-  const isFirstNameValid = form.firstName.trim().length >= 1;
-  const isLastNameValid = form.lastName.trim().length >= 1;
   const isEmailValid = /\S+@\S+\.\S+/.test(form.email);
-  const isPasswordValid = form.password.length >= 8;
-
-  const isFormValid = isFirstNameValid && isLastNameValid && isEmailValid && isPasswordValid;
+  const isFormValid = isEmailValid;
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
@@ -46,23 +40,10 @@ export function AddTenantUserDialog({ open, saving, errorMessage, onClose, onAdd
         <Stack spacing={2} sx={{ mt: 1 }}>
           {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
-          <Stack direction="row" spacing={2}>
-            <TextField
-              label="First name"
-              value={form.firstName}
-              onChange={(event) => setForm((prev) => ({ ...prev, firstName: event.target.value }))}
-              error={form.firstName.length > 0 && !isFirstNameValid}
-              autoFocus
-              fullWidth
-            />
-            <TextField
-              label="Last name"
-              value={form.lastName}
-              onChange={(event) => setForm((prev) => ({ ...prev, lastName: event.target.value }))}
-              error={form.lastName.length > 0 && !isLastNameValid}
-              fullWidth
-            />
-          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            We&apos;ll email this address a link to finish setting up their account (name,
+            password, and email verification).
+          </Typography>
 
           <TextField
             label="Email"
@@ -71,18 +52,7 @@ export function AddTenantUserDialog({ open, saving, errorMessage, onClose, onAdd
             onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
             error={form.email.length > 0 && !isEmailValid}
             helperText={form.email.length > 0 && !isEmailValid ? 'Enter a valid email address.' : ' '}
-            fullWidth
-          />
-
-          <TextField
-            label="Password"
-            type="password"
-            value={form.password}
-            onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-            error={form.password.length > 0 && !isPasswordValid}
-            helperText={
-              form.password.length > 0 && !isPasswordValid ? 'Password must be at least 8 characters.' : ' '
-            }
+            autoFocus
             fullWidth
           />
         </Stack>

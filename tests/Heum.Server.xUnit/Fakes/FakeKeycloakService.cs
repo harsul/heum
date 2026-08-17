@@ -8,33 +8,15 @@ public sealed class FakeKeycloakService : IKeycloakService
 {
     public Exception? ExceptionToThrow { get; set; }
     public string UserIdToReturn { get; set; } = Guid.NewGuid().ToString();
-    public int ProvisionTenantAdminUserCallCount { get; private set; }
-
-    public Task<string> ProvisionTenantAdminUserAsync(
-        string username,
-        string email,
-        string firstName,
-        string lastName,
-        string password,
-        Guid tenantId,
-        CancellationToken cancellationToken = default)
-    {
-        ProvisionTenantAdminUserCallCount++;
-
-        if (ExceptionToThrow is not null)
-            throw ExceptionToThrow;
-
-        return Task.FromResult(UserIdToReturn);
-    }
+    public int CreateTenantUserCallCount { get; private set; }
 
     public Task<string> CreateTenantUserAsync(
         string email,
-        string firstName,
-        string lastName,
-        string password,
         Guid tenantId,
         CancellationToken cancellationToken = default)
     {
+        CreateTenantUserCallCount++;
+
         if (ExceptionToThrow is not null)
             throw ExceptionToThrow;
 

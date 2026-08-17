@@ -12,31 +12,15 @@ namespace Heum.Infrastructure.Keycloak.Services;
 public interface IKeycloakService
 {
     /// <summary>
-    /// Creates a tenant's first (admin) user in Keycloak and stamps the provided tenant id
-    /// onto the user as a custom attribute so JWTs issued for this user carry their tenant
-    /// context.
-    /// </summary>
-    /// <returns>The Keycloak user id (subject) of the newly created user.</returns>
-    Task<string> ProvisionTenantAdminUserAsync(
-        string username,
-        string email,
-        string firstName,
-        string lastName,
-        string password,
-        Guid tenantId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Creates an additional user for an existing tenant (as opposed to the tenant's first
-    /// admin user provisioned via <see cref="ProvisionTenantAdminUserAsync"/>), stamped with
-    /// the same tenant id attribute.
+    /// Creates a user for a tenant (whether it's the tenant's first/admin user or an
+    /// additional teammate added later - there's no distinction at the Keycloak level).
+    /// The user is created with no password and no name, stamped with the tenant id
+    /// attribute, and flagged with the required actions needed to complete onboarding
+    /// (update profile, set a password, verify email) the next time they authenticate.
     /// </summary>
     /// <returns>The Keycloak user id (subject) of the newly created user.</returns>
     Task<string> CreateTenantUserAsync(
         string email,
-        string firstName,
-        string lastName,
-        string password,
         Guid tenantId,
         CancellationToken cancellationToken = default);
 
@@ -50,7 +34,8 @@ public interface IKeycloakService
 
     /// <summary>
     /// Asks Keycloak to email the user a link that executes the given required actions
-    /// (for example "VERIFY_EMAIL"). The email is delivered through the realm's SMTP settings.
+    /// (for example "UPDATE_PROFILE", "UPDATE_PASSWORD", "VERIFY_EMAIL"). The email is
+    /// delivered through the realm's SMTP settings.
     /// </summary>
     Task SendRequiredActionsEmailAsync(
         string userId,

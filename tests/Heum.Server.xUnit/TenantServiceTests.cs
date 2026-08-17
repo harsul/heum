@@ -1,4 +1,5 @@
-﻿using Heum.Contracts.Events;
+﻿using System.Net;
+using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Data.Models;
 using Heum.Server.Features.Tenants;
@@ -103,26 +104,24 @@ public class TenantServiceTests
     }
 
     [Fact]
-    public async Task ProvisionTenantAsync_ReturnsSlugConflict_WhenSlugAlreadyExists()
+    public async Task ProvisionTenantAsync_GeneratesUniqueSlug_WhenCompanyNameCollides()
     {
         await using var db = CreateDbContext();
-        db.Tenants.Add(new Tenant { Id = Guid.NewGuid(), Name = "Acme", Slug = "acme" });
-        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var tenantService = CreateService(db);
 
-        var keycloak = new FakeKeycloakService();
-        var tenantService = CreateService(db, keycloak);
+        var first = await tenantService.ProvisionTenantAsync(
+            "Acme", "jane@acme.com", TestContext.Current.CancellationToken);
+        var second = await tenantService.ProvisionTenantAsync(
+            "Acme", "john@acme.com", TestContext.Current.CancellationToken);
 
-        var result = await tenantService.ProvisionTenantAsync(
-            "Acme Again", "acme", "Jane", "Doe", "jane@acme.com", "Password123",
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.SlugConflict);
-        Assert.Null(result.Tenant);
-        Assert.Equal(0, keycloak.ProvisionTenantAdminUserCallCount);
+        Assert.False(first.EmailConflict);
+        Assert.False(second.EmailConflict);
+        Assert.Equal("acme", first.Tenant!.Slug);
+        Assert.Equal("acme-2", second.Tenant!.Slug);
     }
 
     [Fact]
-    public async Task ProvisionTenantAsync_CreatesTenantAndPublishesEvent_WhenSuccessful()
+    public async Task ProvisionTenantAsync_CreatesTenantAndPublishesEvents_WhenSuccessful()
     {
         await using var db = CreateDbContext();
         var keycloak = new FakeKeycloakService { UserIdToReturn = "keycloak-user-1" };
@@ -130,17 +129,46 @@ public class TenantServiceTests
         var tenantService = CreateService(db, keycloak, events);
 
         var result = await tenantService.ProvisionTenantAsync(
-            "Acme", "acme", "Jane", "Doe", "jane@acme.com", "Password123",
-            TestContext.Current.CancellationToken);
+            "Acme", "jane@acme.com", TestContext.Current.CancellationToken);
 
-        Assert.False(result.SlugConflict);
+        Assert.False(result.EmailConflict);
         Assert.NotNull(result.Tenant);
+        Assert.Equal("acme", result.Tenant.Slug);
         Assert.Equal("keycloak-user-1", result.KeycloakUserId);
         Assert.Equal(1, await db.Tenants.CountAsync(TestContext.Current.CancellationToken));
 
-        var publishedEvent = Assert.IsType<TenantCreatedEvent>(Assert.Single(events.PublishedEvents));
-        Assert.Equal(result.Tenant.Id, publishedEvent.TenantId);
-        Assert.Equal("keycloak-user-1", publishedEvent.KeycloakUserId);
+        Assert.Equal(2, events.PublishedEvents.Count);
+
+        var tenantCreated = Assert.IsType<TenantCreatedEvent>(
+            events.PublishedEvents.Single(e => e is TenantCreatedEvent));
+        Assert.Equal(result.Tenant.Id, tenantCreated.TenantId);
+        Assert.Equal("keycloak-user-1", tenantCreated.KeycloakUserId);
+
+        var onboardingRequested = Assert.IsType<UserOnboardingRequestedEvent>(
+            events.PublishedEvents.Single(e => e is UserOnboardingRequestedEvent));
+        Assert.Equal(result.Tenant.Id, onboardingRequested.TenantId);
+        Assert.Equal("jane@acme.com", onboardingRequested.Email);
+        Assert.Equal("keycloak-user-1", onboardingRequested.KeycloakUserId);
+    }
+
+    [Fact]
+    public async Task ProvisionTenantAsync_ReturnsEmailConflict_WhenKeycloakEmailAlreadyExists()
+    {
+        await using var db = CreateDbContext();
+        var keycloak = new FakeKeycloakService
+        {
+            ExceptionToThrow = new HttpRequestException("Conflict", null, HttpStatusCode.Conflict),
+        };
+        var events = new FakeEventPublisher();
+        var tenantService = CreateService(db, keycloak, events);
+
+        var result = await tenantService.ProvisionTenantAsync(
+            "Acme", "jane@acme.com", TestContext.Current.CancellationToken);
+
+        Assert.True(result.EmailConflict);
+        Assert.Null(result.Tenant);
+        Assert.Equal(0, await db.Tenants.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(events.PublishedEvents);
     }
 
     [Fact]
@@ -152,10 +180,56 @@ public class TenantServiceTests
         var tenantService = CreateService(db, keycloak, events);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => tenantService.ProvisionTenantAsync(
-            "Acme", "acme", "Jane", "Doe", "jane@acme.com", "Password123",
-            TestContext.Current.CancellationToken));
+            "Acme", "jane@acme.com", TestContext.Current.CancellationToken));
 
         Assert.Equal(0, await db.Tenants.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(events.PublishedEvents);
+    }
+
+    [Fact]
+    public async Task AddTenantUserAsync_PublishesOnboardingEvent_WhenSuccessful()
+    {
+        await using var db = CreateDbContext();
+        var tenant = new Tenant { Id = Guid.NewGuid(), Name = "Acme", Slug = "acme" };
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var keycloak = new FakeKeycloakService { UserIdToReturn = "keycloak-user-2" };
+        var events = new FakeEventPublisher();
+        var tenantService = CreateService(db, keycloak, events);
+
+        var result = await tenantService.AddTenantUserAsync(
+            tenant.Id, "teammate@acme.com", TestContext.Current.CancellationToken);
+
+        Assert.False(result.EmailConflict);
+        Assert.Equal("keycloak-user-2", result.KeycloakUserId);
+
+        var onboardingRequested = Assert.IsType<UserOnboardingRequestedEvent>(Assert.Single(events.PublishedEvents));
+        Assert.Equal(tenant.Id, onboardingRequested.TenantId);
+        Assert.Equal("teammate@acme.com", onboardingRequested.Email);
+        Assert.Equal("keycloak-user-2", onboardingRequested.KeycloakUserId);
+    }
+
+    [Fact]
+    public async Task AddTenantUserAsync_ReturnsEmailConflict_WhenKeycloakEmailAlreadyExists()
+    {
+        await using var db = CreateDbContext();
+        var tenant = new Tenant { Id = Guid.NewGuid(), Name = "Acme", Slug = "acme" };
+        db.Tenants.Add(tenant);
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var keycloak = new FakeKeycloakService
+        {
+            ExceptionToThrow = new HttpRequestException("Conflict", null, HttpStatusCode.Conflict),
+        };
+        var events = new FakeEventPublisher();
+        var tenantService = CreateService(db, keycloak, events);
+
+        var result = await tenantService.AddTenantUserAsync(
+            tenant.Id, "teammate@acme.com", TestContext.Current.CancellationToken);
+
+        Assert.True(result.EmailConflict);
+        Assert.Null(result.KeycloakUserId);
         Assert.Empty(events.PublishedEvents);
     }
 }

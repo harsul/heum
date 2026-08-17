@@ -8,11 +8,7 @@ export interface UpdateTenantPayload {
 
 export interface CreateTenantPayload {
   companyName: string;
-  slug: string;
-  adminFirstName: string;
-  adminLastName: string;
   adminEmail: string;
-  adminPassword: string;
 }
 
 export async function fetchTenants(): Promise<Tenant[]> {
@@ -31,10 +27,7 @@ export async function fetchTenantUsers(id: string): Promise<TenantUser[]> {
 }
 
 export interface AddTenantUserPayload {
-  firstName: string;
-  lastName: string;
   email: string;
-  password: string;
 }
 
 export async function addTenantUser(

@@ -2,7 +2,9 @@
 
 namespace Heum.Server.Features.Tenants;
 
-public sealed record TenantProvisionResult(Tenant? Tenant, string? KeycloakUserId, bool SlugConflict);
+public sealed record TenantProvisionResult(Tenant? Tenant, string? KeycloakUserId, bool EmailConflict);
+
+public sealed record TenantUserProvisionResult(string? KeycloakUserId, bool EmailConflict);
 
 /// <summary>
 /// Owns all tenant persistence logic (provisioning + CRUD) so that <see cref="TenantsEndpoints"/>
@@ -12,16 +14,22 @@ public sealed record TenantProvisionResult(Tenant? Tenant, string? KeycloakUserI
 public interface ITenantService
 {
     /// <summary>
-    /// Registers a new tenant and provisions its first (admin) user in Keycloak. Rolls back
-    /// the tenant record if Keycloak provisioning fails, so registration can be safely retried.
+    /// Registers a new tenant (generating a unique slug from the company name) and provisions
+    /// its first (admin) user in Keycloak. Rolls back the tenant record if Keycloak provisioning
+    /// fails (e.g. the email is already in use), so registration can be safely retried.
     /// </summary>
     Task<TenantProvisionResult> ProvisionTenantAsync(
         string companyName,
-        string slug,
-        string adminFirstName,
-        string adminLastName,
         string adminEmail,
-        string adminPassword,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds another user to an existing tenant, triggering the same onboarding email as
+    /// tenant provisioning. Assumes the caller has already verified the tenant exists.
+    /// </summary>
+    Task<TenantUserProvisionResult> AddTenantUserAsync(
+        Guid tenantId,
+        string email,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Tenant>> ListTenantsAsync(CancellationToken cancellationToken = default);

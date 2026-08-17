@@ -1,4 +1,6 @@
-﻿using Heum.Contracts.Events;
+﻿using System.Net;
+using System.Text.RegularExpressions;
+using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
@@ -8,23 +10,19 @@ using Microsoft.EntityFrameworkCore;
 namespace Heum.Server.Features.Tenants;
 
 /// <inheritdoc cref="ITenantService" />
-public sealed class TenantService(
+public sealed partial class TenantService(
     HeumDbContext dbContext,
     IKeycloakService keycloakService,
     IEventPublisher eventPublisher) : ITenantService
 {
+    private const int MaxSlugSuffixAttempts = 50;
+
     public async Task<TenantProvisionResult> ProvisionTenantAsync(
         string companyName,
-        string slug,
-        string adminFirstName,
-        string adminLastName,
         string adminEmail,
-        string adminPassword,
         CancellationToken cancellationToken = default)
     {
-        var slugTaken = await dbContext.Tenants.AnyAsync(t => t.Slug == slug, cancellationToken);
-        if (slugTaken)
-            return new TenantProvisionResult(Tenant: null, KeycloakUserId: null, SlugConflict: true);
+        var slug = await GenerateUniqueSlugAsync(companyName, cancellationToken);
 
         var tenant = new Tenant
         {
@@ -38,27 +36,26 @@ public sealed class TenantService(
 
         try
         {
-            var keycloakUserId = await keycloakService.ProvisionTenantAdminUserAsync(
-                username: adminEmail,
-                email: adminEmail,
-                firstName: adminFirstName,
-                lastName: adminLastName,
-                password: adminPassword,
-                tenantId: tenant.Id,
-                cancellationToken: cancellationToken);
+            var (keycloakUserId, emailConflict) = await CreateOnboardingUserAsync(
+                tenant.Id, adminEmail, cancellationToken);
 
-            var @event = new TenantCreatedEvent(
+            if (emailConflict)
+            {
+                dbContext.Tenants.Remove(tenant);
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return new TenantProvisionResult(Tenant: null, KeycloakUserId: null, EmailConflict: true);
+            }
+
+            var tenantCreated = new TenantCreatedEvent(
                 TenantId: tenant.Id,
                 Slug: tenant.Slug,
                 AdminEmail: adminEmail,
-                AdminFirstName: adminFirstName,
-                AdminLastName: adminLastName,
-                KeycloakUserId: keycloakUserId,
+                KeycloakUserId: keycloakUserId!,
                 OccurredAt: DateTimeOffset.UtcNow);
 
-            await eventPublisher.PublishAsync(@event, cancellationToken);
+            await eventPublisher.PublishAsync(tenantCreated, cancellationToken);
 
-            return new TenantProvisionResult(tenant, keycloakUserId, SlugConflict: false);
+            return new TenantProvisionResult(tenant, keycloakUserId, EmailConflict: false);
         }
         catch
         {
@@ -68,6 +65,15 @@ public sealed class TenantService(
             await dbContext.SaveChangesAsync(cancellationToken);
             throw;
         }
+    }
+
+    public async Task<TenantUserProvisionResult> AddTenantUserAsync(
+        Guid tenantId,
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        var (keycloakUserId, emailConflict) = await CreateOnboardingUserAsync(tenantId, email, cancellationToken);
+        return new TenantUserProvisionResult(keycloakUserId, emailConflict);
     }
 
     public async Task<IReadOnlyList<Tenant>> ListTenantsAsync(CancellationToken cancellationToken = default) =>
@@ -113,4 +119,58 @@ public sealed class TenantService(
 
         return tenant;
     }
+
+    /// <summary>
+    /// Creates the Keycloak user for a tenant (first admin or additional teammate - identical
+    /// either way) and publishes <see cref="UserOnboardingRequestedEvent"/> on success. Shared
+    /// by <see cref="ProvisionTenantAsync"/> and <see cref="AddTenantUserAsync"/>.
+    /// </summary>
+    private async Task<(string? KeycloakUserId, bool EmailConflict)> CreateOnboardingUserAsync(
+        Guid tenantId,
+        string email,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var keycloakUserId = await keycloakService.CreateTenantUserAsync(email, tenantId, cancellationToken);
+
+            var onboardingRequested = new UserOnboardingRequestedEvent(
+                TenantId: tenantId,
+                Email: email,
+                KeycloakUserId: keycloakUserId,
+                OccurredAt: DateTimeOffset.UtcNow);
+
+            await eventPublisher.PublishAsync(onboardingRequested, cancellationToken);
+
+            return (keycloakUserId, EmailConflict: false);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+        {
+            return (null, EmailConflict: true);
+        }
+    }
+
+    private async Task<string> GenerateUniqueSlugAsync(string companyName, CancellationToken cancellationToken)
+    {
+        var baseSlug = Slugify(companyName);
+
+        for (var attempt = 1; attempt <= MaxSlugSuffixAttempts; attempt++)
+        {
+            var candidate = attempt == 1 ? baseSlug : $"{baseSlug}-{attempt}";
+            if (!await dbContext.Tenants.AnyAsync(t => t.Slug == candidate, cancellationToken))
+                return candidate;
+        }
+
+        // Astronomically unlikely fallback, but guarantees termination.
+        return $"{baseSlug}-{Guid.NewGuid():N}"[..(baseSlug.Length + 9)];
+    }
+
+    private static string Slugify(string value)
+    {
+        var slug = NonAlphanumericRunRegex().Replace(value.ToLowerInvariant(), "-").Trim('-');
+        return string.IsNullOrEmpty(slug) ? "tenant" : slug;
+    }
+
+    [GeneratedRegex("[^a-z0-9]+")]
+    private static partial Regex NonAlphanumericRunRegex();
 }

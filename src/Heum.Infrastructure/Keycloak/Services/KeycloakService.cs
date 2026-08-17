@@ -6,24 +6,30 @@ namespace Heum.Infrastructure.Keycloak.Services;
 /// <inheritdoc cref="IKeycloakService" />
 internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycloakService
 {
-    public Task<string> ProvisionTenantAdminUserAsync(
-        string username,
-        string email,
-        string firstName,
-        string lastName,
-        string password,
-        Guid tenantId,
-        CancellationToken cancellationToken = default)
-        => CreateKeycloakUserAsync(username, email, firstName, lastName, password, tenantId, cancellationToken);
+    private static readonly string[] OnboardingRequiredActions = ["UPDATE_PROFILE", "UPDATE_PASSWORD", "VERIFY_EMAIL"];
 
-    public Task<string> CreateTenantUserAsync(
+    public async Task<string> CreateTenantUserAsync(
         string email,
-        string firstName,
-        string lastName,
-        string password,
         Guid tenantId,
         CancellationToken cancellationToken = default)
-        => CreateKeycloakUserAsync(username: email, email, firstName, lastName, password, tenantId, cancellationToken);
+    {
+        var user = new KeycloakUserRepresentation
+        {
+            Username = email,
+            Email = email,
+            FirstName = string.Empty,
+            LastName = string.Empty,
+            EmailVerified = false,
+            Attributes = new Dictionary<string, string[]>
+            {
+                ["tenant_id"] = [tenantId.ToString()],
+            },
+            Credentials = [],
+            RequiredActions = [.. OnboardingRequiredActions],
+        };
+
+        return await adminClient.CreateUserAsync(user, cancellationToken);
+    }
 
     public async Task<IReadOnlyList<KeycloakUserSummary>> ListTenantUsersAsync(
         Guid tenantId,
@@ -39,32 +45,4 @@ internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycl
         IEnumerable<string> actions,
         CancellationToken cancellationToken = default)
         => adminClient.ExecuteUserActionsEmailAsync(userId, actions, cancellationToken);
-
-    private async Task<string> CreateKeycloakUserAsync(
-        string username,
-        string email,
-        string firstName,
-        string lastName,
-        string password,
-        Guid tenantId,
-        CancellationToken cancellationToken)
-    {
-        var user = new KeycloakUserRepresentation
-        {
-            Username = username,
-            Email = email,
-            FirstName = firstName,
-            LastName = lastName,
-            Attributes = new Dictionary<string, string[]>
-            {
-                ["tenant_id"] = [tenantId.ToString()],
-            },
-            Credentials =
-            [
-                new KeycloakCredentialRepresentation { Type = "password", Value = password, Temporary = false },
-            ],
-        };
-
-        return await adminClient.CreateUserAsync(user, cancellationToken);
-    }
 }

@@ -20,7 +20,8 @@ builder.AddRedisClientBuilder("cache")
 
 builder.AddAzureServiceBusClient("messaging");
 builder.AddEventPublishing(topics => topics
-    .MapTopic<TenantCreatedEvent>("tenant-events"));
+    .MapTopic<TenantCreatedEvent>("tenant-events")
+    .MapTopic<UserOnboardingRequestedEvent>("user-events"));
 
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>

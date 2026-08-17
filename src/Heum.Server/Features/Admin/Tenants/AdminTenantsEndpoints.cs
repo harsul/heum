@@ -1,5 +1,4 @@
-﻿using System.Net;
-using Heum.Infrastructure.Keycloak.Models;
+﻿using Heum.Infrastructure.Keycloak.Models;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Server.Features.Admin.Tenants.Models;
 using Heum.Server.Features.Tenants;
@@ -58,19 +57,15 @@ public static class AdminTenantsEndpoints
     {
         var result = await tenantService.ProvisionTenantAsync(
             request.CompanyName,
-            request.Slug,
-            request.AdminFirstName,
-            request.AdminLastName,
             request.AdminEmail,
-            request.AdminPassword,
             cancellationToken);
 
-        if (result.SlugConflict)
+        if (result.EmailConflict)
         {
             return TypedResults.Conflict(new ProblemDetails
             {
-                Title = "Slug already in use",
-                Detail = $"A tenant with slug '{request.Slug}' already exists.",
+                Title = "Email already in use",
+                Detail = $"A user with email '{request.AdminEmail}' already exists.",
                 Status = StatusCodes.Status409Conflict,
             });
         }
@@ -111,38 +106,15 @@ public static class AdminTenantsEndpoints
         Guid id,
         AddTenantUserRequest request,
         ITenantService tenantService,
-        IKeycloakService keycloakService,
         CancellationToken cancellationToken)
     {
         var tenant = await tenantService.GetTenantAsync(id, cancellationToken);
         if (tenant is null)
             return TypedResults.NotFound();
 
-        try
-        {
-            var keycloakUserId = await keycloakService.CreateTenantUserAsync(
-                email: request.Email,
-                firstName: request.FirstName,
-                lastName: request.LastName,
-                password: request.Password,
-                tenantId: id,
-                cancellationToken: cancellationToken);
+        var result = await tenantService.AddTenantUserAsync(id, request.Email, cancellationToken);
 
-            var response = new TenantUserResponse
-            {
-                Id = keycloakUserId,
-                Username = request.Email,
-                Email = request.Email,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Enabled = true,
-                EmailVerified = true,
-                CreatedAtUtc = DateTimeOffset.UtcNow,
-            };
-
-            return TypedResults.Created($"/api/admin/tenants/{id}/users/{keycloakUserId}", response);
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+        if (result.EmailConflict)
         {
             return TypedResults.Conflict(new ProblemDetails
             {
@@ -151,6 +123,20 @@ public static class AdminTenantsEndpoints
                 Status = StatusCodes.Status409Conflict,
             });
         }
+
+        var response = new TenantUserResponse
+        {
+            Id = result.KeycloakUserId!,
+            Username = request.Email,
+            Email = request.Email,
+            FirstName = null,
+            LastName = null,
+            Enabled = true,
+            EmailVerified = false,
+            CreatedAtUtc = DateTimeOffset.UtcNow,
+        };
+
+        return TypedResults.Created($"/api/admin/tenants/{id}/users/{result.KeycloakUserId}", response);
     }
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> UpdateTenantAsync(

@@ -24,19 +24,15 @@ public static class TenantsEndpoints
     {
         var result = await tenantService.ProvisionTenantAsync(
             request.CompanyName,
-            request.Slug,
-            request.AdminFirstName,
-            request.AdminLastName,
             request.AdminEmail,
-            request.AdminPassword,
             cancellationToken);
 
-        if (result.SlugConflict)
+        if (result.EmailConflict)
         {
             return TypedResults.Conflict(new ProblemDetails
             {
-                Title = "Slug already in use",
-                Detail = $"A tenant with slug '{request.Slug}' already exists.",
+                Title = "Email already in use",
+                Detail = $"A user with email '{request.AdminEmail}' already exists.",
                 Status = StatusCodes.Status409Conflict,
             });
         }
