@@ -6,8 +6,22 @@ export interface UpdateTenantPayload {
   isActive: boolean;
 }
 
+export interface CreateTenantPayload {
+  companyName: string;
+  slug: string;
+  adminFirstName: string;
+  adminLastName: string;
+  adminEmail: string;
+  adminPassword: string;
+}
+
 export async function fetchTenants(): Promise<Tenant[]> {
   const { data } = await apiClient.get<Tenant[]>('/admin/tenants');
+  return data;
+}
+
+export async function createTenant(payload: CreateTenantPayload): Promise<Tenant> {
+  const { data } = await apiClient.post<Tenant>('/admin/tenants', payload);
   return data;
 }
 

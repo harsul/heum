@@ -1,4 +1,5 @@
 ﻿import { useMemo, useState } from 'react';
+import { isAxiosError } from 'axios';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -16,8 +17,10 @@ import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import type { Tenant, TenantOrder } from '../types/tenant';
 import { applyTenantFilter, getComparator } from '../utils';
 import { useTenants } from '../hooks/useTenants';
+import { useCreateTenant } from '../hooks/useCreateTenant';
 import { useSetTenantActive, useUpdateTenant } from '../hooks/useTenantMutations';
 import { EditTenantDialog } from './EditTenantDialog';
+import { NewTenantDialog } from './NewTenantDialog';
 import { TenantTableHead, type HeadCell } from './TenantTableHead';
 import { TenantTableRow } from './TenantTableRow';
 import { TenantTableToolbar } from './TenantTableToolbar';
@@ -35,6 +38,7 @@ export function TenantsTable() {
   const { data: tenants = [], isLoading, isError } = useTenants();
   const updateTenant = useUpdateTenant();
   const setTenantActive = useSetTenantActive();
+  const createTenant = useCreateTenant();
 
   const [order, setOrder] = useState<TenantOrder>('asc');
   const [orderBy, setOrderBy] = useState<'name' | 'slug' | 'createdAtUtc' | 'isActive'>('name');
@@ -43,6 +47,7 @@ export function TenantsTable() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [filterName, setFilterName] = useState('');
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [isNewTenantOpen, setIsNewTenantOpen] = useState(false);
 
   const handleRequestSort = (property: string) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -84,7 +89,14 @@ export function TenantsTable() {
         sx={{ alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 3 }}
       >
         <Typography variant="h6">Tenants</Typography>
-        <Button variant="contained" startIcon={<AddOutlinedIcon />} disabled>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={() => {
+            createTenant.reset();
+            setIsNewTenantOpen(true);
+          }}
+        >
           New tenant
         </Button>
       </Stack>
@@ -181,6 +193,26 @@ export function TenantsTable() {
           );
         }}
       />
+
+      <NewTenantDialog
+        open={isNewTenantOpen}
+        saving={createTenant.isPending}
+        errorMessage={getCreateTenantErrorMessage(createTenant.error)}
+        onClose={() => setIsNewTenantOpen(false)}
+        onCreate={(values) => {
+          createTenant.mutate(values, { onSuccess: () => setIsNewTenantOpen(false) });
+        }}
+      />
     </Card>
   );
+}
+
+function getCreateTenantErrorMessage(error: unknown): string | undefined {
+  if (!error) return undefined;
+
+  if (isAxiosError<{ detail?: string; title?: string }>(error)) {
+    return error.response?.data?.detail ?? error.response?.data?.title ?? 'Failed to create tenant.';
+  }
+
+  return 'Failed to create tenant.';
 }
