@@ -1,7 +1,10 @@
 ﻿import { useMemo, useState } from 'react';
+import { isAxiosError } from 'axios';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
+import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -11,9 +14,13 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import { mockTenants } from '../data/mock-tenants';
-import type { TenantOrder } from '../types/tenant';
+import type { Tenant, TenantOrder } from '../types/tenant';
 import { applyTenantFilter, getComparator } from '../utils';
+import { useTenants } from '../hooks/useTenants';
+import { useCreateTenant } from '../hooks/useCreateTenant';
+import { useSetTenantActive, useUpdateTenant } from '../hooks/useTenantMutations';
+import { EditTenantDialog } from './EditTenantDialog';
+import { NewTenantDialog } from './NewTenantDialog';
 import { TenantTableHead, type HeadCell } from './TenantTableHead';
 import { TenantTableRow } from './TenantTableRow';
 import { TenantTableToolbar } from './TenantTableToolbar';
@@ -28,12 +35,19 @@ const headCells: HeadCell[] = [
 ];
 
 export function TenantsTable() {
+  const { data: tenants = [], isLoading, isError } = useTenants();
+  const updateTenant = useUpdateTenant();
+  const setTenantActive = useSetTenantActive();
+  const createTenant = useCreateTenant();
+
   const [order, setOrder] = useState<TenantOrder>('asc');
   const [orderBy, setOrderBy] = useState<'name' | 'slug' | 'createdAtUtc' | 'isActive'>('name');
   const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [filterName, setFilterName] = useState('');
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [isNewTenantOpen, setIsNewTenantOpen] = useState(false);
 
   const handleRequestSort = (property: string) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -42,7 +56,7 @@ export function TenantsTable() {
   };
 
   const handleSelectAllClick = (checked: boolean) => {
-    setSelected(checked ? mockTenants.map((tenant) => tenant.id) : []);
+    setSelected(checked ? tenants.map((tenant) => tenant.id) : []);
   };
 
   const handleSelectRow = (id: string) => {
@@ -54,11 +68,11 @@ export function TenantsTable() {
   const filteredTenants = useMemo(
     () =>
       applyTenantFilter({
-        tenants: mockTenants,
+        tenants,
         comparator: getComparator(order, orderBy),
         query: filterName,
       }),
-    [order, orderBy, filterName],
+    [tenants, order, orderBy, filterName],
   );
 
   const paginatedTenants = filteredTenants.slice(
@@ -66,7 +80,7 @@ export function TenantsTable() {
     page * rowsPerPage + rowsPerPage,
   );
 
-  const isNotFound = filteredTenants.length === 0;
+  const isNotFound = !isLoading && !isError && filteredTenants.length === 0;
 
   return (
     <Card>
@@ -75,7 +89,14 @@ export function TenantsTable() {
         sx={{ alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 3 }}
       >
         <Typography variant="h6">Tenants</Typography>
-        <Button variant="contained" startIcon={<AddOutlinedIcon />} disabled>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={() => {
+            createTenant.reset();
+            setIsNewTenantOpen(true);
+          }}
+        >
           New tenant
         </Button>
       </Stack>
@@ -89,26 +110,46 @@ export function TenantsTable() {
         }}
       />
 
+      {isError && (
+        <Alert severity="error" sx={{ mx: 3, mb: 2 }}>
+          Failed to load tenants. Please try again.
+        </Alert>
+      )}
+
       <TableContainer sx={{ overflow: 'unset' }}>
         <Table sx={{ minWidth: 720 }}>
           <TenantTableHead
             order={order}
             orderBy={orderBy}
             numSelected={selected.length}
-            rowCount={mockTenants.length}
+            rowCount={tenants.length}
             headCells={headCells}
             onRequestSort={handleRequestSort}
             onSelectAllClick={handleSelectAllClick}
           />
           <TableBody>
-            {paginatedTenants.map((tenant) => (
-              <TenantTableRow
-                key={tenant.id}
-                tenant={tenant}
-                selected={selected.includes(tenant.id)}
-                onSelectRow={() => handleSelectRow(tenant.id)}
-              />
-            ))}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={headCells.length + 1} align="center" sx={{ py: 6 }}>
+                  <CircularProgress size={28} />
+                </TableCell>
+              </TableRow>
+            )}
+
+            {!isLoading &&
+              paginatedTenants.map((tenant) => (
+                <TenantTableRow
+                  key={tenant.id}
+                  tenant={tenant}
+                  selected={selected.includes(tenant.id)}
+                  onSelectRow={() => handleSelectRow(tenant.id)}
+                  onEdit={() => setEditingTenant(tenant)}
+                  onToggleActive={() =>
+                    setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
+                  }
+                  toggleActiveDisabled={setTenantActive.isPending}
+                />
+              ))}
 
             {isNotFound && (
               <TableRow>
@@ -138,6 +179,40 @@ export function TenantsTable() {
         }}
         rowsPerPageOptions={[5, 10, 25]}
       />
+
+      <EditTenantDialog
+        tenant={editingTenant}
+        open={editingTenant !== null}
+        saving={updateTenant.isPending}
+        onClose={() => setEditingTenant(null)}
+        onSave={(values) => {
+          if (!editingTenant) return;
+          updateTenant.mutate(
+            { id: editingTenant.id, payload: values },
+            { onSuccess: () => setEditingTenant(null) },
+          );
+        }}
+      />
+
+      <NewTenantDialog
+        open={isNewTenantOpen}
+        saving={createTenant.isPending}
+        errorMessage={getCreateTenantErrorMessage(createTenant.error)}
+        onClose={() => setIsNewTenantOpen(false)}
+        onCreate={(values) => {
+          createTenant.mutate(values, { onSuccess: () => setIsNewTenantOpen(false) });
+        }}
+      />
     </Card>
   );
+}
+
+function getCreateTenantErrorMessage(error: unknown): string | undefined {
+  if (!error) return undefined;
+
+  if (isAxiosError<{ detail?: string; title?: string }>(error)) {
+    return error.response?.data?.detail ?? error.response?.data?.title ?? 'Failed to create tenant.';
+  }
+
+  return 'Failed to create tenant.';
 }

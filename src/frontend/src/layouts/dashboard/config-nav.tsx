@@ -14,12 +14,18 @@ export interface NavItemConfig {
   disabled?: boolean;
 }
 
-export const navConfig: NavItemConfig[] = [
-  { title: 'Dashboard', path: '/', icon: DashboardIcon },
-  // TODO: remove once the weather sample feature is no longer needed.
-  { title: 'Weather', path: '/weather', icon: CloudQueueIcon },
-  { title: 'Tenants', path: '/tenants', icon: PeopleAltIcon },
-  { title: 'Orders', path: '/orders', icon: ShoppingCartIcon, disabled: true },
-  { title: 'Analytics', path: '/analytics', icon: BarChartIcon, disabled: true },
-  { title: 'Settings', path: '/settings', icon: SettingsIcon, disabled: true },
-];
+/**
+ * Tenants management is only relevant (and only authorized) for system admins,
+ * so it's added conditionally rather than being part of the static nav list.
+ */
+export function getNavConfig(isSystemAdmin: boolean): NavItemConfig[] {
+  return [
+    { title: 'Dashboard', path: '/', icon: DashboardIcon },
+    // TODO: remove once the weather sample feature is no longer needed.
+    { title: 'Weather', path: '/weather', icon: CloudQueueIcon },
+    ...(isSystemAdmin ? [{ title: 'Tenants', path: '/tenants', icon: PeopleAltIcon }] : []),
+    { title: 'Orders', path: '/orders', icon: ShoppingCartIcon, disabled: true },
+    { title: 'Analytics', path: '/analytics', icon: BarChartIcon, disabled: true },
+    { title: 'Settings', path: '/settings', icon: SettingsIcon, disabled: true },
+  ];
+}

@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
@@ -11,8 +12,10 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import MoreVertIcon from '@mui/icons-material/MoreVertOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import type { Tenant } from '../types/tenant';
 import { formatDate, tenantInitials } from '../utils';
 
@@ -20,10 +23,21 @@ interface TenantTableRowProps {
   tenant: Tenant;
   selected: boolean;
   onSelectRow: () => void;
+  onEdit: () => void;
+  onToggleActive: () => void;
+  toggleActiveDisabled?: boolean;
 }
 
-export function TenantTableRow({ tenant, selected, onSelectRow }: TenantTableRowProps) {
+export function TenantTableRow({
+  tenant,
+  selected,
+  onSelectRow,
+  onEdit,
+  onToggleActive,
+  toggleActiveDisabled,
+}: TenantTableRowProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
 
   return (
     <TableRow selected={selected} tabIndex={-1}>
@@ -32,11 +46,16 @@ export function TenantTableRow({ tenant, selected, onSelectRow }: TenantTableRow
       </TableCell>
 
       <TableCell component="th" scope="row">
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{ alignItems: 'center', cursor: 'pointer', width: 'fit-content' }}
+          onClick={() => navigate(`/tenants/${tenant.id}`)}
+        >
           <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 14 }}>
             {tenantInitials(tenant.name)}
           </Avatar>
-          <Typography variant="subtitle2" noWrap>
+          <Typography variant="subtitle2" noWrap sx={{ '&:hover': { textDecoration: 'underline' } }}>
             {tenant.name}
           </Typography>
         </Stack>
@@ -74,17 +93,44 @@ export function TenantTableRow({ tenant, selected, onSelectRow }: TenantTableRow
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           slotProps={{ paper: { sx: { width: 160 } } }}
         >
-          <MenuItem onClick={() => setAnchorEl(null)} disabled>
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              navigate(`/tenants/${tenant.id}`);
+            }}
+          >
+            <ListItemIcon>
+              <VisibilityOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            View details
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              onEdit();
+            }}
+          >
             <ListItemIcon>
               <EditOutlinedIcon fontSize="small" />
             </ListItemIcon>
             Edit
           </MenuItem>
-          <MenuItem onClick={() => setAnchorEl(null)} disabled sx={{ color: 'error.main' }}>
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              onToggleActive();
+            }}
+            disabled={toggleActiveDisabled}
+            sx={{ color: tenant.isActive ? 'error.main' : 'success.main' }}
+          >
             <ListItemIcon>
-              <DeleteOutlineIcon fontSize="small" color="error" />
+              {tenant.isActive ? (
+                <BlockOutlinedIcon fontSize="small" color="error" />
+              ) : (
+                <CheckCircleOutlineIcon fontSize="small" color="success" />
+              )}
             </ListItemIcon>
-            Delete
+            {tenant.isActive ? 'Deactivate' : 'Reactivate'}
           </MenuItem>
         </Menu>
       </TableCell>
