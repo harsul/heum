@@ -1,6 +1,7 @@
 using Heum.Infrastructure.Keycloak.Models;
+using Heum.Infrastructure.Keycloak.Services;
 
-namespace Heum.Infrastructure.Keycloak;
+namespace Heum.Infrastructure.Keycloak.Clients;
 
 /// <summary>
 /// Thin wrapper around the Keycloak Admin REST API endpoints. Deliberately has no knowledge

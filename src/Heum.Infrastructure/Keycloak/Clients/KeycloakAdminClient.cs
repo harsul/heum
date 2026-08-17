@@ -1,10 +1,11 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Heum.Infrastructure.Keycloak.Models;
+using Heum.Infrastructure.Keycloak.Services;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
-namespace Heum.Infrastructure.Keycloak;
+namespace Heum.Infrastructure.Keycloak.Clients;
 
 /// <summary>
 /// Calls the Keycloak Admin REST API. Authenticates using the client-credentials grant for

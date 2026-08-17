@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Heum.Data;
 using Heum.Infrastructure.Keycloak;
+using Heum.Infrastructure.Keycloak.Services;
 using Heum.Server.Features.Tenants.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

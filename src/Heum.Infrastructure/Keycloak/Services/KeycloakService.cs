@@ -1,6 +1,7 @@
-﻿using Heum.Infrastructure.Keycloak.Models;
+﻿using Heum.Infrastructure.Keycloak.Clients;
+using Heum.Infrastructure.Keycloak.Models;
 
-namespace Heum.Infrastructure.Keycloak;
+namespace Heum.Infrastructure.Keycloak.Services;
 
 /// <inheritdoc cref="IKeycloakService" />
 internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycloakService

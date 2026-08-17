@@ -3,6 +3,7 @@ using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak;
+using Heum.Infrastructure.Keycloak.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heum.Server.Features.Tenants;

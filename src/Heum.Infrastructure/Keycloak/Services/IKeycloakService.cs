@@ -1,6 +1,7 @@
-﻿using Heum.Infrastructure.Keycloak.Models;
+﻿using Heum.Infrastructure.Keycloak.Clients;
+using Heum.Infrastructure.Keycloak.Models;
 
-namespace Heum.Infrastructure.Keycloak;
+namespace Heum.Infrastructure.Keycloak.Services;
 
 /// <summary>
 /// Tenant-oriented Keycloak operations used by the rest of the app. This is the intended
