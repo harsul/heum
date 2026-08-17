@@ -1,14 +1,10 @@
 ﻿using System.Net;
-using Azure.Messaging.ServiceBus;
-using Heum.Data;
-using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Keycloak.Models;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Server.Features.Admin.Tenants.Models;
 using Heum.Server.Features.Tenants;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Heum.Server.Features.Admin.Tenants;
 
@@ -46,34 +42,27 @@ public static class AdminTenantsEndpoints
     }
 
     internal static async Task<Ok<IReadOnlyList<TenantResponse>>> ListTenantsAsync(
-        HeumDbContext dbContext,
+        ITenantService tenantService,
         CancellationToken cancellationToken)
     {
-        var tenants = await dbContext.Tenants
-            .OrderBy(t => t.Name)
-            .Select(t => ToResponse(t))
-            .ToListAsync(cancellationToken);
+        var tenants = await tenantService.ListTenantsAsync(cancellationToken);
+        var response = tenants.Select(ToResponse).ToList();
 
-        return TypedResults.Ok<IReadOnlyList<TenantResponse>>(tenants);
+        return TypedResults.Ok<IReadOnlyList<TenantResponse>>(response);
     }
 
     internal static async Task<Results<Created<TenantResponse>, Conflict<ProblemDetails>>> CreateTenantAsync(
         CreateTenantRequest request,
-        HeumDbContext dbContext,
-        IKeycloakService keycloakService,
-        ServiceBusSender sender,
+        ITenantService tenantService,
         CancellationToken cancellationToken)
     {
-        var result = await TenantProvisioningService.ProvisionTenantAsync(
+        var result = await tenantService.ProvisionTenantAsync(
             request.CompanyName,
             request.Slug,
             request.AdminFirstName,
             request.AdminLastName,
             request.AdminEmail,
             request.AdminPassword,
-            dbContext,
-            keycloakService,
-            sender,
             cancellationToken);
 
         if (result.SlugConflict)
@@ -92,10 +81,10 @@ public static class AdminTenantsEndpoints
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> GetTenantAsync(
         Guid id,
-        HeumDbContext dbContext,
+        ITenantService tenantService,
         CancellationToken cancellationToken)
     {
-        var tenant = await dbContext.Tenants.FindAsync([id], cancellationToken);
+        var tenant = await tenantService.GetTenantAsync(id, cancellationToken);
         if (tenant is null)
             return TypedResults.NotFound();
 
@@ -104,12 +93,12 @@ public static class AdminTenantsEndpoints
 
     internal static async Task<Results<Ok<IReadOnlyList<TenantUserResponse>>, NotFound>> GetTenantUsersAsync(
         Guid id,
-        HeumDbContext dbContext,
+        ITenantService tenantService,
         IKeycloakService keycloakService,
         CancellationToken cancellationToken)
     {
-        var tenantExists = await dbContext.Tenants.AnyAsync(t => t.Id == id, cancellationToken);
-        if (!tenantExists)
+        var tenant = await tenantService.GetTenantAsync(id, cancellationToken);
+        if (tenant is null)
             return TypedResults.NotFound();
 
         var users = await keycloakService.ListTenantUsersAsync(id, cancellationToken);
@@ -121,12 +110,12 @@ public static class AdminTenantsEndpoints
     internal static async Task<Results<Created<TenantUserResponse>, NotFound, Conflict<ProblemDetails>>> AddTenantUserAsync(
         Guid id,
         AddTenantUserRequest request,
-        HeumDbContext dbContext,
+        ITenantService tenantService,
         IKeycloakService keycloakService,
         CancellationToken cancellationToken)
     {
-        var tenantExists = await dbContext.Tenants.AnyAsync(t => t.Id == id, cancellationToken);
-        if (!tenantExists)
+        var tenant = await tenantService.GetTenantAsync(id, cancellationToken);
+        if (tenant is null)
             return TypedResults.NotFound();
 
         try
@@ -167,48 +156,37 @@ public static class AdminTenantsEndpoints
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> UpdateTenantAsync(
         Guid id,
         UpdateTenantRequest request,
-        HeumDbContext dbContext,
+        ITenantService tenantService,
         CancellationToken cancellationToken)
     {
-        var tenant = await dbContext.Tenants.FindAsync([id], cancellationToken);
+        var tenant = await tenantService.UpdateTenantAsync(id, request.Name, request.IsActive, cancellationToken);
         if (tenant is null)
             return TypedResults.NotFound();
-
-        tenant.Name = request.Name;
-        tenant.IsActive = request.IsActive;
-        tenant.UpdatedAtUtc = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Ok(ToResponse(tenant));
     }
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> DeactivateTenantAsync(
         Guid id,
-        HeumDbContext dbContext,
+        ITenantService tenantService,
         CancellationToken cancellationToken)
-        => await SetActiveAsync(id, isActive: false, dbContext, cancellationToken);
+        => await SetActiveAsync(id, isActive: false, tenantService, cancellationToken);
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> ReactivateTenantAsync(
         Guid id,
-        HeumDbContext dbContext,
+        ITenantService tenantService,
         CancellationToken cancellationToken)
-        => await SetActiveAsync(id, isActive: true, dbContext, cancellationToken);
+        => await SetActiveAsync(id, isActive: true, tenantService, cancellationToken);
 
     private static async Task<Results<Ok<TenantResponse>, NotFound>> SetActiveAsync(
         Guid id,
         bool isActive,
-        HeumDbContext dbContext,
+        ITenantService tenantService,
         CancellationToken cancellationToken)
     {
-        var tenant = await dbContext.Tenants.FindAsync([id], cancellationToken);
+        var tenant = await tenantService.SetTenantActiveAsync(id, isActive, cancellationToken);
         if (tenant is null)
             return TypedResults.NotFound();
-
-        tenant.IsActive = isActive;
-        tenant.UpdatedAtUtc = DateTime.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Ok(ToResponse(tenant));
     }

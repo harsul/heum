@@ -1,8 +1,4 @@
-﻿using Azure.Messaging.ServiceBus;
-using Heum.Data;
-using Heum.Infrastructure.Keycloak;
-using Heum.Infrastructure.Keycloak.Services;
-using Heum.Server.Features.Tenants.Models;
+﻿using Heum.Server.Features.Tenants.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,21 +19,16 @@ public static class TenantsEndpoints
 
     private static async Task<Results<Created<RegisterTenantResponse>, Conflict<ProblemDetails>>> RegisterTenantAsync(
         RegisterTenantRequest request,
-        HeumDbContext dbContext,
-        IKeycloakService keycloakService,
-        ServiceBusSender sender,
+        ITenantService tenantService,
         CancellationToken cancellationToken)
     {
-        var result = await TenantProvisioningService.ProvisionTenantAsync(
+        var result = await tenantService.ProvisionTenantAsync(
             request.CompanyName,
             request.Slug,
             request.AdminFirstName,
             request.AdminLastName,
             request.AdminEmail,
             request.AdminPassword,
-            dbContext,
-            keycloakService,
-            sender,
             cancellationToken);
 
         if (result.SlugConflict)
