@@ -18,6 +18,8 @@ public static class KeycloakExtensions
             client.BaseAddress = new Uri("http+https://keycloak");
         });
 
+        builder.Services.AddScoped<IKeycloakService, KeycloakService>();
+
         return builder;
     }
 }

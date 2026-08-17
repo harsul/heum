@@ -12,7 +12,7 @@ namespace Heum.Functions;
 /// the tenant registration HTTP request fast and lets Service Bus retry transient Keycloak failures.
 /// </summary>
 public class EmailVerificationFunction(
-    IKeycloakAdminClient keycloakAdminClient,
+    IKeycloakService keycloakService,
     ILogger<EmailVerificationFunction> logger)
 {
     private const string VerifyEmailAction = "VERIFY_EMAIL";
@@ -47,7 +47,7 @@ public class EmailVerificationFunction(
 
         try
         {
-            await keycloakAdminClient.SendRequiredActionsEmailAsync(
+            await keycloakService.SendRequiredActionsEmailAsync(
                 @event.KeycloakUserId,
                 [VerifyEmailAction],
                 cancellationToken);

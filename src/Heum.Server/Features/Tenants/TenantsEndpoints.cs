@@ -23,7 +23,7 @@ public static class TenantsEndpoints
     private static async Task<Results<Created<RegisterTenantResponse>, Conflict<ProblemDetails>>> RegisterTenantAsync(
         RegisterTenantRequest request,
         HeumDbContext dbContext,
-        IKeycloakAdminClient keycloakAdminClient,
+        IKeycloakService keycloakService,
         ServiceBusSender sender,
         CancellationToken cancellationToken)
     {
@@ -35,7 +35,7 @@ public static class TenantsEndpoints
             request.AdminEmail,
             request.AdminPassword,
             dbContext,
-            keycloakAdminClient,
+            keycloakService,
             sender,
             cancellationToken);
 

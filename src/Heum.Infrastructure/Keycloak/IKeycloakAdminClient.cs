@@ -2,35 +2,30 @@ using Heum.Infrastructure.Keycloak.Models;
 
 namespace Heum.Infrastructure.Keycloak;
 
-public interface IKeycloakAdminClient
+/// <summary>
+/// Thin wrapper around the Keycloak Admin REST API endpoints. Deliberately has no knowledge
+/// of tenants or any other business concepts - it only knows how to call Keycloak. Business
+/// operations live in <see cref="IKeycloakService"/>, which is the only consumer of this
+/// interface (kept internal on purpose so other projects can't bypass that business logic).
+/// </summary>
+internal interface IKeycloakAdminClient
 {
-    /// <summary>
-    /// Creates a new user in Keycloak and stamps the provided tenant id onto the user as a
-    /// custom attribute so JWTs issued for this user carry their tenant context.
-    /// </summary>
+    /// <summary>Calls <c>POST /admin/realms/{realm}/users</c>.</summary>
     /// <returns>The Keycloak user id (subject) of the newly created user.</returns>
-    Task<string> ProvisionTenantAdminUserAsync(
-        string username,
-        string email,
-        string firstName,
-        string lastName,
-        string password,
-        Guid tenantId,
+    Task<string> CreateUserAsync(
+        KeycloakUserRepresentation user,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Looks up all Keycloak users stamped with the given tenant id (via the "tenant_id"
-    /// custom attribute set during provisioning).
+    /// Calls <c>GET /admin/realms/{realm}/users?q={query}</c>, where <paramref name="query"/>
+    /// is a pre-built Keycloak search query (e.g. an attribute filter like "tenant_id:{id}").
     /// </summary>
-    Task<IReadOnlyList<KeycloakUserSummary>> ListTenantUsersAsync(
-        Guid tenantId,
+    Task<IReadOnlyList<KeycloakUserSummary>> SearchUsersAsync(
+        string query,
         CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Asks Keycloak to email the user a link that executes the given required actions
-    /// (for example "VERIFY_EMAIL"). The email is delivered through the realm's SMTP settings.
-    /// </summary>
-    Task SendRequiredActionsEmailAsync(
+    /// <summary>Calls <c>PUT /admin/realms/{realm}/users/{userId}/execute-actions-email</c>.</summary>
+    Task ExecuteUserActionsEmailAsync(
         string userId,
         IEnumerable<string> actions,
         CancellationToken cancellationToken = default);

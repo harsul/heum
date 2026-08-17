@@ -59,7 +59,7 @@ public static class AdminTenantsEndpoints
     internal static async Task<Results<Created<TenantResponse>, Conflict<ProblemDetails>>> CreateTenantAsync(
         CreateTenantRequest request,
         HeumDbContext dbContext,
-        IKeycloakAdminClient keycloakAdminClient,
+        IKeycloakService keycloakService,
         ServiceBusSender sender,
         CancellationToken cancellationToken)
     {
@@ -71,7 +71,7 @@ public static class AdminTenantsEndpoints
             request.AdminEmail,
             request.AdminPassword,
             dbContext,
-            keycloakAdminClient,
+            keycloakService,
             sender,
             cancellationToken);
 
@@ -104,14 +104,14 @@ public static class AdminTenantsEndpoints
     internal static async Task<Results<Ok<IReadOnlyList<TenantUserResponse>>, NotFound>> GetTenantUsersAsync(
         Guid id,
         HeumDbContext dbContext,
-        IKeycloakAdminClient keycloakAdminClient,
+        IKeycloakService keycloakService,
         CancellationToken cancellationToken)
     {
         var tenantExists = await dbContext.Tenants.AnyAsync(t => t.Id == id, cancellationToken);
         if (!tenantExists)
             return TypedResults.NotFound();
 
-        var users = await keycloakAdminClient.ListTenantUsersAsync(id, cancellationToken);
+        var users = await keycloakService.ListTenantUsersAsync(id, cancellationToken);
         var response = users.Select(ToResponse).ToList();
 
         return TypedResults.Ok<IReadOnlyList<TenantUserResponse>>(response);
@@ -121,7 +121,7 @@ public static class AdminTenantsEndpoints
         Guid id,
         AddTenantUserRequest request,
         HeumDbContext dbContext,
-        IKeycloakAdminClient keycloakAdminClient,
+        IKeycloakService keycloakService,
         CancellationToken cancellationToken)
     {
         var tenantExists = await dbContext.Tenants.AnyAsync(t => t.Id == id, cancellationToken);
@@ -130,10 +130,7 @@ public static class AdminTenantsEndpoints
 
         try
         {
-            // Reuses the same Keycloak user-creation flow as tenant admin provisioning; it
-            // simply creates a user stamped with this tenant's id, regardless of role.
-            var keycloakUserId = await keycloakAdminClient.ProvisionTenantAdminUserAsync(
-                username: request.Email,
+            var keycloakUserId = await keycloakService.CreateTenantUserAsync(
                 email: request.Email,
                 firstName: request.FirstName,
                 lastName: request.LastName,

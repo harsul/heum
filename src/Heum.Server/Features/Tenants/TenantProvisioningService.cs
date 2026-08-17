@@ -24,7 +24,7 @@ public static class TenantProvisioningService
         string adminEmail,
         string adminPassword,
         HeumDbContext dbContext,
-        IKeycloakAdminClient keycloakAdminClient,
+        IKeycloakService keycloakService,
         ServiceBusSender sender,
         CancellationToken cancellationToken)
     {
@@ -44,7 +44,7 @@ public static class TenantProvisioningService
 
         try
         {
-            var keycloakUserId = await keycloakAdminClient.ProvisionTenantAdminUserAsync(
+            var keycloakUserId = await keycloakService.ProvisionTenantAdminUserAsync(
                 username: adminEmail,
                 email: adminEmail,
                 firstName: adminFirstName,
