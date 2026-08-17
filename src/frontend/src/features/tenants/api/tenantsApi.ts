@@ -20,6 +20,11 @@ export async function fetchTenants(): Promise<Tenant[]> {
   return data;
 }
 
+export async function fetchTenant(id: string): Promise<Tenant> {
+  const { data } = await apiClient.get<Tenant>(`/admin/tenants/${id}`);
+  return data;
+}
+
 export async function createTenant(payload: CreateTenantPayload): Promise<Tenant> {
   const { data } = await apiClient.post<Tenant>('/admin/tenants', payload);
   return data;
