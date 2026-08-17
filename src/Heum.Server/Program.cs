@@ -1,7 +1,9 @@
 using Heum.Data;
 using Heum.Infrastructure.Keycloak;
 using Heum.Server;
+using Heum.Server.Features.Admin.Tenants;
 using Heum.Server.Features.Tenants;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,9 +26,22 @@ builder.Services.AddAuthentication()
     {
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         options.TokenValidationParameters.ValidateAudience = false;
+        options.Events = new JwtBearerEvents
+        {
+            // Keycloak packs realm roles into a single "realm_access" claim instead of
+            // individual role claims, so flatten it out for RequireRole/RequireAuthorization.
+            OnTokenValidated = context =>
+            {
+                if (context.Principal is not null)
+                    KeycloakClaimsTransformer.AddRealmRoleClaims(context.Principal);
+
+                return Task.CompletedTask;
+            },
+        };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("SystemAdmin", policy => policy.RequireRole("SystemAdmin"));
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
@@ -56,6 +71,9 @@ string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "
 var api = app.MapGroup("/api");
 
 api.MapTenantsEndpoints();
+
+var admin = api.MapGroup("/admin").RequireAuthorization("SystemAdmin");
+admin.MapAdminTenantsEndpoints();
 
 api.MapGet("weatherforecast", () =>
 {

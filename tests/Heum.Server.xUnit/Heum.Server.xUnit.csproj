@@ -12,6 +12,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
@@ -21,7 +22,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Heum.Data\Heum.Data.csproj" />
+    <ProjectReference Include="..\..\src\Heum.Infrastructure\Heum.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Heum.Server\Heum.Server.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Heum.Infrastructure\Heum.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
