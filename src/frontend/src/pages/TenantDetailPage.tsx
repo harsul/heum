@@ -12,6 +12,8 @@ import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -19,6 +21,7 @@ import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { EditTenantDialog } from '../features/tenants/components/EditTenantDialog';
+import { TenantUsersTable } from '../features/tenants/components/TenantUsersTable';
 import { useTenant } from '../features/tenants/hooks/useTenant';
 import { useSetTenantActive, useUpdateTenant } from '../features/tenants/hooks/useTenantMutations';
 import { formatDate, tenantInitials } from '../features/tenants/utils';
@@ -34,6 +37,8 @@ function DetailField({ label, value }: { label: string; value: React.ReactNode }
   );
 }
 
+type TabValue = 'overview' | 'users' | 'settings';
+
 export function TenantDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -41,6 +46,7 @@ export function TenantDetailPage() {
   const updateTenant = useUpdateTenant();
   const setTenantActive = useSetTenantActive();
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabValue>('overview');
 
   return (
     <DashboardLayout>
@@ -88,10 +94,64 @@ export function TenantDetailPage() {
                 </Box>
               </Stack>
 
-              <Stack direction="row" spacing={1}>
-                <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => setIsEditing(true)}>
-                  Edit
-                </Button>
+              <Chip
+                size="small"
+                label={tenant.isActive ? 'Active' : 'Inactive'}
+                color={tenant.isActive ? 'success' : 'default'}
+                variant={tenant.isActive ? 'filled' : 'outlined'}
+              />
+            </Stack>
+
+            <Tabs
+              value={activeTab}
+              onChange={(_, value: TabValue) => setActiveTab(value)}
+              sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
+            >
+              <Tab label="Overview" value="overview" />
+              <Tab label="Users" value="users" />
+              <Tab label="Settings" value="settings" />
+            </Tabs>
+
+            {activeTab === 'overview' && (
+              <Box>
+                <Stack direction="row" sx={{ justifyContent: 'flex-end', mb: 2 }}>
+                  <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => setIsEditing(true)}>
+                    Edit
+                  </Button>
+                </Stack>
+
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <DetailField label="Tenant ID" value={tenant.id} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <DetailField label="Name" value={tenant.name} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <DetailField label="Created" value={formatDate(tenant.createdAtUtc)} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <DetailField label="Last updated" value={formatDate(tenant.updatedAtUtc)} />
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+
+            {activeTab === 'users' && <TenantUsersTable tenantId={tenant.id} />}
+
+            {activeTab === 'settings' && (
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                  Tenant status
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {tenant.isActive
+                    ? 'This tenant is active. Deactivating it will prevent its users from accessing the platform.'
+                    : 'This tenant is inactive. Reactivate it to restore access for its users.'}
+                </Typography>
+
+                <Divider sx={{ mb: 2 }} />
+
                 <Button
                   variant="outlined"
                   color={tenant.isActive ? 'error' : 'success'}
@@ -101,37 +161,10 @@ export function TenantDetailPage() {
                     setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
                   }
                 >
-                  {tenant.isActive ? 'Deactivate' : 'Reactivate'}
+                  {tenant.isActive ? 'Deactivate tenant' : 'Reactivate tenant'}
                 </Button>
-              </Stack>
-            </Stack>
-
-            <Divider sx={{ mb: 3 }} />
-
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <DetailField label="Tenant ID" value={tenant.id} />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <DetailField
-                  label="Status"
-                  value={
-                    <Chip
-                      size="small"
-                      label={tenant.isActive ? 'Active' : 'Inactive'}
-                      color={tenant.isActive ? 'success' : 'default'}
-                      variant={tenant.isActive ? 'filled' : 'outlined'}
-                    />
-                  }
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <DetailField label="Created" value={formatDate(tenant.createdAtUtc)} />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                <DetailField label="Last updated" value={formatDate(tenant.updatedAtUtc)} />
-              </Grid>
-            </Grid>
+              </Box>
+            )}
           </CardContent>
         </Card>
       )}

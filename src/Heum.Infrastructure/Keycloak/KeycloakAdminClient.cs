@@ -34,6 +34,26 @@ public class KeycloakAdminClient(
         return await CreateUserAsync(accessToken, username, email, firstName, lastName, password, tenantId, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<KeycloakUserSummary>> ListTenantUsersAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
+
+        // Keycloak's user search supports querying custom attributes via "q=key:value".
+        var query = Uri.EscapeDataString($"tenant_id:{tenantId}");
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/admin/realms/{_options.Realm}/users?q={query}");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var users = await response.Content.ReadFromJsonAsync<List<KeycloakUserSummary>>(cancellationToken: cancellationToken);
+        return users ?? [];
+    }
+
     public async Task SendRequiredActionsEmailAsync(
         string userId,
         IEnumerable<string> actions,

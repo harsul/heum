@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Heum.Data;
 using Heum.Infrastructure.Keycloak;
+using Heum.Infrastructure.Keycloak.Models;
 using Heum.Server.Features.Admin.Tenants.Models;
 using Heum.Server.Features.Tenants;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -23,6 +24,9 @@ public static class AdminTenantsEndpoints
 
         tenants.MapGet("/{id:guid}", GetTenantAsync)
             .WithName("AdminGetTenant");
+
+        tenants.MapGet("/{id:guid}/users", GetTenantUsersAsync)
+            .WithName("AdminGetTenantUsers");
 
         tenants.MapPut("/{id:guid}", UpdateTenantAsync)
             .WithName("AdminUpdateTenant");
@@ -93,6 +97,22 @@ public static class AdminTenantsEndpoints
         return TypedResults.Ok(ToResponse(tenant));
     }
 
+    internal static async Task<Results<Ok<IReadOnlyList<TenantUserResponse>>, NotFound>> GetTenantUsersAsync(
+        Guid id,
+        HeumDbContext dbContext,
+        IKeycloakAdminClient keycloakAdminClient,
+        CancellationToken cancellationToken)
+    {
+        var tenantExists = await dbContext.Tenants.AnyAsync(t => t.Id == id, cancellationToken);
+        if (!tenantExists)
+            return TypedResults.NotFound();
+
+        var users = await keycloakAdminClient.ListTenantUsersAsync(id, cancellationToken);
+        var response = users.Select(ToResponse).ToList();
+
+        return TypedResults.Ok<IReadOnlyList<TenantUserResponse>>(response);
+    }
+
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> UpdateTenantAsync(
         Guid id,
         UpdateTenantRequest request,
@@ -150,5 +170,19 @@ public static class AdminTenantsEndpoints
         IsActive = tenant.IsActive,
         CreatedAtUtc = tenant.CreatedAtUtc,
         UpdatedAtUtc = tenant.UpdatedAtUtc,
+    };
+
+    private static TenantUserResponse ToResponse(KeycloakUserSummary user) => new()
+    {
+        Id = user.Id,
+        Username = user.Username,
+        Email = user.Email,
+        FirstName = user.FirstName,
+        LastName = user.LastName,
+        Enabled = user.Enabled,
+        EmailVerified = user.EmailVerified,
+        CreatedAtUtc = user.CreatedTimestamp is { } timestamp
+            ? DateTimeOffset.FromUnixTimeMilliseconds(timestamp)
+            : null,
     };
 }

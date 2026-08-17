@@ -1,3 +1,5 @@
+using Heum.Infrastructure.Keycloak.Models;
+
 namespace Heum.Infrastructure.Keycloak;
 
 public interface IKeycloakAdminClient
@@ -13,6 +15,14 @@ public interface IKeycloakAdminClient
         string firstName,
         string lastName,
         string password,
+        Guid tenantId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Looks up all Keycloak users stamped with the given tenant id (via the "tenant_id"
+    /// custom attribute set during provisioning).
+    /// </summary>
+    Task<IReadOnlyList<KeycloakUserSummary>> ListTenantUsersAsync(
         Guid tenantId,
         CancellationToken cancellationToken = default);
 

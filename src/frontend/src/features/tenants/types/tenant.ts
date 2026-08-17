@@ -12,3 +12,19 @@ export interface Tenant {
 }
 
 export type TenantOrder = 'asc' | 'desc';
+
+/**
+ * Mirrors `Heum.Server.Features.Admin.Tenants.Models.TenantUserResponse` returned by
+ * `GET /api/admin/tenants/{id}/users`. Sourced live from Keycloak (users stamped with
+ * this tenant's id), not from our own database.
+ */
+export interface TenantUser {
+  id: string;
+  username: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  enabled: boolean;
+  emailVerified: boolean;
+  createdAtUtc: string | null;
+}

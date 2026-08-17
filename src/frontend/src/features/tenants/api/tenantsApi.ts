@@ -1,5 +1,5 @@
 ﻿import { apiClient } from '../../../lib/apiClient';
-import type { Tenant } from '../types/tenant';
+import type { Tenant, TenantUser } from '../types/tenant';
 
 export interface UpdateTenantPayload {
   name: string;
@@ -22,6 +22,11 @@ export async function fetchTenants(): Promise<Tenant[]> {
 
 export async function fetchTenant(id: string): Promise<Tenant> {
   const { data } = await apiClient.get<Tenant>(`/admin/tenants/${id}`);
+  return data;
+}
+
+export async function fetchTenantUsers(id: string): Promise<TenantUser[]> {
+  const { data } = await apiClient.get<TenantUser[]>(`/admin/tenants/${id}/users`);
   return data;
 }
 
