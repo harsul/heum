@@ -30,6 +30,21 @@ export async function fetchTenantUsers(id: string): Promise<TenantUser[]> {
   return data;
 }
 
+export interface AddTenantUserPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+export async function addTenantUser(
+  tenantId: string,
+  payload: AddTenantUserPayload,
+): Promise<TenantUser> {
+  const { data } = await apiClient.post<TenantUser>(`/admin/tenants/${tenantId}/users`, payload);
+  return data;
+}
+
 export async function createTenant(payload: CreateTenantPayload): Promise<Tenant> {
   const { data } = await apiClient.post<Tenant>('/admin/tenants', payload);
   return data;

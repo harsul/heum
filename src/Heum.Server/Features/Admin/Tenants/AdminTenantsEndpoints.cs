@@ -1,4 +1,5 @@
-﻿using Azure.Messaging.ServiceBus;
+﻿using System.Net;
+using Azure.Messaging.ServiceBus;
 using Heum.Data;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Keycloak.Models;
@@ -27,6 +28,9 @@ public static class AdminTenantsEndpoints
 
         tenants.MapGet("/{id:guid}/users", GetTenantUsersAsync)
             .WithName("AdminGetTenantUsers");
+
+        tenants.MapPost("/{id:guid}/users", AddTenantUserAsync)
+            .WithName("AdminAddTenantUser");
 
         tenants.MapPut("/{id:guid}", UpdateTenantAsync)
             .WithName("AdminUpdateTenant");
@@ -111,6 +115,55 @@ public static class AdminTenantsEndpoints
         var response = users.Select(ToResponse).ToList();
 
         return TypedResults.Ok<IReadOnlyList<TenantUserResponse>>(response);
+    }
+
+    internal static async Task<Results<Created<TenantUserResponse>, NotFound, Conflict<ProblemDetails>>> AddTenantUserAsync(
+        Guid id,
+        AddTenantUserRequest request,
+        HeumDbContext dbContext,
+        IKeycloakAdminClient keycloakAdminClient,
+        CancellationToken cancellationToken)
+    {
+        var tenantExists = await dbContext.Tenants.AnyAsync(t => t.Id == id, cancellationToken);
+        if (!tenantExists)
+            return TypedResults.NotFound();
+
+        try
+        {
+            // Reuses the same Keycloak user-creation flow as tenant admin provisioning; it
+            // simply creates a user stamped with this tenant's id, regardless of role.
+            var keycloakUserId = await keycloakAdminClient.ProvisionTenantAdminUserAsync(
+                username: request.Email,
+                email: request.Email,
+                firstName: request.FirstName,
+                lastName: request.LastName,
+                password: request.Password,
+                tenantId: id,
+                cancellationToken: cancellationToken);
+
+            var response = new TenantUserResponse
+            {
+                Id = keycloakUserId,
+                Username = request.Email,
+                Email = request.Email,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Enabled = true,
+                EmailVerified = true,
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+            };
+
+            return TypedResults.Created($"/api/admin/tenants/{id}/users/{keycloakUserId}", response);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+        {
+            return TypedResults.Conflict(new ProblemDetails
+            {
+                Title = "Email already in use",
+                Detail = $"A user with email '{request.Email}' already exists.",
+                Status = StatusCodes.Status409Conflict,
+            });
+        }
     }
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> UpdateTenantAsync(
