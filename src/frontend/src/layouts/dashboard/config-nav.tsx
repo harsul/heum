@@ -1,5 +1,4 @@
 ﻿import DashboardIcon from '@mui/icons-material/DashboardOutlined';
-import CloudQueueIcon from '@mui/icons-material/CloudQueueOutlined';
 import PeopleAltIcon from '@mui/icons-material/PeopleAltOutlined';
 import BusinessIcon from '@mui/icons-material/BusinessOutlined';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCartOutlined';
@@ -23,8 +22,6 @@ export interface NavItemConfig {
 export function getNavConfig(isSystemAdmin: boolean, isTenantAdmin: boolean): NavItemConfig[] {
   return [
     { title: 'Dashboard', path: '/', icon: DashboardIcon },
-    // TODO: remove once the weather sample feature is no longer needed.
-    { title: 'Weather', path: '/weather', icon: CloudQueueIcon },
     ...(isSystemAdmin ? [{ title: 'Tenants', path: '/tenants', icon: PeopleAltIcon }] : []),
     ...(isTenantAdmin ? [{ title: 'My Company', path: '/company', icon: BusinessIcon }] : []),
     { title: 'Orders', path: '/orders', icon: ShoppingCartIcon, disabled: true },

@@ -73,8 +73,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseOutputCache();
 
-string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
-
 var api = app.MapGroup("/api");
 
 api.MapTenantsEndpoints();
@@ -82,32 +80,9 @@ api.MapTenantsEndpoints();
 var admin = api.MapGroup("/admin").RequireAuthorization("SystemAdmin");
 admin.MapAdminTenantsEndpoints();
 
-api.MapGet("weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.CacheOutput(p => p.Expire(TimeSpan.FromSeconds(5)))
-.WithName("GetWeatherForecast")
-.RequireAuthorization();
-
 app.MapDefaultEndpoints();
 
 app.UseFileServer();
 
 app.Run();
 
-namespace Heum.Server
-{
-    record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-    {
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-    }
-}
