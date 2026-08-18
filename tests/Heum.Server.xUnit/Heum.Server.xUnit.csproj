@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Heum.Contracts\Heum.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Heum.Data\Heum.Data.csproj" />
     <ProjectReference Include="..\..\src\Heum.Infrastructure\Heum.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Heum.Server\Heum.Server.csproj" />
@@ -29,10 +30,6 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Heum.Infrastructure\Heum.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

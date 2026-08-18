@@ -1,5 +1,7 @@
+using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Infrastructure.Keycloak;
+using Heum.Infrastructure.Messaging;
 using Heum.Server;
 using Heum.Server.Features.Admin.Tenants;
 using Heum.Server.Features.Tenants;
@@ -17,9 +19,9 @@ builder.AddRedisClientBuilder("cache")
     .WithOutputCache();
 
 builder.AddAzureServiceBusClient("messaging");
-builder.Services.AddSingleton(sp =>
-    sp.GetRequiredService<Azure.Messaging.ServiceBus.ServiceBusClient>()
-      .CreateSender("tenant-events"));
+builder.AddEventPublishing(topics => topics
+    .MapTopic<TenantCreatedEvent>("tenant-events")
+    .MapTopic<UserOnboardingRequestedEvent>("user-events"));
 
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>
@@ -42,6 +44,8 @@ builder.Services.AddAuthentication()
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("SystemAdmin", policy => policy.RequireRole("SystemAdmin"));
+
+builder.Services.AddScoped<ITenantService, TenantService>();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();

@@ -1,7 +1,4 @@
-﻿using Azure.Messaging.ServiceBus;
-using Heum.Data;
-using Heum.Infrastructure.Keycloak;
-using Heum.Server.Features.Tenants.Models;
+﻿using Heum.Server.Features.Tenants.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,29 +19,20 @@ public static class TenantsEndpoints
 
     private static async Task<Results<Created<RegisterTenantResponse>, Conflict<ProblemDetails>>> RegisterTenantAsync(
         RegisterTenantRequest request,
-        HeumDbContext dbContext,
-        IKeycloakAdminClient keycloakAdminClient,
-        ServiceBusSender sender,
+        ITenantService tenantService,
         CancellationToken cancellationToken)
     {
-        var result = await TenantProvisioningService.ProvisionTenantAsync(
+        var result = await tenantService.ProvisionTenantAsync(
             request.CompanyName,
-            request.Slug,
-            request.AdminFirstName,
-            request.AdminLastName,
             request.AdminEmail,
-            request.AdminPassword,
-            dbContext,
-            keycloakAdminClient,
-            sender,
             cancellationToken);
 
-        if (result.SlugConflict)
+        if (result.EmailConflict)
         {
             return TypedResults.Conflict(new ProblemDetails
             {
-                Title = "Slug already in use",
-                Detail = $"A tenant with slug '{request.Slug}' already exists.",
+                Title = "Email already in use",
+                Detail = $"A user with email '{request.AdminEmail}' already exists.",
                 Status = StatusCodes.Status409Conflict,
             });
         }

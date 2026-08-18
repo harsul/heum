@@ -1,16 +1,19 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Heum.Infrastructure.Keycloak.Models;
+using Heum.Infrastructure.Keycloak.Services;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
-namespace Heum.Infrastructure.Keycloak;
+namespace Heum.Infrastructure.Keycloak.Clients;
 
 /// <summary>
-/// Talks to the Keycloak Admin REST API to provision users as part of tenant onboarding.
-/// Authenticates using the client-credentials grant for the "tenant-provisioning-service"
-/// confidential client, which has been granted the realm-management "manage-users" role.
+/// Calls the Keycloak Admin REST API. Authenticates using the client-credentials grant for
+/// the "tenant-provisioning-service" confidential client, which has been granted the
+/// realm-management "manage-users" role. Contains no business logic - see
+/// <see cref="IKeycloakService"/> for tenant-oriented operations built on top of this.
 /// </summary>
-public class KeycloakAdminClient(
+internal sealed class KeycloakAdminClient(
     HttpClient httpClient,
     IOptions<KeycloakAdminOptions> options,
     IDistributedCache cache)
@@ -20,32 +23,37 @@ public class KeycloakAdminClient(
     private const string AccessTokenCacheKey = "keycloak:admin:access_token";
     private static readonly TimeSpan TokenExpiryBuffer = TimeSpan.FromSeconds(30);
 
-    public async Task<string> ProvisionTenantAdminUserAsync(
-        string username,
-        string email,
-        string firstName,
-        string lastName,
-        string password,
-        Guid tenantId,
+    public async Task<string> CreateUserAsync(
+        KeycloakUserRepresentation user,
         CancellationToken cancellationToken = default)
     {
         var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
 
-        return await CreateUserAsync(accessToken, username, email, firstName, lastName, password, tenantId, cancellationToken);
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{_options.Realm}/users");
+        request.Content = JsonContent.Create(user);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        // Keycloak returns the new user's location in the Location header: .../users/{id}
+        var location = response.Headers.Location
+            ?? throw new InvalidOperationException("Keycloak did not return a Location header for the created user.");
+
+        return location.Segments[^1].TrimEnd('/');
     }
 
-    public async Task<IReadOnlyList<KeycloakUserSummary>> ListTenantUsersAsync(
-        Guid tenantId,
+    public async Task<IReadOnlyList<KeycloakUserSummary>> SearchUsersAsync(
+        string query,
         CancellationToken cancellationToken = default)
     {
         var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
 
-        // Keycloak's user search supports querying custom attributes via "q=key:value".
-        var query = Uri.EscapeDataString($"tenant_id:{tenantId}");
+        var escapedQuery = Uri.EscapeDataString(query);
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
-            $"/admin/realms/{_options.Realm}/users?q={query}");
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+            $"/admin/realms/{_options.Realm}/users?q={escapedQuery}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -54,7 +62,7 @@ public class KeycloakAdminClient(
         return users ?? [];
     }
 
-    public async Task SendRequiredActionsEmailAsync(
+    public async Task ExecuteUserActionsEmailAsync(
         string userId,
         IEnumerable<string> actions,
         CancellationToken cancellationToken = default)
@@ -65,7 +73,7 @@ public class KeycloakAdminClient(
             HttpMethod.Put,
             $"/admin/realms/{_options.Realm}/users/{userId}/execute-actions-email");
         request.Content = JsonContent.Create(actions.ToArray());
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -102,45 +110,5 @@ public class KeycloakAdminClient(
         await cache.SetStringAsync(AccessTokenCacheKey, token.AccessToken, cacheOptions, cancellationToken);
 
         return token.AccessToken;
-    }
-
-    private async Task<string> CreateUserAsync(
-        string accessToken,
-        string username,
-        string email,
-        string firstName,
-        string lastName,
-        string password,
-        Guid tenantId,
-        CancellationToken cancellationToken)
-    {
-        var user = new KeycloakUserRepresentation
-        {
-            Username = username,
-            Email = email,
-            FirstName = firstName,
-            LastName = lastName,
-            Attributes = new Dictionary<string, string[]>
-            {
-                ["tenant_id"] = [tenantId.ToString()],
-            },
-            Credentials =
-            [
-                new KeycloakCredentialRepresentation { Type = "password", Value = password, Temporary = false },
-            ],
-        };
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{_options.Realm}/users");
-        request.Content = JsonContent.Create(user);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        // Keycloak returns the new user's location in the Location header: .../users/{id}
-        var location = response.Headers.Location
-            ?? throw new InvalidOperationException("Keycloak did not return a Location header for the created user.");
-
-        return location.Segments[^1].TrimEnd('/');
     }
 }

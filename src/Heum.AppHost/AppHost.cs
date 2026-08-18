@@ -24,8 +24,10 @@ var messaging = builder.AddAzureServiceBus("messaging")
     .RunAsEmulator();
 
 var tenantEventsTopic = messaging.AddServiceBusTopic("tenant-events");
-tenantEventsTopic.AddServiceBusSubscription("email-verification-sub");
 tenantEventsTopic.AddServiceBusSubscription("db-seeding-sub");
+
+var userEventsTopic = messaging.AddServiceBusTopic("user-events");
+userEventsTopic.AddServiceBusSubscription("user-onboarding-sub");
 
 var keycloakAdminSecret = builder.AddParameter("KeycloakAdminSecret", secret: true);
 
@@ -52,8 +54,9 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints();
 
-// Background worker: sends the Keycloak VERIFY_EMAIL action link when a tenant is created.
-builder.AddAzureFunctionsProject<Projects.Heum_Functions>("emailverification")
+// Background worker: sends the Keycloak onboarding action link (profile, password, verify
+// email) when a new tenant/user is provisioned.
+builder.AddAzureFunctionsProject<Projects.Heum_Functions>("useronboarding")
     .WithReference(cache)
     .WithReference(keycloak)
     .WithReference(messaging)
