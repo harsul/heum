@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { getNavConfig } from './config-nav';
-import { isSystemAdmin } from '../../auth/roles';
+import { isSystemAdmin, isTenantAdmin } from '../../auth/roles';
 
 export const NAV_WIDTH = 280;
 
@@ -20,7 +20,7 @@ interface NavSidebarProps {
 
 function NavContent() {
   const auth = useAuth();
-  const navConfig = getNavConfig(isSystemAdmin(auth.user));
+  const navConfig = getNavConfig(isSystemAdmin(auth.user), isTenantAdmin(auth.user));
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

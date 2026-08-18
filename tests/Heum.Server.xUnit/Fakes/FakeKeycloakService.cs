@@ -9,13 +9,17 @@ public sealed class FakeKeycloakService : IKeycloakService
     public Exception? ExceptionToThrow { get; set; }
     public string UserIdToReturn { get; set; } = Guid.NewGuid().ToString();
     public int CreateTenantUserCallCount { get; private set; }
+    public bool? LastIsTenantAdmin { get; private set; }
+    public bool? SetTenantUserEnabledResult { get; set; } = true;
 
     public Task<string> CreateTenantUserAsync(
         string email,
         Guid tenantId,
+        bool isTenantAdmin,
         CancellationToken cancellationToken = default)
     {
         CreateTenantUserCallCount++;
+        LastIsTenantAdmin = isTenantAdmin;
 
         if (ExceptionToThrow is not null)
             throw ExceptionToThrow;
@@ -33,4 +37,11 @@ public sealed class FakeKeycloakService : IKeycloakService
         IEnumerable<string> actions,
         CancellationToken cancellationToken = default)
         => Task.CompletedTask;
+
+    public Task<bool> SetTenantUserEnabledAsync(
+        Guid tenantId,
+        string userId,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+        => Task.FromResult(SetTenantUserEnabledResult ?? false);
 }

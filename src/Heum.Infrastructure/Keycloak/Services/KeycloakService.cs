@@ -11,6 +11,7 @@ internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycl
     public async Task<string> CreateTenantUserAsync(
         string email,
         Guid tenantId,
+        bool isTenantAdmin,
         CancellationToken cancellationToken = default)
     {
         var user = new KeycloakUserRepresentation
@@ -26,6 +27,7 @@ internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycl
             },
             Credentials = [],
             RequiredActions = [.. OnboardingRequiredActions],
+            RealmRoles = isTenantAdmin ? ["Admin", "User"] : ["User"],
         };
 
         return await adminClient.CreateUserAsync(user, cancellationToken);
@@ -45,4 +47,23 @@ internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycl
         IEnumerable<string> actions,
         CancellationToken cancellationToken = default)
         => adminClient.ExecuteUserActionsEmailAsync(userId, actions, cancellationToken);
+
+    public async Task<bool> SetTenantUserEnabledAsync(
+        Guid tenantId,
+        string userId,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await adminClient.GetUserAsync(userId, cancellationToken);
+        if (user is null || !BelongsToTenant(user, tenantId))
+            return false;
+
+        await adminClient.SetUserEnabledAsync(userId, enabled, cancellationToken);
+        return true;
+    }
+
+    private static bool BelongsToTenant(KeycloakUserSummary user, Guid tenantId) =>
+        user.Attributes is { } attributes &&
+        attributes.TryGetValue("tenant_id", out var tenantIds) &&
+        tenantIds.Contains(tenantId.ToString());
 }

@@ -79,6 +79,43 @@ internal sealed class KeycloakAdminClient(
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<KeycloakUserSummary?> GetUserAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/admin/realms/{_options.Realm}/users/{userId}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return null;
+
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<KeycloakUserSummary>(cancellationToken: cancellationToken);
+    }
+
+    public async Task SetUserEnabledAsync(
+        string userId,
+        bool enabled,
+        CancellationToken cancellationToken = default)
+    {
+        var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Put,
+            $"/admin/realms/{_options.Realm}/users/{userId}");
+        request.Content = JsonContent.Create(new { enabled });
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     private async Task<string> GetAdminAccessTokenAsync(CancellationToken cancellationToken)
     {
         var cachedToken = await cache.GetStringAsync(AccessTokenCacheKey, cancellationToken);

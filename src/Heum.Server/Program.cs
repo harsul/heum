@@ -43,7 +43,8 @@ builder.Services.AddAuthentication()
     });
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("SystemAdmin", policy => policy.RequireRole("SystemAdmin"));
+    .AddPolicy("SystemAdmin", policy => policy.RequireRole("SystemAdmin"))
+    .AddPolicy("TenantAdmin", policy => policy.RequireRole("Admin"));
 
 builder.Services.AddScoped<ITenantService, TenantService>();
 

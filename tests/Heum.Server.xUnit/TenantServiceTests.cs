@@ -149,6 +149,8 @@ public class TenantServiceTests
         Assert.Equal(result.Tenant.Id, onboardingRequested.TenantId);
         Assert.Equal("jane@acme.com", onboardingRequested.Email);
         Assert.Equal("keycloak-user-1", onboardingRequested.KeycloakUserId);
+
+        Assert.True(keycloak.LastIsTenantAdmin);
     }
 
     [Fact]
@@ -208,6 +210,8 @@ public class TenantServiceTests
         Assert.Equal(tenant.Id, onboardingRequested.TenantId);
         Assert.Equal("teammate@acme.com", onboardingRequested.Email);
         Assert.Equal("keycloak-user-2", onboardingRequested.KeycloakUserId);
+
+        Assert.False(keycloak.LastIsTenantAdmin);
     }
 
     [Fact]

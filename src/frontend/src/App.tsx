@@ -5,10 +5,11 @@ import { DashboardPage } from './pages/DashboardPage';
 import { WeatherPage } from './pages/WeatherPage';
 import { TenantsPage } from './pages/TenantsPage';
 import { TenantDetailPage } from './pages/TenantDetailPage';
+import { MyCompanyPage } from './pages/MyCompanyPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { setTokenCookie, clearTokenCookie } from './utils/cookie';
 import { setAccessToken } from './lib/apiClient';
-import { SYSTEM_ADMIN_ROLE } from './auth/roles';
+import { SYSTEM_ADMIN_ROLE, TENANT_ADMIN_ROLE } from './auth/roles';
 
 function App() {
   const auth = useAuth();
@@ -54,6 +55,14 @@ function App() {
         element={
           <ProtectedRoute requireRole={SYSTEM_ADMIN_ROLE}>
             <TenantDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/company"
+        element={
+          <ProtectedRoute requireRole={TENANT_ADMIN_ROLE}>
+            <MyCompanyPage />
           </ProtectedRoute>
         }
       />

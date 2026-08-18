@@ -4,6 +4,9 @@ import { decodeJwtPayload } from '../utils/jwt';
 /** Realm role that identifies platform staff who can manage tenants across the system. */
 export const SYSTEM_ADMIN_ROLE = 'SystemAdmin';
 
+/** Realm role that identifies a tenant's own admin(s), who can manage their tenant's users. */
+export const TENANT_ADMIN_ROLE = 'Admin';
+
 interface KeycloakAccessTokenClaims {
   realm_access?: {
     roles?: string[];
@@ -26,4 +29,8 @@ export function hasRole(user: User | null | undefined, role: string): boolean {
 
 export function isSystemAdmin(user: User | null | undefined): boolean {
   return hasRole(user, SYSTEM_ADMIN_ROLE);
+}
+
+export function isTenantAdmin(user: User | null | undefined): boolean {
+  return hasRole(user, TENANT_ADMIN_ROLE);
 }

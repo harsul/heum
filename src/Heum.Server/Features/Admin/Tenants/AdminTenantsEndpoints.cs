@@ -28,6 +28,12 @@ public static class AdminTenantsEndpoints
         tenants.MapPost("/{id:guid}/users", AddTenantUserAsync)
             .WithName("AdminAddTenantUser");
 
+        tenants.MapPost("/{id:guid}/users/{userId}/enable", EnableTenantUserAsync)
+            .WithName("AdminEnableTenantUser");
+
+        tenants.MapPost("/{id:guid}/users/{userId}/disable", DisableTenantUserAsync)
+            .WithName("AdminDisableTenantUser");
+
         tenants.MapPut("/{id:guid}", UpdateTenantAsync)
             .WithName("AdminUpdateTenant");
 
@@ -139,6 +145,31 @@ public static class AdminTenantsEndpoints
         return TypedResults.Created($"/api/admin/tenants/{id}/users/{result.KeycloakUserId}", response);
     }
 
+    internal static async Task<Results<NoContent, NotFound>> EnableTenantUserAsync(
+        Guid id,
+        string userId,
+        IKeycloakService keycloakService,
+        CancellationToken cancellationToken)
+        => await SetTenantUserEnabledAsync(id, userId, enabled: true, keycloakService, cancellationToken);
+
+    internal static async Task<Results<NoContent, NotFound>> DisableTenantUserAsync(
+        Guid id,
+        string userId,
+        IKeycloakService keycloakService,
+        CancellationToken cancellationToken)
+        => await SetTenantUserEnabledAsync(id, userId, enabled: false, keycloakService, cancellationToken);
+
+    private static async Task<Results<NoContent, NotFound>> SetTenantUserEnabledAsync(
+        Guid tenantId,
+        string userId,
+        bool enabled,
+        IKeycloakService keycloakService,
+        CancellationToken cancellationToken)
+    {
+        var succeeded = await keycloakService.SetTenantUserEnabledAsync(tenantId, userId, enabled, cancellationToken);
+        return succeeded ? TypedResults.NoContent() : TypedResults.NotFound();
+    }
+
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> UpdateTenantAsync(
         Guid id,
         UpdateTenantRequest request,
@@ -177,27 +208,7 @@ public static class AdminTenantsEndpoints
         return TypedResults.Ok(ToResponse(tenant));
     }
 
-    private static TenantResponse ToResponse(Data.Models.Tenant tenant) => new()
-    {
-        Id = tenant.Id,
-        Name = tenant.Name,
-        Slug = tenant.Slug,
-        IsActive = tenant.IsActive,
-        CreatedAtUtc = tenant.CreatedAtUtc,
-        UpdatedAtUtc = tenant.UpdatedAtUtc,
-    };
+    private static TenantResponse ToResponse(Data.Models.Tenant tenant) => TenantResponseMapper.ToResponse(tenant);
 
-    private static TenantUserResponse ToResponse(KeycloakUserSummary user) => new()
-    {
-        Id = user.Id,
-        Username = user.Username,
-        Email = user.Email,
-        FirstName = user.FirstName,
-        LastName = user.LastName,
-        Enabled = user.Enabled,
-        EmailVerified = user.EmailVerified,
-        CreatedAtUtc = user.CreatedTimestamp is { } timestamp
-            ? DateTimeOffset.FromUnixTimeMilliseconds(timestamp)
-            : null,
-    };
+    private static TenantUserResponse ToResponse(KeycloakUserSummary user) => TenantResponseMapper.ToResponse(user);
 }
