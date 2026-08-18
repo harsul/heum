@@ -20,7 +20,7 @@ internal sealed class KeycloakUserRepresentation
     public bool Enabled { get; set; } = true;
 
     [JsonPropertyName("emailVerified")]
-    public bool EmailVerified { get; set; } = true;
+    public bool EmailVerified { get; set; } = false;
 
     [JsonPropertyName("attributes")]
     public Dictionary<string, string[]> Attributes { get; set; } = [];

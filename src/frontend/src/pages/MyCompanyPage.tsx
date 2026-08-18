@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -12,20 +12,10 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
+import { DetailField } from '../components/DetailField';
 import { CompanyUsersTable } from '../features/company/components/CompanyUsersTable';
 import { useMyTenant } from '../features/company/hooks/useMyTenant';
-import { formatDate, tenantInitials } from '../features/tenants/utils';
-
-function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <Box>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body1">{value}</Typography>
-    </Box>
-  );
-}
+import { formatDate, tenantInitials } from '../utils/format';
 
 type TabValue = 'overview' | 'users';
 

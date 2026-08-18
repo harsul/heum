@@ -1,4 +1,4 @@
-﻿import type { Tenant, TenantOrder } from './types/tenant';
+import type { Tenant, TenantOrder } from './types/tenant';
 
 type ComparableKey = keyof Pick<Tenant, 'name' | 'slug' | 'createdAtUtc' | 'isActive'>;
 
@@ -41,22 +41,4 @@ export function applyTenantFilter({
       tenant.name.toLowerCase().includes(lowerQuery) ||
       tenant.slug.toLowerCase().includes(lowerQuery),
   );
-}
-
-export function tenantInitials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
-}
-
-export function formatDate(value: string | null) {
-  if (!value) return '—';
-  return new Date(value).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
 }

@@ -1,6 +1,6 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
+using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Keycloak.Services;
-using Heum.Server.Features.Admin.Tenants.Models;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -10,8 +10,6 @@ namespace Heum.Server.Features.Tenants;
 
 public static class TenantsEndpoints
 {
-    private const string TenantIdClaimType = "tenant_id";
-
     public static RouteGroupBuilder MapTenantsEndpoints(this RouteGroupBuilder group)
     {
         var tenants = group.MapGroup("/tenants");
@@ -45,7 +43,7 @@ public static class TenantsEndpoints
     }
 
     private static async Task<Results<Created<RegisterTenantResponse>, Conflict<ProblemDetails>>> RegisterTenantAsync(
-        RegisterTenantRequest request,
+        CreateTenantRequest request,
         ITenantService tenantService,
         CancellationToken cancellationToken)
     {
@@ -55,14 +53,7 @@ public static class TenantsEndpoints
             cancellationToken);
 
         if (result.EmailConflict)
-        {
-            return TypedResults.Conflict(new ProblemDetails
-            {
-                Title = "Email already in use",
-                Detail = $"A user with email '{request.AdminEmail}' already exists.",
-                Status = StatusCodes.Status409Conflict,
-            });
-        }
+            return TypedResults.Conflict(TenantResponseMapper.EmailConflict(request.AdminEmail));
 
         return TypedResults.Created($"/api/tenants/{result.Tenant!.Id}", new RegisterTenantResponse
         {
@@ -108,28 +99,11 @@ public static class TenantsEndpoints
         var result = await tenantService.AddTenantUserAsync(tenantId, request.Email, cancellationToken);
 
         if (result.EmailConflict)
-        {
-            return TypedResults.Conflict(new ProblemDetails
-            {
-                Title = "Email already in use",
-                Detail = $"A user with email '{request.Email}' already exists.",
-                Status = StatusCodes.Status409Conflict,
-            });
-        }
+            return TypedResults.Conflict(TenantResponseMapper.EmailConflict(request.Email));
 
-        var response = new TenantUserResponse
-        {
-            Id = result.KeycloakUserId!,
-            Username = request.Email,
-            Email = request.Email,
-            FirstName = null,
-            LastName = null,
-            Enabled = true,
-            EmailVerified = false,
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-        };
-
-        return TypedResults.Created($"/api/tenants/me/users/{result.KeycloakUserId}", response);
+        return TypedResults.Created(
+            $"/api/tenants/me/users/{result.KeycloakUserId}",
+            TenantResponseMapper.NewlyCreatedUser(result.KeycloakUserId!, request.Email));
     }
 
     internal static async Task<Results<NoContent, NotFound, BadRequest<ProblemDetails>>> EnableMyTenantUserAsync(
@@ -174,13 +148,13 @@ public static class TenantsEndpoints
         user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
 
     /// <summary>
-    /// Reads the "tenant_id" claim (populated by a Keycloak protocol mapper off the user's
-    /// "tenant_id" attribute) off the caller's token. Accounts without a tenant (e.g.
-    /// SystemAdmin/service accounts) won't have this claim.
+    /// Reads the <see cref="KeycloakClaimTypes.TenantId"/> claim (populated by a Keycloak protocol
+    /// mapper off the user's "tenant_id" attribute) off the caller's token. Accounts without a
+    /// tenant (e.g. SystemAdmin/service accounts) won't have this claim.
     /// </summary>
     internal static bool TryGetTenantId(ClaimsPrincipal user, out Guid tenantId)
     {
-        var claim = user.FindFirst(TenantIdClaimType)?.Value;
+        var claim = user.FindFirst(KeycloakClaimTypes.TenantId)?.Value;
         return Guid.TryParse(claim, out tenantId);
     }
 

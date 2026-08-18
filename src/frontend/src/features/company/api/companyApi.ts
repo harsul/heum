@@ -1,22 +1,22 @@
-﻿import { apiClient } from '../../../lib/apiClient';
-import type { MyTenant, MyTenantUser } from '../types/company';
+import { apiClient } from '../../../lib/apiClient';
+import type { Tenant, TenantUser } from '../../tenants/types/tenant';
 
 export interface AddMyTenantUserPayload {
   email: string;
 }
 
-export async function fetchMyTenant(): Promise<MyTenant> {
-  const { data } = await apiClient.get<MyTenant>('/tenants/me');
+export async function fetchMyTenant(): Promise<Tenant> {
+  const { data } = await apiClient.get<Tenant>('/tenants/me');
   return data;
 }
 
-export async function fetchMyTenantUsers(): Promise<MyTenantUser[]> {
-  const { data } = await apiClient.get<MyTenantUser[]>('/tenants/me/users');
+export async function fetchMyTenantUsers(): Promise<TenantUser[]> {
+  const { data } = await apiClient.get<TenantUser[]>('/tenants/me/users');
   return data;
 }
 
-export async function addMyTenantUser(payload: AddMyTenantUserPayload): Promise<MyTenantUser> {
-  const { data } = await apiClient.post<MyTenantUser>('/tenants/me/users', payload);
+export async function addMyTenantUser(payload: AddMyTenantUserPayload): Promise<TenantUser> {
+  const { data } = await apiClient.post<TenantUser>('/tenants/me/users', payload);
   return data;
 }
 

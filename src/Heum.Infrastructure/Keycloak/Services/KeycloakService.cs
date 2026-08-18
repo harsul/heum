@@ -1,4 +1,4 @@
-﻿using Heum.Infrastructure.Keycloak.Clients;
+using Heum.Infrastructure.Keycloak.Clients;
 using Heum.Infrastructure.Keycloak.Models;
 
 namespace Heum.Infrastructure.Keycloak.Services;
@@ -23,7 +23,7 @@ internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycl
             EmailVerified = false,
             Attributes = new Dictionary<string, string[]>
             {
-                ["tenant_id"] = [tenantId.ToString()],
+                [KeycloakClaimTypes.TenantId] = [tenantId.ToString()],
             },
             Credentials = [],
             RequiredActions = [.. OnboardingRequiredActions],
@@ -37,8 +37,7 @@ internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycl
         Guid tenantId,
         CancellationToken cancellationToken = default)
     {
-        // Keycloak's user search supports querying custom attributes via "q=key:value".
-        var query = $"tenant_id:{tenantId}";
+        var query = $"{KeycloakClaimTypes.TenantId}:{tenantId}";
         return await adminClient.SearchUsersAsync(query, cancellationToken);
     }
 
@@ -64,6 +63,6 @@ internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycl
 
     private static bool BelongsToTenant(KeycloakUserSummary user, Guid tenantId) =>
         user.Attributes is { } attributes &&
-        attributes.TryGetValue("tenant_id", out var tenantIds) &&
+        attributes.TryGetValue(KeycloakClaimTypes.TenantId, out var tenantIds) &&
         tenantIds.Contains(tenantId.ToString());
 }

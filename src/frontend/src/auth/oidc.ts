@@ -1,5 +1,4 @@
 import type { AuthProviderProps } from 'react-oidc-context';
-import { setTokenCookie } from '../utils/cookie';
 
 declare const __KEYCLOAK_URL__: string;
 
@@ -9,10 +8,9 @@ export const oidcConfig: AuthProviderProps = {
   redirect_uri: window.location.origin,
   post_logout_redirect_uri: window.location.origin,
   scope: 'openid profile email',
-  onSigninCallback: (user) => {
-    if (user?.access_token) {
-      setTokenCookie(user.access_token);
-    }
+  onSigninCallback: () => {
+    // Token is written to the cookie by App.tsx's useEffect (the single source of truth).
+    // The cookie is read server-side by the ASP.NET backend, not by frontend JS.
     window.history.replaceState({}, document.title, window.location.pathname);
   },
 };

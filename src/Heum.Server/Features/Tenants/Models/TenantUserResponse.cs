@@ -1,4 +1,4 @@
-﻿namespace Heum.Server.Features.Admin.Tenants.Models;
+namespace Heum.Server.Features.Tenants.Models;
 
 public class TenantUserResponse
 {

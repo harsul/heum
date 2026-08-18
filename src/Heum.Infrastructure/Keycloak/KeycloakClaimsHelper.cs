@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace Heum.Infrastructure.Keycloak;
@@ -9,7 +9,7 @@ namespace Heum.Infrastructure.Keycloak;
 /// This helper flattens that claim into standard <see cref="ClaimTypes.Role"/> claims
 /// so ASP.NET Core authorization (RequireRole/RequireAuthorization policies) works.
 /// </summary>
-public static class KeycloakClaimsTransformer
+public static class KeycloakClaimsHelper
 {
     private const string RealmAccessClaimType = "realm_access";
 

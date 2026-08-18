@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
@@ -20,22 +20,12 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
+import { DetailField } from '../components/DetailField';
 import { EditTenantDialog } from '../features/tenants/components/EditTenantDialog';
 import { TenantUsersTable } from '../features/tenants/components/TenantUsersTable';
 import { useTenant } from '../features/tenants/hooks/useTenant';
 import { useSetTenantActive, useUpdateTenant } from '../features/tenants/hooks/useTenantMutations';
-import { formatDate, tenantInitials } from '../features/tenants/utils';
-
-function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <Box>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body1">{value}</Typography>
-    </Box>
-  );
-}
+import { formatDate, tenantInitials } from '../utils/format';
 
 type TabValue = 'overview' | 'users' | 'settings';
 

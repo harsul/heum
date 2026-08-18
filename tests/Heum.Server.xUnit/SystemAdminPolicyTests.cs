@@ -41,7 +41,7 @@ public class SystemAdminPolicyTests
         identity.AddClaim(new Claim("realm_access", rolesJson));
 
         var principal = new ClaimsPrincipal(identity);
-        KeycloakClaimsTransformer.AddRealmRoleClaims(principal);
+        KeycloakClaimsHelper.AddRealmRoleClaims(principal);
 
         return principal;
     }

@@ -1,7 +1,7 @@
-﻿using Heum.Infrastructure.Keycloak.Models;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Server.Features.Admin.Tenants.Models;
 using Heum.Server.Features.Tenants;
+using Heum.Server.Features.Tenants.Models;
 using Heum.Server.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -52,7 +52,7 @@ public static class AdminTenantsEndpoints
         CancellationToken cancellationToken)
     {
         var tenants = await tenantService.ListTenantsAsync(cancellationToken);
-        var response = tenants.Select(ToResponse).ToList();
+        var response = tenants.Select(TenantResponseMapper.ToResponse).ToList();
 
         return TypedResults.Ok<IReadOnlyList<TenantResponse>>(response);
     }
@@ -68,17 +68,10 @@ public static class AdminTenantsEndpoints
             cancellationToken);
 
         if (result.EmailConflict)
-        {
-            return TypedResults.Conflict(new ProblemDetails
-            {
-                Title = "Email already in use",
-                Detail = $"A user with email '{request.AdminEmail}' already exists.",
-                Status = StatusCodes.Status409Conflict,
-            });
-        }
+            return TypedResults.Conflict(TenantResponseMapper.EmailConflict(request.AdminEmail));
 
         var tenant = result.Tenant!;
-        return TypedResults.Created($"/api/admin/tenants/{tenant.Id}", ToResponse(tenant));
+        return TypedResults.Created($"/api/admin/tenants/{tenant.Id}", TenantResponseMapper.ToResponse(tenant));
     }
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> GetTenantAsync(
@@ -90,7 +83,7 @@ public static class AdminTenantsEndpoints
         if (tenant is null)
             return TypedResults.NotFound();
 
-        return TypedResults.Ok(ToResponse(tenant));
+        return TypedResults.Ok(TenantResponseMapper.ToResponse(tenant));
     }
 
     internal static async Task<Results<Ok<IReadOnlyList<TenantUserResponse>>, NotFound>> GetTenantUsersAsync(
@@ -104,7 +97,7 @@ public static class AdminTenantsEndpoints
             return TypedResults.NotFound();
 
         var users = await keycloakService.ListTenantUsersAsync(id, cancellationToken);
-        var response = users.Select(ToResponse).ToList();
+        var response = users.Select(TenantResponseMapper.ToResponse).ToList();
 
         return TypedResults.Ok<IReadOnlyList<TenantUserResponse>>(response);
     }
@@ -122,28 +115,11 @@ public static class AdminTenantsEndpoints
         var result = await tenantService.AddTenantUserAsync(id, request.Email, cancellationToken);
 
         if (result.EmailConflict)
-        {
-            return TypedResults.Conflict(new ProblemDetails
-            {
-                Title = "Email already in use",
-                Detail = $"A user with email '{request.Email}' already exists.",
-                Status = StatusCodes.Status409Conflict,
-            });
-        }
+            return TypedResults.Conflict(TenantResponseMapper.EmailConflict(request.Email));
 
-        var response = new TenantUserResponse
-        {
-            Id = result.KeycloakUserId!,
-            Username = request.Email,
-            Email = request.Email,
-            FirstName = null,
-            LastName = null,
-            Enabled = true,
-            EmailVerified = false,
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-        };
-
-        return TypedResults.Created($"/api/admin/tenants/{id}/users/{result.KeycloakUserId}", response);
+        return TypedResults.Created(
+            $"/api/admin/tenants/{id}/users/{result.KeycloakUserId}",
+            TenantResponseMapper.NewlyCreatedUser(result.KeycloakUserId!, request.Email));
     }
 
     internal static async Task<Results<NoContent, NotFound>> EnableTenantUserAsync(
@@ -181,7 +157,7 @@ public static class AdminTenantsEndpoints
         if (tenant is null)
             return TypedResults.NotFound();
 
-        return TypedResults.Ok(ToResponse(tenant));
+        return TypedResults.Ok(TenantResponseMapper.ToResponse(tenant));
     }
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound>> DeactivateTenantAsync(
@@ -206,10 +182,6 @@ public static class AdminTenantsEndpoints
         if (tenant is null)
             return TypedResults.NotFound();
 
-        return TypedResults.Ok(ToResponse(tenant));
+        return TypedResults.Ok(TenantResponseMapper.ToResponse(tenant));
     }
-
-    private static TenantResponse ToResponse(Data.Models.Tenant tenant) => TenantResponseMapper.ToResponse(tenant);
-
-    private static TenantUserResponse ToResponse(KeycloakUserSummary user) => TenantResponseMapper.ToResponse(user);
 }

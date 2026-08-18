@@ -1,5 +1,4 @@
-﻿import { useMemo, useState } from 'react';
-import { isAxiosError } from 'axios';
+import { useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -16,6 +15,7 @@ import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import type { Tenant, TenantOrder } from '../types/tenant';
 import { applyTenantFilter, getComparator } from '../utils';
+import { getApiErrorMessage } from '../../../utils/apiError';
 import { useTenants } from '../hooks/useTenants';
 import { useCreateTenant } from '../hooks/useCreateTenant';
 import { useSetTenantActive, useUpdateTenant } from '../hooks/useTenantMutations';
@@ -42,7 +42,6 @@ export function TenantsTable() {
 
   const [order, setOrder] = useState<TenantOrder>('asc');
   const [orderBy, setOrderBy] = useState<'name' | 'slug' | 'createdAtUtc' | 'isActive'>('name');
-  const [selected, setSelected] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [filterName, setFilterName] = useState('');
@@ -53,16 +52,6 @@ export function TenantsTable() {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property as typeof orderBy);
-  };
-
-  const handleSelectAllClick = (checked: boolean) => {
-    setSelected(checked ? tenants.map((tenant) => tenant.id) : []);
-  };
-
-  const handleSelectRow = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
-    );
   };
 
   const filteredTenants = useMemo(
@@ -102,7 +91,6 @@ export function TenantsTable() {
       </Stack>
 
       <TenantTableToolbar
-        numSelected={selected.length}
         filterName={filterName}
         onFilterName={(value) => {
           setFilterName(value);
@@ -121,16 +109,13 @@ export function TenantsTable() {
           <TenantTableHead
             order={order}
             orderBy={orderBy}
-            numSelected={selected.length}
-            rowCount={tenants.length}
             headCells={headCells}
             onRequestSort={handleRequestSort}
-            onSelectAllClick={handleSelectAllClick}
           />
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={headCells.length + 1} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={headCells.length} align="center" sx={{ py: 6 }}>
                   <CircularProgress size={28} />
                 </TableCell>
               </TableRow>
@@ -141,8 +126,6 @@ export function TenantsTable() {
                 <TenantTableRow
                   key={tenant.id}
                   tenant={tenant}
-                  selected={selected.includes(tenant.id)}
-                  onSelectRow={() => handleSelectRow(tenant.id)}
                   onEdit={() => setEditingTenant(tenant)}
                   onToggleActive={() =>
                     setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
@@ -153,7 +136,7 @@ export function TenantsTable() {
 
             {isNotFound && (
               <TableRow>
-                <TableCell colSpan={headCells.length + 1} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={headCells.length} align="center" sx={{ py: 6 }}>
                   <Box>
                     <Typography variant="subtitle1">No tenants found</Typography>
                     <Typography variant="body2" color="text.secondary">
@@ -197,7 +180,7 @@ export function TenantsTable() {
       <NewTenantDialog
         open={isNewTenantOpen}
         saving={createTenant.isPending}
-        errorMessage={getCreateTenantErrorMessage(createTenant.error)}
+        errorMessage={getApiErrorMessage(createTenant.error, 'Failed to create tenant.')}
         onClose={() => setIsNewTenantOpen(false)}
         onCreate={(values) => {
           createTenant.mutate(values, { onSuccess: () => setIsNewTenantOpen(false) });
@@ -205,14 +188,4 @@ export function TenantsTable() {
       />
     </Card>
   );
-}
-
-function getCreateTenantErrorMessage(error: unknown): string | undefined {
-  if (!error) return undefined;
-
-  if (isAxiosError<{ detail?: string; title?: string }>(error)) {
-    return error.response?.data?.detail ?? error.response?.data?.title ?? 'Failed to create tenant.';
-  }
-
-  return 'Failed to create tenant.';
 }

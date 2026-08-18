@@ -164,8 +164,9 @@ public sealed partial class TenantService(
                 return candidate;
         }
 
-        // Astronomically unlikely fallback, but guarantees termination.
-        return $"{baseSlug}-{Guid.NewGuid():N}"[..(baseSlug.Length + 9)];
+        // Truncate so the slug + "-" + 8-char hex suffix never exceeds the 100-char DB column.
+        var truncated = baseSlug.Length > 91 ? baseSlug[..91] : baseSlug;
+        return $"{truncated}-{Guid.NewGuid():N}"[..100];
     }
 
     private static string Slugify(string value)

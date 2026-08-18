@@ -2,13 +2,11 @@ using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Messaging;
-using Heum.Server;
 using Heum.Server.Features.Admin.Tenants;
 using Heum.Server.Features.Tenants;
 using Heum.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
-using TenantService = Heum.Server.Services.TenantService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +35,7 @@ builder.Services.AddAuthentication()
             OnTokenValidated = context =>
             {
                 if (context.Principal is not null)
-                    KeycloakClaimsTransformer.AddRealmRoleClaims(context.Principal);
+                    KeycloakClaimsHelper.AddRealmRoleClaims(context.Principal);
 
                 return Task.CompletedTask;
             },
@@ -85,4 +83,3 @@ app.MapDefaultEndpoints();
 app.UseFileServer();
 
 app.Run();
-

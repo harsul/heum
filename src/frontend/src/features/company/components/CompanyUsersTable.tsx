@@ -1,5 +1,4 @@
-﻿import { useState } from 'react';
-import { isAxiosError } from 'axios';
+import { useState } from 'react';
 import { useAuth } from 'react-oidc-context';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
@@ -20,21 +19,12 @@ import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
-import { formatDate, tenantInitials } from '../../tenants/utils';
+import { formatDate, tenantInitials } from '../../../utils/format';
+import { getApiErrorMessage } from '../../../utils/apiError';
+import { AddUserByEmailDialog } from '../../../components/AddUserByEmailDialog';
 import { useMyTenantUsers } from '../hooks/useMyTenantUsers';
 import { useAddMyTenantUser } from '../hooks/useAddMyTenantUser';
 import { useSetMyTenantUserEnabled } from '../hooks/useSetMyTenantUserEnabled';
-import { AddCompanyUserDialog } from './AddCompanyUserDialog';
-
-function getErrorMessage(error: unknown, fallback: string): string | undefined {
-  if (!error) return undefined;
-
-  if (isAxiosError<{ detail?: string; title?: string }>(error)) {
-    return error.response?.data?.detail ?? error.response?.data?.title ?? fallback;
-  }
-
-  return fallback;
-}
 
 export function CompanyUsersTable() {
   const auth = useAuth();
@@ -69,7 +59,7 @@ export function CompanyUsersTable() {
 
       {!isLoading && !isError && setUserEnabled.isError && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {getErrorMessage(setUserEnabled.error, 'Failed to update this user.')}
+          {getApiErrorMessage(setUserEnabled.error, 'Failed to update this user.')}
         </Alert>
       )}
 
@@ -175,10 +165,10 @@ export function CompanyUsersTable() {
         </TableContainer>
       )}
 
-      <AddCompanyUserDialog
+      <AddUserByEmailDialog
         open={isAddingUser}
         saving={addUser.isPending}
-        errorMessage={getErrorMessage(addUser.error, 'Failed to add user.')}
+        errorMessage={getApiErrorMessage(addUser.error, 'Failed to add user.')}
         onClose={() => setIsAddingUser(false)}
         onAdd={(values) => {
           addUser.mutate(values, { onSuccess: () => setIsAddingUser(false) });
