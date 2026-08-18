@@ -8,18 +8,15 @@ namespace Heum.Functions;
 
 /// <summary>
 /// Consumes UserOnboardingRequestedEvent messages from the user-events topic and asks Keycloak
-/// to email the new user a single link that walks them through completing their profile, setting
-/// a password, and verifying their email - all in one flow. Running this out-of-band keeps the
-/// tenant registration / add-user HTTP requests fast and lets Service Bus retry transient
+/// to email the new user a link that lets them set a password. Running this out-of-band keeps
+/// the tenant registration / add-user HTTP requests fast and lets Service Bus retry transient
 /// Keycloak failures.
 /// </summary>
 public class UserOnboardingEmailFunction(
     IKeycloakService keycloakService,
     ILogger<UserOnboardingEmailFunction> logger)
 {
-    private const string UpdateProfileAction = "UPDATE_PROFILE";
     private const string UpdatePasswordAction = "UPDATE_PASSWORD";
-    private const string VerifyEmailAction = "VERIFY_EMAIL";
 
     [Function(nameof(UserOnboardingEmailFunction))]
     public async Task RunAsync(
@@ -53,7 +50,7 @@ public class UserOnboardingEmailFunction(
         {
             await keycloakService.SendRequiredActionsEmailAsync(
                 @event.KeycloakUserId,
-                [UpdateProfileAction, UpdatePasswordAction, VerifyEmailAction],
+                [UpdatePasswordAction],
                 cancellationToken);
 
             logger.LogInformation(

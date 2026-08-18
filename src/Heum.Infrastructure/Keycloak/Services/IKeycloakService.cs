@@ -15,8 +15,8 @@ public interface IKeycloakService
     /// Creates a user for a tenant (whether it's the tenant's first/admin user or an
     /// additional teammate added later - there's no distinction at the Keycloak level).
     /// The user is created with no password and no name, stamped with the tenant id
-    /// attribute, and flagged with the required actions needed to complete onboarding
-    /// (update profile, set a password, verify email) the next time they authenticate.
+    /// attribute, and flagged with the required action needed to complete onboarding
+    /// (set a password) the next time they authenticate.
     /// </summary>
     /// <returns>The Keycloak user id (subject) of the newly created user.</returns>
     Task<string> CreateTenantUserAsync(
@@ -34,8 +34,7 @@ public interface IKeycloakService
 
     /// <summary>
     /// Asks Keycloak to email the user a link that executes the given required actions
-    /// (for example "UPDATE_PROFILE", "UPDATE_PASSWORD", "VERIFY_EMAIL"). The email is
-    /// delivered through the realm's SMTP settings.
+    /// (for example "UPDATE_PASSWORD"). The email is delivered through the realm's SMTP settings.
     /// </summary>
     Task SendRequiredActionsEmailAsync(
         string userId,

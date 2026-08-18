@@ -6,7 +6,7 @@ namespace Heum.Infrastructure.Keycloak.Services;
 /// <inheritdoc cref="IKeycloakService" />
 internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycloakService
 {
-    private static readonly string[] OnboardingRequiredActions = ["UPDATE_PROFILE", "UPDATE_PASSWORD", "VERIFY_EMAIL"];
+    private static readonly string[] OnboardingRequiredActions = ["UPDATE_PASSWORD"];
 
     public async Task<string> CreateTenantUserAsync(
         string email,
