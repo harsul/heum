@@ -1,6 +1,7 @@
 ﻿using Heum.Data.Models;
+using Heum.Server.Features.Tenants;
 
-namespace Heum.Server.Features.Tenants;
+namespace Heum.Server.Services;
 
 public sealed record TenantProvisionResult(Tenant? Tenant, string? KeycloakUserId, bool EmailConflict);
 

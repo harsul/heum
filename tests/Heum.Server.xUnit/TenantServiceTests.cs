@@ -5,6 +5,7 @@ using Heum.Data.Models;
 using Heum.Server.Features.Tenants;
 using Heum.Server.xUnit.Fakes;
 using Microsoft.EntityFrameworkCore;
+using TenantService = Heum.Server.Services.TenantService;
 
 namespace Heum.Server.xUnit;
 

@@ -7,7 +7,7 @@ using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 
-namespace Heum.Server.Features.Tenants;
+namespace Heum.Server.Services;
 
 /// <inheritdoc cref="ITenantService" />
 public sealed partial class TenantService(
