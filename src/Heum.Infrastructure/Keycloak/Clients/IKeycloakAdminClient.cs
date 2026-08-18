@@ -30,4 +30,16 @@ internal interface IKeycloakAdminClient
         string userId,
         IEnumerable<string> actions,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Calls <c>GET /admin/realms/{realm}/users/{userId}</c>.</summary>
+    /// <returns><c>null</c> if no user with that id exists.</returns>
+    Task<KeycloakUserSummary?> GetUserAsync(
+        string userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Calls <c>PUT /admin/realms/{realm}/users/{userId}</c> to set the "enabled" flag.</summary>
+    Task SetUserEnabledAsync(
+        string userId,
+        bool enabled,
+        CancellationToken cancellationToken = default);
 }

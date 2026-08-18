@@ -30,4 +30,7 @@ internal sealed class KeycloakUserRepresentation
 
     [JsonPropertyName("requiredActions")]
     public List<string> RequiredActions { get; set; } = [];
+
+    [JsonPropertyName("realmRoles")]
+    public List<string> RealmRoles { get; set; } = [];
 }

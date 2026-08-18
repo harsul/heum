@@ -27,4 +27,7 @@ public sealed class KeycloakUserSummary
 
     [JsonPropertyName("createdTimestamp")]
     public long? CreatedTimestamp { get; set; }
+
+    [JsonPropertyName("attributes")]
+    public Dictionary<string, string[]>? Attributes { get; set; }
 }

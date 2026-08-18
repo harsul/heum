@@ -5,8 +5,10 @@ using Heum.Infrastructure.Messaging;
 using Heum.Server;
 using Heum.Server.Features.Admin.Tenants;
 using Heum.Server.Features.Tenants;
+using Heum.Server.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
+using TenantService = Heum.Server.Services.TenantService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,7 +45,8 @@ builder.Services.AddAuthentication()
     });
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("SystemAdmin", policy => policy.RequireRole("SystemAdmin"));
+    .AddPolicy("SystemAdmin", policy => policy.RequireRole("SystemAdmin"))
+    .AddPolicy("TenantAdmin", policy => policy.RequireRole("Admin"));
 
 builder.Services.AddScoped<ITenantService, TenantService>();
 

@@ -7,7 +7,7 @@ using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 
-namespace Heum.Server.Features.Tenants;
+namespace Heum.Server.Services;
 
 /// <inheritdoc cref="ITenantService" />
 public sealed partial class TenantService(
@@ -37,7 +37,7 @@ public sealed partial class TenantService(
         try
         {
             var (keycloakUserId, emailConflict) = await CreateOnboardingUserAsync(
-                tenant.Id, adminEmail, cancellationToken);
+                tenant.Id, adminEmail, isTenantAdmin: true, cancellationToken);
 
             if (emailConflict)
             {
@@ -72,7 +72,8 @@ public sealed partial class TenantService(
         string email,
         CancellationToken cancellationToken = default)
     {
-        var (keycloakUserId, emailConflict) = await CreateOnboardingUserAsync(tenantId, email, cancellationToken);
+        var (keycloakUserId, emailConflict) = await CreateOnboardingUserAsync(
+            tenantId, email, isTenantAdmin: false, cancellationToken);
         return new TenantUserProvisionResult(keycloakUserId, emailConflict);
     }
 
@@ -128,11 +129,13 @@ public sealed partial class TenantService(
     private async Task<(string? KeycloakUserId, bool EmailConflict)> CreateOnboardingUserAsync(
         Guid tenantId,
         string email,
+        bool isTenantAdmin,
         CancellationToken cancellationToken)
     {
         try
         {
-            var keycloakUserId = await keycloakService.CreateTenantUserAsync(email, tenantId, cancellationToken);
+            var keycloakUserId = await keycloakService.CreateTenantUserAsync(
+                email, tenantId, isTenantAdmin, cancellationToken);
 
             var onboardingRequested = new UserOnboardingRequestedEvent(
                 TenantId: tenantId,
