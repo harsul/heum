@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Heum.Server.xUnit" />
+    <InternalsVisibleTo Include="Heum.Server.xIntegration" />
   </ItemGroup>
 
   <ItemGroup>
