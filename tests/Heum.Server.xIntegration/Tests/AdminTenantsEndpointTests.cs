@@ -1,11 +1,11 @@
 using System.Net;
-using System.Net.Http.Json;
 using Heum.Data;
 using Heum.Data.Models;
-using Heum.Server.Features.Tenants.Models;
+using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Refit;
 
 namespace Heum.Server.xIntegration.Tests;
 
@@ -31,22 +31,20 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     [Fact]
     public async Task ListTenants_Returns200WithAll_ForSystemAdmin()
     {
-        var response = await fixture.CreateSystemAdminClient()
-            .GetAsync("/api/admin/tenants/", TestContext.Current.CancellationToken);
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.ListTenantsAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<List<TenantResponse>>(
-            TestContext.Current.CancellationToken);
-        Assert.NotNull(body);
-        Assert.Equal(2, body.Count);
+        Assert.Equal(2, response.Content!.Count);
     }
 
     [Fact]
     public async Task ListTenants_Returns401_WithoutToken()
     {
-        var response = await fixture.CreateClient()
-            .GetAsync("/api/admin/tenants/", TestContext.Current.CancellationToken);
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateClient());
+
+        var response = await api.ListTenantsAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -55,8 +53,9 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     public async Task ListTenants_Returns403_ForTenantAdminRole()
     {
         // TenantAdmin has "Admin" role but /api/admin/tenants requires "SystemAdmin"
-        var response = await fixture.CreateTenantAdminClient(Guid.NewGuid())
-            .GetAsync("/api/admin/tenants/", TestContext.Current.CancellationToken);
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateTenantAdminClient(Guid.NewGuid()));
+
+        var response = await api.ListTenantsAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -68,17 +67,20 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var response = await fixture.CreateSystemAdminClient()
-            .GetAsync($"/api/admin/tenants/{tenant.Id}", TestContext.Current.CancellationToken);
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.GetTenantAsync(tenant.Id, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(tenant.Id, response.Content!.Id);
     }
 
     [Fact]
     public async Task GetTenant_Returns404_ForUnknownId()
     {
-        var response = await fixture.CreateSystemAdminClient()
-            .GetAsync($"/api/admin/tenants/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.GetTenantAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }

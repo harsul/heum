@@ -1,10 +1,10 @@
 using System.Net;
-using System.Net.Http.Json;
 using Heum.Data;
 using Heum.Data.Models;
-using Heum.Server.Features.Tenants.Models;
+using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Refit;
 
 namespace Heum.Server.xIntegration.Tests;
 
@@ -32,23 +32,21 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task GetMyTenant_Returns200_ForTenantAdmin()
     {
-        var response = await fixture.CreateTenantAdminClient(_tenant.Id)
-            .GetAsync("/api/tenants/me/", TestContext.Current.CancellationToken);
+        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+
+        var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<TenantResponse>(
-            TestContext.Current.CancellationToken);
-        Assert.NotNull(body);
-        Assert.Equal(_tenant.Id, body.Id);
-        Assert.Equal("My Tenant", body.Name);
+        Assert.Equal(_tenant.Id, response.Content!.Id);
+        Assert.Equal("My Tenant", response.Content.Name);
     }
 
     [Fact]
     public async Task GetMyTenant_Returns401_WithoutToken()
     {
-        var response = await fixture.CreateClient()
-            .GetAsync("/api/tenants/me/", TestContext.Current.CancellationToken);
+        var api = RestService.For<ITenantsApi>(fixture.CreateClient());
+
+        var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -57,8 +55,9 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     public async Task GetMyTenant_Returns403_ForSystemAdminRole()
     {
         // SystemAdmin has "SystemAdmin" role but not "Admin", so TenantAdmin policy denies it
-        var response = await fixture.CreateSystemAdminClient()
-            .GetAsync("/api/tenants/me/", TestContext.Current.CancellationToken);
+        var api = RestService.For<ITenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -68,9 +67,10 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     {
         // Roles present (passes TenantAdmin policy) but no X-Test-Tenant-Id header
         // → TryGetTenantId finds no tenant_id claim → endpoint returns 400
-        var response = await fixture
-            .CreateAuthenticatedClient(roles: "Admin,User")
-            .GetAsync("/api/tenants/me/", TestContext.Current.CancellationToken);
+        var api = RestService.For<ITenantsApi>(
+            fixture.CreateAuthenticatedClient(roles: "Admin,User"));
+
+        var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -78,8 +78,9 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task GetMyTenant_Returns404_WhenTenantNotInDatabase()
     {
-        var response = await fixture.CreateTenantAdminClient(Guid.NewGuid())
-            .GetAsync("/api/tenants/me/", TestContext.Current.CancellationToken);
+        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(Guid.NewGuid()));
+
+        var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
