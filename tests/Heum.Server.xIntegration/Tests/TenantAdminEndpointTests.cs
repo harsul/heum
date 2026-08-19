@@ -66,13 +66,10 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task GetMyTenant_Returns400_WhenTokenHasNoTenantIdClaim()
     {
-        // Token has "Admin" role but no tenant_id claim — TryGetTenantId returns false → 400
-        var token = JwtTokenFactory.CreateToken(
-            subject: "admin-without-tenant",
-            tenantId: null,
-            realmRoles: ["Admin", "User"]);
-
-        var response = await fixture.CreateAuthenticatedClient(token)
+        // Roles present (passes TenantAdmin policy) but no X-Test-Tenant-Id header
+        // → TryGetTenantId finds no tenant_id claim → endpoint returns 400
+        var response = await fixture
+            .CreateAuthenticatedClient(roles: "Admin,User")
             .GetAsync("/api/tenants/me/", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
