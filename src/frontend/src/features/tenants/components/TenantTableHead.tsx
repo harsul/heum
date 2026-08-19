@@ -1,5 +1,4 @@
-﻿import Box from '@mui/material/Box';
-import Checkbox from '@mui/material/Checkbox';
+import Box from '@mui/material/Box';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
@@ -16,32 +15,14 @@ export interface HeadCell {
 interface TenantTableHeadProps {
   order: TenantOrder;
   orderBy: string;
-  numSelected: number;
-  rowCount: number;
   headCells: HeadCell[];
   onRequestSort: (property: string) => void;
-  onSelectAllClick: (checked: boolean) => void;
 }
 
-export function TenantTableHead({
-  order,
-  orderBy,
-  numSelected,
-  rowCount,
-  headCells,
-  onRequestSort,
-  onSelectAllClick,
-}: TenantTableHeadProps) {
+export function TenantTableHead({ order, orderBy, headCells, onRequestSort }: TenantTableHeadProps) {
   return (
     <TableHead>
       <TableRow>
-        <TableCell padding="checkbox">
-          <Checkbox
-            indeterminate={numSelected > 0 && numSelected < rowCount}
-            checked={rowCount > 0 && numSelected === rowCount}
-            onChange={(event) => onSelectAllClick(event.target.checked)}
-          />
-        </TableCell>
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}

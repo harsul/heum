@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -8,22 +8,25 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import type { AddMyTenantUserPayload } from '../api/companyApi';
 
-interface AddCompanyUserDialogProps {
+interface AddUserByEmailDialogProps {
   open: boolean;
   saving: boolean;
   errorMessage?: string;
   onClose: () => void;
-  onAdd: (values: AddMyTenantUserPayload) => void;
+  onAdd: (values: { email: string }) => void;
 }
 
-const emptyForm: AddMyTenantUserPayload = {
-  email: '',
-};
+const emptyForm = { email: '' };
 
-export function AddCompanyUserDialog({ open, saving, errorMessage, onClose, onAdd }: AddCompanyUserDialogProps) {
-  const [form, setForm] = useState<AddMyTenantUserPayload>(emptyForm);
+export function AddUserByEmailDialog({
+  open,
+  saving,
+  errorMessage,
+  onClose,
+  onAdd,
+}: AddUserByEmailDialogProps) {
+  const [form, setForm] = useState(emptyForm);
 
   const handleClose = () => {
     setForm(emptyForm);
@@ -31,7 +34,6 @@ export function AddCompanyUserDialog({ open, saving, errorMessage, onClose, onAd
   };
 
   const isEmailValid = /\S+@\S+\.\S+/.test(form.email);
-  const isFormValid = isEmailValid;
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
@@ -61,7 +63,7 @@ export function AddCompanyUserDialog({ open, saving, errorMessage, onClose, onAd
         <Button onClick={handleClose} disabled={saving}>
           Cancel
         </Button>
-        <Button variant="contained" disabled={!isFormValid || saving} onClick={() => onAdd(form)}>
+        <Button variant="contained" disabled={!isEmailValid || saving} onClick={() => onAdd(form)}>
           Add user
         </Button>
       </DialogActions>

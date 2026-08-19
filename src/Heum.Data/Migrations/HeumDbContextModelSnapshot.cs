@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Heum.Data.Migrations
 {
     [DbContext(typeof(HeumDbContext))]
-    partial class HeumdDbContextModelSnapshot : ModelSnapshot
+    partial class HeumDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

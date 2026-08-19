@@ -1,5 +1,4 @@
-﻿import { useState } from 'react';
-import { isAxiosError } from 'axios';
+import { useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -15,23 +14,14 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import { formatDate, tenantInitials } from '../../../utils/format';
+import { getApiErrorMessage } from '../../../utils/apiError';
+import { AddUserByEmailDialog } from '../../../components/AddUserByEmailDialog';
 import { useTenantUsers } from '../hooks/useTenantUsers';
 import { useAddTenantUser } from '../hooks/useAddTenantUser';
-import { formatDate, tenantInitials } from '../utils';
-import { AddTenantUserDialog } from './AddTenantUserDialog';
 
 interface TenantUsersTableProps {
   tenantId: string;
-}
-
-function getAddUserErrorMessage(error: unknown): string | undefined {
-  if (!error) return undefined;
-
-  if (isAxiosError<{ detail?: string; title?: string }>(error)) {
-    return error.response?.data?.detail ?? error.response?.data?.title ?? 'Failed to add user.';
-  }
-
-  return 'Failed to add user.';
 }
 
 export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
@@ -134,10 +124,10 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
         </TableContainer>
       )}
 
-      <AddTenantUserDialog
+      <AddUserByEmailDialog
         open={isAddingUser}
         saving={addTenantUser.isPending}
-        errorMessage={getAddUserErrorMessage(addTenantUser.error)}
+        errorMessage={getApiErrorMessage(addTenantUser.error, 'Failed to add user.')}
         onClose={() => setIsAddingUser(false)}
         onAdd={(values) => {
           addTenantUser.mutate(values, { onSuccess: () => setIsAddingUser(false) });

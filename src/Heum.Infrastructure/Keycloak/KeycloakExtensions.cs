@@ -1,4 +1,4 @@
-﻿using Heum.Infrastructure.Keycloak.Clients;
+using Heum.Infrastructure.Keycloak.Clients;
 using Heum.Infrastructure.Keycloak.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,12 +13,16 @@ public static class KeycloakExtensions
         builder.Services
             .AddOptions<KeycloakAdminOptions>()
             .Bind(builder.Configuration.GetSection(KeycloakAdminOptions.SectionName))
-            .ValidateDataAnnotations();
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        builder.Services.AddTransient<KeycloakAdminAuthHandler>();
 
         builder.Services.AddHttpClient<IKeycloakAdminClient, KeycloakAdminClient>(client =>
         {
             client.BaseAddress = new Uri("http+https://keycloak");
-        });
+        })
+        .AddHttpMessageHandler<KeycloakAdminAuthHandler>();
 
         builder.Services.AddScoped<IKeycloakService, KeycloakService>();
 

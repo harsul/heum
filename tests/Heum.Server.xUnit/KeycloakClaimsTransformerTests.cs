@@ -3,7 +3,7 @@ using Heum.Infrastructure.Keycloak;
 
 namespace Heum.Server.xUnit;
 
-public class KeycloakClaimsTransformerTests
+public class KeycloakClaimsHelperTests // renamed from KeycloakClaimsTransformerTests
 {
     [Fact]
     public void AddRealmRoleClaims_MapsRolesFromRealmAccessClaim()
@@ -12,7 +12,7 @@ public class KeycloakClaimsTransformerTests
         identity.AddClaim(new Claim("realm_access", """{"roles":["SystemAdmin","User"]}"""));
         var principal = new ClaimsPrincipal(identity);
 
-        KeycloakClaimsTransformer.AddRealmRoleClaims(principal);
+        KeycloakClaimsHelper.AddRealmRoleClaims(principal);
 
         Assert.True(principal.IsInRole("SystemAdmin"));
         Assert.True(principal.IsInRole("User"));
@@ -25,7 +25,7 @@ public class KeycloakClaimsTransformerTests
         var identity = new ClaimsIdentity("Bearer");
         var principal = new ClaimsPrincipal(identity);
 
-        KeycloakClaimsTransformer.AddRealmRoleClaims(principal);
+        KeycloakClaimsHelper.AddRealmRoleClaims(principal);
 
         Assert.False(principal.IsInRole("SystemAdmin"));
     }
@@ -37,7 +37,7 @@ public class KeycloakClaimsTransformerTests
         identity.AddClaim(new Claim("realm_access", "not-json"));
         var principal = new ClaimsPrincipal(identity);
 
-        KeycloakClaimsTransformer.AddRealmRoleClaims(principal);
+        KeycloakClaimsHelper.AddRealmRoleClaims(principal);
 
         Assert.False(principal.IsInRole("SystemAdmin"));
     }

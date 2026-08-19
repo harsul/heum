@@ -1,8 +1,5 @@
-﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Heum.Infrastructure.Keycloak.Models;
-using Heum.Infrastructure.Keycloak.Services;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
 namespace Heum.Infrastructure.Keycloak.Clients;
@@ -12,26 +9,21 @@ namespace Heum.Infrastructure.Keycloak.Clients;
 /// the "tenant-provisioning-service" confidential client, which has been granted the
 /// realm-management "manage-users" role. Contains no business logic - see
 /// <see cref="IKeycloakService"/> for tenant-oriented operations built on top of this.
+/// Authorization is handled transparently by <see cref="KeycloakAdminAuthHandler"/>.
 /// </summary>
 internal sealed class KeycloakAdminClient(
     HttpClient httpClient,
-    IOptions<KeycloakAdminOptions> options,
-    IDistributedCache cache)
+    IOptions<KeycloakAdminOptions> options)
     : IKeycloakAdminClient
 {
     private readonly KeycloakAdminOptions _options = options.Value;
-    private const string AccessTokenCacheKey = "keycloak:admin:access_token";
-    private static readonly TimeSpan TokenExpiryBuffer = TimeSpan.FromSeconds(30);
 
     public async Task<string> CreateUserAsync(
         KeycloakUserRepresentation user,
         CancellationToken cancellationToken = default)
     {
-        var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
-
         using var request = new HttpRequestMessage(HttpMethod.Post, $"/admin/realms/{_options.Realm}/users");
         request.Content = JsonContent.Create(user);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -47,13 +39,10 @@ internal sealed class KeycloakAdminClient(
         string query,
         CancellationToken cancellationToken = default)
     {
-        var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
-
         var escapedQuery = Uri.EscapeDataString(query);
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
             $"/admin/realms/{_options.Realm}/users?q={escapedQuery}");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -67,13 +56,10 @@ internal sealed class KeycloakAdminClient(
         IEnumerable<string> actions,
         CancellationToken cancellationToken = default)
     {
-        var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
-
         using var request = new HttpRequestMessage(
             HttpMethod.Put,
             $"/admin/realms/{_options.Realm}/users/{userId}/execute-actions-email");
         request.Content = JsonContent.Create(actions.ToArray());
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -83,12 +69,9 @@ internal sealed class KeycloakAdminClient(
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
-
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
             $"/admin/realms/{_options.Realm}/users/{userId}");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -104,48 +87,12 @@ internal sealed class KeycloakAdminClient(
         bool enabled,
         CancellationToken cancellationToken = default)
     {
-        var accessToken = await GetAdminAccessTokenAsync(cancellationToken);
-
         using var request = new HttpRequestMessage(
             HttpMethod.Put,
             $"/admin/realms/{_options.Realm}/users/{userId}");
         request.Content = JsonContent.Create(new { enabled });
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
-    }
-
-    private async Task<string> GetAdminAccessTokenAsync(CancellationToken cancellationToken)
-    {
-        var cachedToken = await cache.GetStringAsync(AccessTokenCacheKey, cancellationToken);
-        if (!string.IsNullOrEmpty(cachedToken))
-            return cachedToken;
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/realms/{_options.Realm}/protocol/openid-connect/token");
-        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["grant_type"] = "client_credentials",
-            ["client_id"] = _options.ClientId,
-            ["client_secret"] = _options.ClientSecret,
-        });
-
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        var token = await response.Content.ReadFromJsonAsync<KeycloakTokenResponse>(cancellationToken: cancellationToken)
-            ?? throw new InvalidOperationException("Keycloak did not return an access token.");
-
-        var cacheOptions = new DistributedCacheEntryOptions();
-        if (token.ExpiresIn > 0)
-        {
-            var expiry = TimeSpan.FromSeconds(token.ExpiresIn) - TokenExpiryBuffer;
-            if (expiry > TimeSpan.Zero)
-                cacheOptions.AbsoluteExpirationRelativeToNow = expiry;
-        }
-
-        await cache.SetStringAsync(AccessTokenCacheKey, token.AccessToken, cacheOptions, cancellationToken);
-
-        return token.AccessToken;
     }
 }

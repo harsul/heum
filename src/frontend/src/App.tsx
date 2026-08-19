@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { DashboardPage } from './pages/DashboardPage';
-import { WeatherPage } from './pages/WeatherPage';
 import { TenantsPage } from './pages/TenantsPage';
 import { TenantDetailPage } from './pages/TenantDetailPage';
 import { MyCompanyPage } from './pages/MyCompanyPage';
@@ -31,14 +30,6 @@ function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/weather"
-        element={
-          <ProtectedRoute>
-            <WeatherPage />
           </ProtectedRoute>
         }
       />

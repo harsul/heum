@@ -1,7 +1,6 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '@mui/material/Avatar';
-import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
@@ -17,34 +16,21 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import type { Tenant } from '../types/tenant';
-import { formatDate, tenantInitials } from '../utils';
+import { formatDate, tenantInitials } from '../../../utils/format';
 
 interface TenantTableRowProps {
   tenant: Tenant;
-  selected: boolean;
-  onSelectRow: () => void;
   onEdit: () => void;
   onToggleActive: () => void;
   toggleActiveDisabled?: boolean;
 }
 
-export function TenantTableRow({
-  tenant,
-  selected,
-  onSelectRow,
-  onEdit,
-  onToggleActive,
-  toggleActiveDisabled,
-}: TenantTableRowProps) {
+export function TenantTableRow({ tenant, onEdit, onToggleActive, toggleActiveDisabled }: TenantTableRowProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
 
   return (
-    <TableRow selected={selected} tabIndex={-1}>
-      <TableCell padding="checkbox">
-        <Checkbox checked={selected} onChange={onSelectRow} />
-      </TableCell>
-
+    <TableRow tabIndex={-1}>
       <TableCell component="th" scope="row">
         <Stack
           direction="row"
