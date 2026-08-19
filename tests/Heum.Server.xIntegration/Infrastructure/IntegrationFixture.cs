@@ -29,17 +29,6 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
     {
         builder.UseEnvironment("Testing");
 
-        // Placeholder satisfies Aspire's ValidateOnStart (non-empty check only).
-        // The DbContext is replaced with in-memory below; this value is never used.
-        builder.UseSetting("ConnectionStrings:heumdb",
-            "Host=localhost;Database=heum-test;Username=test;Password=test");
-        builder.UseSetting("ConnectionStrings:messaging",
-            "Endpoint=sb://test.servicebus.windows.net/;" +
-            "SharedAccessKeyName=RootManageSharedAccessKey;" +
-            "SharedAccessKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
-        builder.UseSetting("ConnectionStrings:cache", "localhost:16379,abortConnect=false");
-        builder.UseSetting("KeycloakAdmin:ClientSecret", "test-secret-placeholder");
-
         builder.ConfigureTestServices(services =>
         {
             // ── Authentication ──────────────────────────────────────────────────
