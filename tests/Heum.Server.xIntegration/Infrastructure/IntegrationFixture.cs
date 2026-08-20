@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Refit;
 
 namespace Heum.Server.xIntegration.Infrastructure;
 
@@ -93,4 +94,6 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
 
     public HttpClient CreateSystemAdminClient()
         => CreateAuthenticatedClient("SystemAdmin", subject: "sys-admin-1");
+
+    public T GetClient<T>(HttpClient httpClient) => RestService.For<T>(httpClient);
 }

@@ -33,7 +33,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task GetMyTenant_Returns200_ForTenantAdmin()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
 
         var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
@@ -45,7 +45,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task GetMyTenant_Returns401_WithoutToken()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateClient());
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateClient());
 
         var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
@@ -56,7 +56,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     public async Task GetMyTenant_Returns403_ForSystemAdminRole()
     {
         // SystemAdmin has "SystemAdmin" role but not "Admin", so TenantAdmin policy denies it
-        var api = RestService.For<ITenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
@@ -68,7 +68,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     {
         // Roles present (passes TenantAdmin policy) but no X-Test-Tenant-Id header
         // → TryGetTenantId finds no tenant_id claim → endpoint returns 400
-        var api = RestService.For<ITenantsApi>(
+        var api = fixture.GetClient<ITenantsApi>(
             fixture.CreateAuthenticatedClient(roles: "Admin,User"));
 
         var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
@@ -79,7 +79,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task GetMyTenant_Returns404_WhenTenantNotInDatabase()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(Guid.NewGuid()));
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateTenantAdminClient(Guid.NewGuid()));
 
         var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
@@ -89,7 +89,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task GetMyTenantUsers_Returns200_ForTenantAdmin()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
 
         var response = await api.GetMyTenantUsersAsync(TestContext.Current.CancellationToken);
 
@@ -100,7 +100,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task GetMyTenantUsers_Returns400_WhenTokenHasNoTenantIdClaim()
     {
-        var api = RestService.For<ITenantsApi>(
+        var api = fixture.GetClient<ITenantsApi>(
             fixture.CreateAuthenticatedClient(roles: "Admin,User"));
 
         var response = await api.GetMyTenantUsersAsync(TestContext.Current.CancellationToken);
@@ -111,7 +111,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task AddMyTenantUser_Returns201_WithValidRequest()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
 
         var response = await api.AddMyTenantUserAsync(
             new AddTenantUserRequest { Email = "newmember@mytenant.com" },
@@ -127,7 +127,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
         fixture.FakeKeycloak.ExceptionToThrow =
             new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
 
-        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
 
         var response = await api.AddMyTenantUserAsync(
             new AddTenantUserRequest { Email = "existing@mytenant.com" },
@@ -139,7 +139,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task AddMyTenantUser_Returns400_WhenTokenHasNoTenantIdClaim()
     {
-        var api = RestService.For<ITenantsApi>(
+        var api = fixture.GetClient<ITenantsApi>(
             fixture.CreateAuthenticatedClient(roles: "Admin,User"));
 
         var response = await api.AddMyTenantUserAsync(
@@ -152,7 +152,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task EnableMyTenantUser_Returns204_WhenSucceeds()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
 
         var response = await api.EnableMyTenantUserAsync("some-user-id", TestContext.Current.CancellationToken);
 
@@ -164,7 +164,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     {
         fixture.FakeKeycloak.SetTenantUserEnabledResult = false;
 
-        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
 
         var response = await api.EnableMyTenantUserAsync("missing-user", TestContext.Current.CancellationToken);
 
@@ -174,7 +174,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task DisableMyTenantUser_Returns204_ForDifferentUser()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
 
         var response = await api.DisableMyTenantUserAsync("other-user-id", TestContext.Current.CancellationToken);
 
@@ -186,7 +186,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     {
         // CreateTenantAdminClient uses subject "tenant-admin-1" — disabling that same userId
         // triggers the self-disable guard in SetMyTenantUserEnabledAsync / GetKeycloakUserId
-        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+        var api = fixture.GetClient<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
 
         var response = await api.DisableMyTenantUserAsync("tenant-admin-1", TestContext.Current.CancellationToken);
 
@@ -196,7 +196,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     [Fact]
     public async Task DisableMyTenantUser_Returns400_WhenTokenHasNoTenantIdClaim()
     {
-        var api = RestService.For<ITenantsApi>(
+        var api = fixture.GetClient<ITenantsApi>(
             fixture.CreateAuthenticatedClient(roles: "Admin,User"));
 
         var response = await api.DisableMyTenantUserAsync("some-user", TestContext.Current.CancellationToken);

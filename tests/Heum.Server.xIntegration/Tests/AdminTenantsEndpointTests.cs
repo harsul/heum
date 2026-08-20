@@ -33,7 +33,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     [Fact]
     public async Task ListTenants_Returns200WithAll_ForSystemAdmin()
     {
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.ListTenantsAsync(TestContext.Current.CancellationToken);
 
@@ -44,7 +44,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     [Fact]
     public async Task ListTenants_Returns401_WithoutToken()
     {
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateClient());
 
         var response = await api.ListTenantsAsync(TestContext.Current.CancellationToken);
 
@@ -55,7 +55,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     public async Task ListTenants_Returns403_ForTenantAdminRole()
     {
         // TenantAdmin has "Admin" role but /api/admin/tenants requires "SystemAdmin"
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateTenantAdminClient(Guid.NewGuid()));
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateTenantAdminClient(Guid.NewGuid()));
 
         var response = await api.ListTenantsAsync(TestContext.Current.CancellationToken);
 
@@ -69,7 +69,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.GetTenantAsync(tenant.Id, TestContext.Current.CancellationToken);
 
@@ -80,7 +80,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     [Fact]
     public async Task GetTenant_Returns404_ForUnknownId()
     {
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.GetTenantAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
@@ -90,7 +90,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     [Fact]
     public async Task CreateTenant_Returns201_WithValidRequest()
     {
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.CreateTenantAsync(
             new CreateTenantRequest { CompanyName = "New Corp", AdminEmail = "admin@newcorp.com" },
@@ -107,7 +107,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         fixture.FakeKeycloak.ExceptionToThrow =
             new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.CreateTenantAsync(
             new CreateTenantRequest { CompanyName = "Dup Corp", AdminEmail = "dup@corp.com" },
@@ -123,7 +123,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.GetTenantUsersAsync(tenant.Id, TestContext.Current.CancellationToken);
 
@@ -134,7 +134,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     [Fact]
     public async Task GetTenantUsers_Returns404_ForUnknownTenant()
     {
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.GetTenantUsersAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
@@ -148,7 +148,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.AddTenantUserAsync(
             tenant.Id,
@@ -162,7 +162,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     [Fact]
     public async Task AddTenantUser_Returns404_ForUnknownTenant()
     {
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.AddTenantUserAsync(
             Guid.NewGuid(),
@@ -182,7 +182,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.AddTenantUserAsync(
             tenant.Id,
@@ -199,7 +199,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.UpdateTenantAsync(
             tenant.Id,
@@ -213,7 +213,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     [Fact]
     public async Task UpdateTenant_Returns404_ForUnknownTenant()
     {
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.UpdateTenantAsync(
             Guid.NewGuid(),
@@ -230,7 +230,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.DeactivateTenantAsync(tenant.Id, TestContext.Current.CancellationToken);
 
@@ -241,7 +241,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     [Fact]
     public async Task DeactivateTenant_Returns404_ForUnknownTenant()
     {
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.DeactivateTenantAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
@@ -257,7 +257,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         tenant.IsActive = false;
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.ReactivateTenantAsync(tenant.Id, TestContext.Current.CancellationToken);
 
@@ -272,7 +272,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.EnableTenantUserAsync(tenant.Id, "some-user-id", TestContext.Current.CancellationToken);
 
@@ -288,7 +288,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.EnableTenantUserAsync(tenant.Id, "missing-user", TestContext.Current.CancellationToken);
 
@@ -302,7 +302,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
 
-        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+        var api = fixture.GetClient<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
 
         var response = await api.DisableTenantUserAsync(tenant.Id, "some-user-id", TestContext.Current.CancellationToken);
 
