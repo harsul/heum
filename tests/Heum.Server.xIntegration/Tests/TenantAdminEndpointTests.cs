@@ -1,6 +1,7 @@
 using System.Net;
 using Heum.Data;
 using Heum.Data.Models;
+using Heum.Server.Features.Tenants.Models;
 using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ namespace Heum.Server.xIntegration.Tests;
 [Collection(nameof(IntegrationCollection))]
 public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifetime
 {
-    private Tenant _tenant = default!;
+    private Tenant _tenant = null!;
 
     async ValueTask IAsyncLifetime.InitializeAsync()
     {
@@ -83,5 +84,123 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
         var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMyTenantUsers_Returns200_ForTenantAdmin()
+    {
+        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+
+        var response = await api.GetMyTenantUsersAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(response.Content);
+    }
+
+    [Fact]
+    public async Task GetMyTenantUsers_Returns400_WhenTokenHasNoTenantIdClaim()
+    {
+        var api = RestService.For<ITenantsApi>(
+            fixture.CreateAuthenticatedClient(roles: "Admin,User"));
+
+        var response = await api.GetMyTenantUsersAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddMyTenantUser_Returns201_WithValidRequest()
+    {
+        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+
+        var response = await api.AddMyTenantUserAsync(
+            new AddTenantUserRequest { Email = "newmember@mytenant.com" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal("newmember@mytenant.com", response.Content!.Email);
+    }
+
+    [Fact]
+    public async Task AddMyTenantUser_Returns409_WhenKeycloakThrowsConflict()
+    {
+        fixture.FakeKeycloak.ExceptionToThrow =
+            new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
+
+        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+
+        var response = await api.AddMyTenantUserAsync(
+            new AddTenantUserRequest { Email = "existing@mytenant.com" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddMyTenantUser_Returns400_WhenTokenHasNoTenantIdClaim()
+    {
+        var api = RestService.For<ITenantsApi>(
+            fixture.CreateAuthenticatedClient(roles: "Admin,User"));
+
+        var response = await api.AddMyTenantUserAsync(
+            new AddTenantUserRequest { Email = "user@example.com" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EnableMyTenantUser_Returns204_WhenSucceeds()
+    {
+        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+
+        var response = await api.EnableMyTenantUserAsync("some-user-id", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EnableMyTenantUser_Returns404_WhenUserNotFound()
+    {
+        fixture.FakeKeycloak.SetTenantUserEnabledResult = false;
+
+        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+
+        var response = await api.EnableMyTenantUserAsync("missing-user", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DisableMyTenantUser_Returns204_ForDifferentUser()
+    {
+        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+
+        var response = await api.DisableMyTenantUserAsync("other-user-id", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DisableMyTenantUser_Returns400_WhenDisablingOwnAccount()
+    {
+        // CreateTenantAdminClient uses subject "tenant-admin-1" — disabling that same userId
+        // triggers the self-disable guard in SetMyTenantUserEnabledAsync / GetKeycloakUserId
+        var api = RestService.For<ITenantsApi>(fixture.CreateTenantAdminClient(_tenant.Id));
+
+        var response = await api.DisableMyTenantUserAsync("tenant-admin-1", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DisableMyTenantUser_Returns400_WhenTokenHasNoTenantIdClaim()
+    {
+        var api = RestService.For<ITenantsApi>(
+            fixture.CreateAuthenticatedClient(roles: "Admin,User"));
+
+        var response = await api.DisableMyTenantUserAsync("some-user", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }

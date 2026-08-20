@@ -1,6 +1,8 @@
 using System.Net;
 using Heum.Data;
 using Heum.Data.Models;
+using Heum.Server.Features.Admin.Tenants.Models;
+using Heum.Server.Features.Tenants.Models;
 using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -83,5 +85,227 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var response = await api.GetTenantAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateTenant_Returns201_WithValidRequest()
+    {
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.CreateTenantAsync(
+            new CreateTenantRequest { CompanyName = "New Corp", AdminEmail = "admin@newcorp.com" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotEqual(Guid.Empty, response.Content!.Id);
+        Assert.Equal("New Corp", response.Content.Name);
+    }
+
+    [Fact]
+    public async Task CreateTenant_Returns409_WhenKeycloakThrowsConflict()
+    {
+        fixture.FakeKeycloak.ExceptionToThrow =
+            new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.CreateTenantAsync(
+            new CreateTenantRequest { CompanyName = "Dup Corp", AdminEmail = "dup@corp.com" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetTenantUsers_Returns200_ForKnownTenant()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.GetTenantUsersAsync(tenant.Id, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(response.Content);
+    }
+
+    [Fact]
+    public async Task GetTenantUsers_Returns404_ForUnknownTenant()
+    {
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.GetTenantUsersAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddTenantUser_Returns201_ForKnownTenant()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.AddTenantUserAsync(
+            tenant.Id,
+            new AddTenantUserRequest { Email = "newuser@alpha.com" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal("newuser@alpha.com", response.Content!.Email);
+    }
+
+    [Fact]
+    public async Task AddTenantUser_Returns404_ForUnknownTenant()
+    {
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.AddTenantUserAsync(
+            Guid.NewGuid(),
+            new AddTenantUserRequest { Email = "user@nowhere.com" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddTenantUser_Returns409_WhenKeycloakThrowsConflict()
+    {
+        fixture.FakeKeycloak.ExceptionToThrow =
+            new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
+
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.AddTenantUserAsync(
+            tenant.Id,
+            new AddTenantUserRequest { Email = "existing@alpha.com" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateTenant_Returns200_ForKnownTenant()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.UpdateTenantAsync(
+            tenant.Id,
+            new UpdateTenantRequest { Name = "Alpha Renamed", IsActive = true },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("Alpha Renamed", response.Content!.Name);
+    }
+
+    [Fact]
+    public async Task UpdateTenant_Returns404_ForUnknownTenant()
+    {
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.UpdateTenantAsync(
+            Guid.NewGuid(),
+            new UpdateTenantRequest { Name = "Ghost", IsActive = true },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeactivateTenant_Returns200_ForKnownTenant()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.DeactivateTenantAsync(tenant.Id, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.False(response.Content!.IsActive);
+    }
+
+    [Fact]
+    public async Task DeactivateTenant_Returns404_ForUnknownTenant()
+    {
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.DeactivateTenantAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReactivateTenant_Returns200_ForInactiveTenant()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+        tenant.IsActive = false;
+        await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.ReactivateTenantAsync(tenant.Id, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Content!.IsActive);
+    }
+
+    [Fact]
+    public async Task EnableTenantUser_Returns204_WhenSucceeds()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.EnableTenantUserAsync(tenant.Id, "some-user-id", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EnableTenantUser_Returns404_WhenUserNotFound()
+    {
+        fixture.FakeKeycloak.SetTenantUserEnabledResult = false;
+
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.EnableTenantUserAsync(tenant.Id, "missing-user", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DisableTenantUser_Returns204_WhenSucceeds()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        var api = RestService.For<IAdminTenantsApi>(fixture.CreateSystemAdminClient());
+
+        var response = await api.DisableTenantUserAsync(tenant.Id, "some-user-id", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 }
