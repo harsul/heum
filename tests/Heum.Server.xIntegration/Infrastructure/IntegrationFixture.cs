@@ -32,7 +32,6 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
 
         builder.ConfigureTestServices(services =>
         {
-            // ── Authentication ──────────────────────────────────────────────────
             services.AddAuthentication()
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                     TestAuthHandler.SchemeName, _ => { });
@@ -45,14 +44,7 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
                 opts.DefaultChallengeScheme    = TestAuthHandler.SchemeName;
                 opts.DefaultForbidScheme       = TestAuthHandler.SchemeName;
             });
-
-            // ── Database ────────────────────────────────────────────────────────
-            // Aspire's AddNpgsqlDbContext registers both the context options AND
-            // Npgsql's IDatabaseProvider in the DI container. Calling AddDbContext
-            // with UseInMemoryDatabase adds InMemory's IDatabaseProvider on top,
-            // causing EF Core to throw "multiple providers registered".
-            // Fix: register HeumDbContext via a scoped factory with fresh options
-            // built independently of the container, so EF Core never sees the conflict.
+            
             services.RemoveAll<DbContextOptions<HeumDbContext>>();
             services.RemoveAll<HeumDbContext>();
             services.AddScoped(_ =>
@@ -61,7 +53,6 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
                         .UseInMemoryDatabase("heum-test")
                         .Options));
 
-            // ── External service fakes ──────────────────────────────────────────
             services.RemoveAll<IKeycloakService>();
             services.AddSingleton<IKeycloakService>(FakeKeycloak);
 
@@ -76,10 +67,15 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
         });
     }
 
-    public HttpClient CreateAuthenticatedClient(
-        string roles,
-        Guid? tenantId = null,
-        string subject = "test-user")
+    public T GetClient<T>(ClientScope scope)
+    {
+        var httpClient = scope.Roles is null
+            ? CreateClient()
+            : CreateAuthenticatedClient(scope.Roles, scope.TenantId, scope.Subject);
+        return RestService.For<T>(httpClient);
+    }
+
+    private HttpClient CreateAuthenticatedClient(string roles, Guid? tenantId, string subject)
     {
         var client = CreateClient();
         client.DefaultRequestHeaders.Add("X-Test-Roles", roles);
@@ -88,12 +84,4 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
         client.DefaultRequestHeaders.Add("X-Test-Subject", subject);
         return client;
     }
-
-    public HttpClient CreateTenantAdminClient(Guid tenantId)
-        => CreateAuthenticatedClient("Admin,User", tenantId, "tenant-admin-1");
-
-    public HttpClient CreateSystemAdminClient()
-        => CreateAuthenticatedClient("SystemAdmin", subject: "sys-admin-1");
-
-    public T GetClient<T>(HttpClient httpClient) => RestService.For<T>(httpClient);
 }

@@ -5,7 +5,6 @@ using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Refit;
 
 namespace Heum.Server.xIntegration.Tests;
 
@@ -28,7 +27,7 @@ public class TenantRegistrationTests(IntegrationFixture fixture) : IAsyncLifetim
     [Fact]
     public async Task RegisterTenant_Returns201_WithValidRequest()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateClient());
+        var api = fixture.GetClient<ITenantsApi>(ClientScope.Anonymous);
 
         var response = await api.RegisterTenantAsync(
             new CreateTenantRequest { CompanyName = "Acme Corp", AdminEmail = "admin@acme.com" },
@@ -57,7 +56,7 @@ public class TenantRegistrationTests(IntegrationFixture fixture) : IAsyncLifetim
         fixture.FakeKeycloak.ExceptionToThrow =
             new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
 
-        var api = RestService.For<ITenantsApi>(fixture.CreateClient());
+        var api = fixture.GetClient<ITenantsApi>(ClientScope.Anonymous);
 
         var response = await api.RegisterTenantAsync(
             new CreateTenantRequest { CompanyName = "Duplicate Corp", AdminEmail = "duplicate@corp.com" },
@@ -75,7 +74,7 @@ public class TenantRegistrationTests(IntegrationFixture fixture) : IAsyncLifetim
     [Fact]
     public async Task RegisterTenant_Returns400_WithInvalidRequest()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateClient());
+        var api = fixture.GetClient<ITenantsApi>(ClientScope.Anonymous);
 
         var response = await api.RegisterTenantAsync(
             new CreateTenantRequest { CompanyName = "", AdminEmail = "admin@acme.com" },
@@ -87,7 +86,7 @@ public class TenantRegistrationTests(IntegrationFixture fixture) : IAsyncLifetim
     [Fact]
     public async Task RegisterTenant_IsAccessibleWithoutAuth()
     {
-        var api = RestService.For<ITenantsApi>(fixture.CreateClient());
+        var api = fixture.GetClient<ITenantsApi>(ClientScope.Anonymous);
 
         var response = await api.RegisterTenantAsync(
             new CreateTenantRequest { CompanyName = "Open Corp", AdminEmail = "open@corp.com" },
