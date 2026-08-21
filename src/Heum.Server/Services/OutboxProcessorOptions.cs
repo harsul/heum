@@ -12,4 +12,6 @@ public sealed class OutboxProcessorOptions
     public int BatchSize { get; set; } = 50;
 
     public int MaxAttempts { get; set; } = 5;
+
+    public TimeSpan RetentionPeriod { get; set; } = TimeSpan.FromDays(7);
 }
