@@ -12,6 +12,15 @@ public sealed class FakeKeycloakService : IKeycloakService
     public bool? LastIsTenantAdmin { get; private set; }
     public bool? SetTenantUserEnabledResult { get; set; } = true;
 
+    public void Reset()
+    {
+        ExceptionToThrow = null;
+        UserIdToReturn = Guid.NewGuid().ToString();
+        CreateTenantUserCallCount = 0;
+        LastIsTenantAdmin = null;
+        SetTenantUserEnabledResult = true;
+    }
+
     public Task<string> CreateTenantUserAsync(
         string email,
         Guid tenantId,
