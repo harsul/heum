@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using Heum.Contracts.Events;
 using Heum.Data;
+using Heum.Data.Auditing;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
@@ -119,6 +120,28 @@ public sealed partial class TenantService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return tenant;
+    }
+
+    public async Task<(IReadOnlyList<AuditTrail> Items, int TotalCount)> GetTenantHistoryAsync(
+        Guid tenantId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = dbContext.Set<AuditTrail>()
+            .Where(a => a.EntityName == nameof(Tenant) && a.PrimaryKey == tenantId.ToString());
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderByDescending(a => a.TimestampUtc)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 
     /// <summary>

@@ -1,5 +1,5 @@
 ﻿import { apiClient } from '../../../lib/apiClient';
-import type { Tenant, TenantUser } from '../types/tenant';
+import type { Tenant, TenantHistoryPage, TenantUser } from '../types/tenant';
 
 export interface UpdateTenantPayload {
   name: string;
@@ -55,5 +55,16 @@ export async function deactivateTenant(id: string): Promise<Tenant> {
 
 export async function reactivateTenant(id: string): Promise<Tenant> {
   const { data } = await apiClient.post<Tenant>(`/admin/tenants/${id}/reactivate`);
+  return data;
+}
+
+export async function fetchTenantHistory(
+  id: string,
+  page: number,
+  pageSize: number,
+): Promise<TenantHistoryPage> {
+  const { data } = await apiClient.get<TenantHistoryPage>(`/admin/tenants/${id}/history`, {
+    params: { page, pageSize },
+  });
   return data;
 }

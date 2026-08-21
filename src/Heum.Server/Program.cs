@@ -1,5 +1,6 @@
 using Heum.Contracts.Events;
 using Heum.Data;
+using Heum.Data.Auditing;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Messaging;
 using Heum.Server.Features.Admin.Tenants;
@@ -47,6 +48,9 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("TenantAdmin", policy => policy.RequireRole("Admin"));
 
 builder.Services.AddScoped<ITenantService, TenantService>();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();

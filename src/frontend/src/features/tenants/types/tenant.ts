@@ -28,3 +28,26 @@ export interface TenantUser {
   emailVerified: boolean;
   createdAtUtc: string | null;
 }
+
+/**
+ * Mirrors `Heum.Server.Features.Tenants.Models.TenantHistoryEntryResponse` returned by
+ * `GET /api/admin/tenants/{id}/history` (and the self-service `/api/tenants/me/history`).
+ */
+export interface TenantHistoryEntry {
+  id: string;
+  action: 'Insert' | 'Update' | 'Delete';
+  oldValues: string | null;
+  newValues: string | null;
+  userId: string;
+  timestampUtc: string;
+}
+
+/**
+ * Mirrors `Heum.Server.Features.Tenants.Models.TenantHistoryResponse`.
+ */
+export interface TenantHistoryPage {
+  items: TenantHistoryEntry[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}

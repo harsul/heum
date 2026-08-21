@@ -26,6 +26,9 @@ public static class AdminTenantsEndpoints
         tenants.MapGet("/{id:guid}/users", GetTenantUsersAsync)
             .WithName("AdminGetTenantUsers");
 
+        tenants.MapGet("/{id:guid}/history", GetTenantHistoryAsync)
+            .WithName("AdminGetTenantHistory");
+
         tenants.MapPost("/{id:guid}/users", AddTenantUserAsync)
             .WithName("AdminAddTenantUser");
 
@@ -100,6 +103,28 @@ public static class AdminTenantsEndpoints
         var response = users.Select(TenantResponseMapper.ToResponse).ToList();
 
         return TypedResults.Ok<IReadOnlyList<TenantUserResponse>>(response);
+    }
+
+    internal static async Task<Results<Ok<TenantHistoryResponse>, NotFound>> GetTenantHistoryAsync(
+        Guid id,
+        ITenantService tenantService,
+        CancellationToken cancellationToken,
+        int page = 1,
+        int pageSize = 20)
+    {
+        var tenant = await tenantService.GetTenantAsync(id, cancellationToken);
+        if (tenant is null)
+            return TypedResults.NotFound();
+
+        var (items, totalCount) = await tenantService.GetTenantHistoryAsync(id, page, pageSize, cancellationToken);
+
+        return TypedResults.Ok(new TenantHistoryResponse
+        {
+            Items = items.Select(TenantResponseMapper.ToResponse).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+        });
     }
 
     internal static async Task<Results<Created<TenantUserResponse>, NotFound, Conflict<ProblemDetails>>> AddTenantUserAsync(

@@ -22,12 +22,13 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlin
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { DetailField } from '../components/DetailField';
 import { EditTenantDialog } from '../features/tenants/components/EditTenantDialog';
+import { TenantHistoryTable } from '../features/tenants/components/TenantHistoryTable';
 import { TenantUsersTable } from '../features/tenants/components/TenantUsersTable';
 import { useTenant } from '../features/tenants/hooks/useTenant';
 import { useSetTenantActive, useUpdateTenant } from '../features/tenants/hooks/useTenantMutations';
 import { formatDate, tenantInitials } from '../utils/format';
 
-type TabValue = 'overview' | 'users' | 'settings';
+type TabValue = 'overview' | 'users' | 'history' | 'settings';
 
 export function TenantDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -99,6 +100,7 @@ export function TenantDetailPage() {
             >
               <Tab label="Overview" value="overview" />
               <Tab label="Users" value="users" />
+              <Tab label="History" value="history" />
               <Tab label="Settings" value="settings" />
             </Tabs>
 
@@ -128,6 +130,8 @@ export function TenantDetailPage() {
             )}
 
             {activeTab === 'users' && <TenantUsersTable tenantId={tenant.id} />}
+
+            {activeTab === 'history' && <TenantHistoryTable tenantId={tenant.id} />}
 
             {activeTab === 'settings' && (
               <Box>

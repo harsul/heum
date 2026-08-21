@@ -1,10 +1,12 @@
 using Heum.Data;
+using Heum.Data.Auditing;
 using Heum.MigrationService;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.AddServiceDefaults();
 builder.Services.AddHostedService<Worker>();
+builder.Services.AddScoped<ICurrentUserService, SystemCurrentUserService>();
 
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddSource(Worker.ActivitySourceName));

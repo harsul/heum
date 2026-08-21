@@ -1,5 +1,6 @@
 using System.Net;
 using Heum.Data;
+using Heum.Data.Auditing;
 using Heum.Data.Models;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.xIntegration.Clients;
@@ -197,5 +198,76 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
         var response = await api.DisableMyTenantUserAsync("some-user", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMyTenantHistory_Returns200_WithOnlyThisTenantsEntries()
+    {
+        await SeedAuditTrailAsync(_tenant.Id, AuditAction.Insert, TimestampUtc: DateTime.UtcNow.AddMinutes(-2));
+        await SeedAuditTrailAsync(_tenant.Id, AuditAction.Update, TimestampUtc: DateTime.UtcNow.AddMinutes(-1));
+        await SeedAuditTrailAsync(Guid.NewGuid(), AuditAction.Update, TimestampUtc: DateTime.UtcNow);
+
+        var api = fixture.GetClient<ITenantsApi>(ClientScope.TenantAdmin(_tenant.Id));
+
+        var response = await api.GetMyTenantHistoryAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(2, response.Content!.TotalCount);
+        Assert.Equal(2, response.Content.Items.Count);
+        // Newest first
+        Assert.Equal("Update", response.Content.Items[0].Action);
+        Assert.Equal("Insert", response.Content.Items[1].Action);
+    }
+
+    [Fact]
+    public async Task GetMyTenantHistory_RespectsPaging()
+    {
+        for (var i = 0; i < 3; i++)
+            await SeedAuditTrailAsync(_tenant.Id, AuditAction.Update, TimestampUtc: DateTime.UtcNow.AddMinutes(-i));
+
+        var api = fixture.GetClient<ITenantsApi>(ClientScope.TenantAdmin(_tenant.Id));
+
+        var response = await api.GetMyTenantHistoryAsync(page: 1, pageSize: 2, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(3, response.Content!.TotalCount);
+        Assert.Equal(2, response.Content.Items.Count);
+        Assert.Equal(1, response.Content.Page);
+        Assert.Equal(2, response.Content.PageSize);
+    }
+
+    [Fact]
+    public async Task GetMyTenantHistory_Returns403_ForPlainTenantUser()
+    {
+        var api = fixture.GetClient<ITenantsApi>(ClientScope.Authenticated("User", _tenant.Id));
+
+        var response = await api.GetMyTenantHistoryAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMyTenantHistory_Returns400_WhenTokenHasNoTenantIdClaim()
+    {
+        var api = fixture.GetClient<ITenantsApi>(ClientScope.Authenticated("Admin,User"));
+
+        var response = await api.GetMyTenantHistoryAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private async Task SeedAuditTrailAsync(Guid tenantId, AuditAction action, DateTime TimestampUtc)
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        db.Set<AuditTrail>().Add(new AuditTrail
+        {
+            EntityName = nameof(Tenant),
+            PrimaryKey = tenantId.ToString(),
+            Action = action,
+            UserId = "tester",
+            TimestampUtc = TimestampUtc,
+        });
+        await db.SaveChangesAsync();
     }
 }
