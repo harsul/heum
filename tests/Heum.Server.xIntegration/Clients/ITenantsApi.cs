@@ -32,4 +32,10 @@ public interface ITenantsApi
     Task<IApiResponse> DisableMyTenantUserAsync(
         string userId,
         CancellationToken cancellationToken = default);
+
+    [Get("/api/tenants/me/history")]
+    Task<IApiResponse<TenantHistoryResponse>> GetMyTenantHistoryAsync(
+        int? page = null,
+        int? pageSize = null,
+        CancellationToken cancellationToken = default);
 }

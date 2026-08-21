@@ -1,4 +1,5 @@
-﻿using Heum.Data.Models;
+﻿using Heum.Data.Auditing;
+using Heum.Data.Models;
 using Heum.Server.Features.Tenants;
 
 namespace Heum.Server.Services;
@@ -46,5 +47,15 @@ public interface ITenantService
     Task<Tenant?> SetTenantActiveAsync(
         Guid id,
         bool isActive,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a page of <see cref="AuditTrail"/> entries recorded against the given tenant's
+    /// <see cref="Tenant"/> row (name/active-state changes etc.), newest first.
+    /// </summary>
+    Task<(IReadOnlyList<AuditTrail> Items, int TotalCount)> GetTenantHistoryAsync(
+        Guid tenantId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default);
 }

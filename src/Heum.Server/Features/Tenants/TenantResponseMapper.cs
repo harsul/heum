@@ -1,3 +1,4 @@
+using Heum.Data.Auditing;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Models;
 using Heum.Server.Features.Tenants.Models;
@@ -46,6 +47,16 @@ internal static class TenantResponseMapper
         Enabled = true,
         EmailVerified = false,
         CreatedAtUtc = DateTimeOffset.UtcNow,
+    };
+
+    public static TenantHistoryEntryResponse ToResponse(AuditTrail entry) => new()
+    {
+        Id = entry.Id,
+        Action = entry.Action.ToString(),
+        OldValues = entry.OldValues,
+        NewValues = entry.NewValues,
+        UserId = entry.UserId,
+        TimestampUtc = entry.TimestampUtc,
     };
 
     public static ProblemDetails EmailConflict(string email) => new()

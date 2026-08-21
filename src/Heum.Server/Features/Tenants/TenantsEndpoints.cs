@@ -39,6 +39,9 @@ public static class TenantsEndpoints
         myTenant.MapPost("/users/{userId}/disable", DisableMyTenantUserAsync)
             .WithName("DisableMyTenantUser");
 
+        myTenant.MapGet("/history", GetMyTenantHistoryAsync)
+            .WithName("GetMyTenantHistory");
+
         return group;
     }
 
@@ -142,6 +145,27 @@ public static class TenantsEndpoints
 
         var succeeded = await keycloakService.SetTenantUserEnabledAsync(tenantId, userId, enabled, cancellationToken);
         return succeeded ? TypedResults.NoContent() : TypedResults.NotFound();
+    }
+
+    internal static async Task<Results<Ok<TenantHistoryResponse>, BadRequest<ProblemDetails>>> GetMyTenantHistoryAsync(
+        ClaimsPrincipal user,
+        ITenantService tenantService,
+        CancellationToken cancellationToken,
+        int page = 1,
+        int pageSize = 20)
+    {
+        if (!TryGetTenantId(user, out var tenantId))
+            return NoTenantProblem();
+
+        var (items, totalCount) = await tenantService.GetTenantHistoryAsync(tenantId, page, pageSize, cancellationToken);
+
+        return TypedResults.Ok(new TenantHistoryResponse
+        {
+            Items = items.Select(TenantResponseMapper.ToResponse).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+        });
     }
 
     private static string? GetKeycloakUserId(ClaimsPrincipal user) =>
