@@ -19,7 +19,7 @@ public sealed class FakeEventPublisher : IEventPublisher
         ExceptionToThrow = null;
     }
 
-    public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default) where TEvent : notnull
+    public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default, string? messageId = null) where TEvent : notnull
     {
         if (ExceptionToThrow is not null)
             throw ExceptionToThrow;

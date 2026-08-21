@@ -9,7 +9,7 @@ public sealed class FakeEventPublisher : IEventPublisher
 
     public IReadOnlyList<object> PublishedEvents => _publishedEvents;
 
-    public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default) where TEvent : notnull
+    public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default, string? messageId = null) where TEvent : notnull
     {
         _publishedEvents.Add(@event);
         return Task.CompletedTask;

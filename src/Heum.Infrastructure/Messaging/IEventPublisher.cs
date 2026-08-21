@@ -6,5 +6,5 @@
 /// </summary>
 public interface IEventPublisher
 {
-    Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default) where TEvent : notnull;
+    Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default, string? messageId = null) where TEvent : notnull;
 }

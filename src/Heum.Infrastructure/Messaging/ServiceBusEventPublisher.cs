@@ -12,7 +12,7 @@ internal sealed class ServiceBusEventPublisher(ServiceBusClient client, EventTop
 {
     private readonly ConcurrentDictionary<string, ServiceBusSender> _senders = new();
 
-    public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default) where TEvent : notnull
+    public Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default, string? messageId = null) where TEvent : notnull
     {
         var topic = topics.GetTopic<TEvent>();
         var sender = _senders.GetOrAdd(topic, client.CreateSender);
@@ -22,6 +22,9 @@ internal sealed class ServiceBusEventPublisher(ServiceBusClient client, EventTop
             ContentType = "application/json",
             Subject = typeof(TEvent).Name,
         };
+
+        if (messageId is not null)
+            message.MessageId = messageId;
 
         return sender.SendMessageAsync(message, cancellationToken);
     }
