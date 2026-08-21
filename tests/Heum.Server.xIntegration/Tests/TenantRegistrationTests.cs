@@ -1,5 +1,6 @@
 using System.Net;
 using Heum.Data;
+using Heum.Data.Contexts;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;

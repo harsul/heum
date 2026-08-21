@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Heum.Data;
+using Heum.Data.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heum.MigrationService;

@@ -1,7 +1,7 @@
 using Heum.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Heum.Data;
+namespace Heum.Data.Contexts;
 
 public class HeumDbContext(DbContextOptions<HeumDbContext> options) : DbContext(options)
 {

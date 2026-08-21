@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using Heum.Contracts.Events;
 using Heum.Data;
+using Heum.Data.Contexts;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
