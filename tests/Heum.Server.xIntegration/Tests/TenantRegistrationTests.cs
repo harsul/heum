@@ -1,6 +1,7 @@
 using System.Net;
 using Heum.Data;
 using Heum.Server.Features.Tenants.Models;
+using Heum.Server.Services;
 using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,7 @@ public class TenantRegistrationTests(IntegrationFixture fixture) : IAsyncLifetim
         await using var scope = fixture.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         db.Tenants.RemoveRange(db.Tenants);
+        db.OutboxMessages.RemoveRange(db.OutboxMessages);
         await db.SaveChangesAsync();
 
         fixture.FakeEvents.Clear();
@@ -46,8 +48,18 @@ public class TenantRegistrationTests(IntegrationFixture fixture) : IAsyncLifetim
         Assert.Equal("Acme Corp", tenant.Name);
         Assert.True(tenant.IsActive);
 
-        // ProvisionTenantAsync publishes UserOnboardingRequestedEvent then TenantCreatedEvent
+        // ProvisionTenantAsync raises TenantCreatedEvent + UserOnboardingRequestedEvent, which
+        // land in the OutboxMessages table transactionally - nothing has been published yet.
+        Assert.Equal(2, await db.OutboxMessages.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(fixture.FakeEvents.PublishedEvents);
+
+        // Explicitly drain the outbox instead of waiting on the poll interval.
+        var processor = scope.ServiceProvider.GetRequiredService<IOutboxProcessor>();
+        await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
+
         Assert.Equal(2, fixture.FakeEvents.PublishedEvents.Count);
+        Assert.True(await db.OutboxMessages.AllAsync(
+            m => m.ProcessedAtUtc != null, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -64,10 +76,13 @@ public class TenantRegistrationTests(IntegrationFixture fixture) : IAsyncLifetim
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
 
-        // Tenant row is rolled back when email conflicts
+        // Tenant row is rolled back when email conflicts, and no domain events were ever raised
+        // (MarkProvisioned/the onboarding event are only queued after Keycloak succeeds), so
+        // nothing should have landed in the outbox either.
         await using var scope = fixture.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         Assert.False(await db.Tenants.AnyAsync(TestContext.Current.CancellationToken));
+        Assert.False(await db.OutboxMessages.AnyAsync(TestContext.Current.CancellationToken));
         Assert.Empty(fixture.FakeEvents.PublishedEvents);
     }
 

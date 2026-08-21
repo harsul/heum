@@ -1,37 +1,38 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Heum.Data.Domain;
 
 /// <summary>
-/// After a successful <c>SaveChanges</c>, collects domain events raised on tracked aggregate
-/// roots (see <see cref="AggregateRoot"/>) plus any ambient events queued via
-/// <see cref="IDomainEventCollector"/>, and hands them to <see cref="IDomainEventDispatcher"/> -
-/// so services never need to publish events themselves. Dispatches post-commit (not in
-/// <c>SavingChanges</c>) so nothing is published for a write that could still fail.
+/// Before a <c>SaveChanges</c> commits, collects domain events raised on tracked aggregate roots
+/// (see <see cref="AggregateRoot"/>) plus any ambient events queued via
+/// <see cref="IDomainEventCollector"/>, and writes each one as an <see cref="OutboxMessage"/> row
+/// tracked on the same <see cref="DbContext"/> - so it's persisted atomically with whatever
+/// entity change raised it (the "transactional outbox" pattern). A separate poller
+/// (<c>Heum.Server</c>'s outbox processor) reads and publishes these rows later; this interceptor
+/// never talks to Service Bus itself, so <c>Heum.Data</c> has no messaging dependency.
 /// </summary>
-public class DomainEventDispatchingInterceptor(
-    IDomainEventDispatcher dispatcher,
-    IDomainEventCollector collector) : SaveChangesInterceptor
+public class DomainEventDispatchingInterceptor(IDomainEventCollector collector) : SaveChangesInterceptor
 {
-    public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
+    public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
-        DispatchDomainEventsAsync(eventData.Context).GetAwaiter().GetResult();
+        WriteOutboxMessages(eventData.Context);
 
-        return base.SavedChanges(eventData, result);
+        return base.SavingChanges(eventData, result);
     }
 
-    public override async ValueTask<int> SavedChangesAsync(
-        SaveChangesCompletedEventData eventData,
-        int result,
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
-        await DispatchDomainEventsAsync(eventData.Context, cancellationToken);
+        WriteOutboxMessages(eventData.Context);
 
-        return await base.SavedChangesAsync(eventData, result, cancellationToken);
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private async Task DispatchDomainEventsAsync(DbContext? context, CancellationToken cancellationToken = default)
+    private void WriteOutboxMessages(DbContext? context)
     {
         if (context is null)
             return;
@@ -53,6 +54,14 @@ public class DomainEventDispatchingInterceptor(
         if (domainEvents.Count == 0)
             return;
 
-        await dispatcher.DispatchAsync(domainEvents, cancellationToken);
+        foreach (var domainEvent in domainEvents)
+        {
+            context.Set<OutboxMessage>().Add(new OutboxMessage
+            {
+                EventType = domainEvent.GetType().Name,
+                Payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType()),
+                OccurredAtUtc = DateTime.UtcNow,
+            });
+        }
     }
 }
