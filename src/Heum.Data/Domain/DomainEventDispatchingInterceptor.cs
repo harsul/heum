@@ -13,7 +13,7 @@ namespace Heum.Data.Domain;
 /// (<c>Heum.Server</c>'s outbox processor) reads and publishes these rows later; this interceptor
 /// never talks to Service Bus itself, so <c>Heum.Data</c> has no messaging dependency.
 /// </summary>
-public class DomainEventDispatchingInterceptor(IDomainEventCollector collector) : SaveChangesInterceptor
+public class DomainEventDispatchingInterceptor(IDomainEventCollector collector, TimeProvider timeProvider) : SaveChangesInterceptor
 {
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
@@ -60,7 +60,7 @@ public class DomainEventDispatchingInterceptor(IDomainEventCollector collector) 
             {
                 EventType = domainEvent.GetType().Name,
                 Payload = JsonSerializer.Serialize(domainEvent, domainEvent.GetType()),
-                OccurredAtUtc = DateTime.UtcNow,
+                OccurredAtUtc = timeProvider.GetUtcNow().UtcDateTime,
             });
         }
     }

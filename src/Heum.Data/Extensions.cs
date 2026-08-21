@@ -1,5 +1,6 @@
 ﻿using Heum.Data.Auditing;
 using Heum.Data.Domain;
+using Heum.Data.SoftDelete;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,11 +19,13 @@ public static class Extensions
         builder.Services.AddScoped<AuditingInterceptor>();
         builder.Services.AddScoped<IDomainEventCollector, DomainEventCollector>();
         builder.Services.AddScoped<DomainEventDispatchingInterceptor>();
+        builder.Services.AddScoped<SoftDeleteInterceptor>();
 
         builder.Services.AddDbContext<HeumDbContext>((sp, options) =>
         {
             options.UseNpgsql(builder.Configuration.GetConnectionString("heumdb"));
             options.AddInterceptors(
+                sp.GetRequiredService<SoftDeleteInterceptor>(),
                 sp.GetRequiredService<AuditingInterceptor>(),
                 sp.GetRequiredService<DomainEventDispatchingInterceptor>());
         });

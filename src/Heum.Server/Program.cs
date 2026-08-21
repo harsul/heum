@@ -59,7 +59,11 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("SystemAdmin", policy => policy.RequireRole("SystemAdmin"))
     .AddPolicy("TenantAdmin", policy => policy.RequireRole("Admin"));
 
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<TenantContext>();
+builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
+builder.Services.AddScoped<Heum.Data.Multitenancy.ITenantProvider>(sp => sp.GetRequiredService<TenantContext>());
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();

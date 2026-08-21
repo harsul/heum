@@ -9,7 +9,7 @@ public class Tenant : AggregateRoot
     public string Name { get; private set; } = string.Empty;
     public string Slug { get; private set; } = string.Empty;
     public bool IsActive { get; private set; } = true;
-    public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
 
     private Tenant()
@@ -17,29 +17,30 @@ public class Tenant : AggregateRoot
         // EF Core materialization.
     }
 
-    public static Tenant Register(string name, string slug) => new()
+    public static Tenant Register(string name, string slug, TimeProvider timeProvider) => new()
     {
         Id = Guid.NewGuid(),
         Name = name,
         Slug = slug,
+        CreatedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
     };
 
     /// <summary>
     /// Raises <see cref="TenantCreatedEvent"/> once the tenant's first admin has been
     /// successfully provisioned in Keycloak (called from <c>TenantService.ProvisionTenantAsync</c>).
     /// </summary>
-    public void MarkProvisioned(string adminEmail, string keycloakUserId) =>
-        AddDomainEvent(new TenantCreatedEvent(Id, Slug, adminEmail, keycloakUserId, DateTimeOffset.UtcNow));
+    public void MarkProvisioned(string adminEmail, string keycloakUserId, TimeProvider timeProvider) =>
+        AddDomainEvent(new TenantCreatedEvent(Id, Slug, adminEmail, keycloakUserId, timeProvider.GetUtcNow()));
 
-    public void Rename(string name)
+    public void Rename(string name, TimeProvider timeProvider)
     {
         Name = name;
-        UpdatedAtUtc = DateTime.UtcNow;
+        UpdatedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
     }
 
-    public void SetActive(bool isActive)
+    public void SetActive(bool isActive, TimeProvider timeProvider)
     {
         IsActive = isActive;
-        UpdatedAtUtc = DateTime.UtcNow;
+        UpdatedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
     }
 }

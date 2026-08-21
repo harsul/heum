@@ -15,6 +15,7 @@ internal sealed class OutboxProcessor(
     IEventPublisher eventPublisher,
     OutboxEventTypeCatalog catalog,
     IOptions<OutboxProcessorOptions> options,
+    TimeProvider timeProvider,
     ILogger<OutboxProcessor> logger) : IOutboxProcessor
 {
     private static readonly ConcurrentDictionary<Type, MethodInfo> PublishMethods = new();
@@ -45,7 +46,7 @@ internal sealed class OutboxProcessor(
 
                 await (Task)publishMethod.Invoke(eventPublisher, [domainEvent, cancellationToken])!;
 
-                message.ProcessedAtUtc = DateTime.UtcNow;
+                message.ProcessedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
             }
             catch (Exception ex)
             {
