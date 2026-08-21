@@ -71,7 +71,7 @@ public static class AdminTenantsEndpoints
             cancellationToken);
 
         if (result.EmailConflict)
-            return TypedResults.Conflict(TenantResponseMapper.EmailConflict(request.AdminEmail));
+            return TypedResults.Conflict(TenantProblems.EmailConflict(request.AdminEmail));
 
         var tenant = result.Tenant!;
         return TypedResults.Created($"/api/admin/tenants/{tenant.Id}", TenantResponseMapper.ToResponse(tenant));
@@ -131,6 +131,7 @@ public static class AdminTenantsEndpoints
         Guid id,
         AddTenantUserRequest request,
         ITenantService tenantService,
+        TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
         var tenant = await tenantService.GetTenantAsync(id, cancellationToken);
@@ -140,11 +141,11 @@ public static class AdminTenantsEndpoints
         var result = await tenantService.AddTenantUserAsync(id, request.Email, cancellationToken);
 
         if (result.EmailConflict)
-            return TypedResults.Conflict(TenantResponseMapper.EmailConflict(request.Email));
+            return TypedResults.Conflict(TenantProblems.EmailConflict(request.Email));
 
         return TypedResults.Created(
             $"/api/admin/tenants/{id}/users/{result.KeycloakUserId}",
-            TenantResponseMapper.NewlyCreatedUser(result.KeycloakUserId!, request.Email));
+            TenantResponseMapper.NewlyCreatedUser(result.KeycloakUserId!, request.Email, timeProvider));
     }
 
     internal static async Task<Results<NoContent, NotFound>> EnableTenantUserAsync(

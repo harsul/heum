@@ -14,7 +14,8 @@ namespace Heum.Server.Services;
 public sealed partial class TenantService(
     HeumDbContext dbContext,
     IKeycloakService keycloakService,
-    IDomainEventCollector domainEventCollector) : ITenantService
+    IDomainEventCollector domainEventCollector,
+    TimeProvider timeProvider) : ITenantService
 {
     private const int MaxSlugSuffixAttempts = 50;
 
@@ -25,7 +26,7 @@ public sealed partial class TenantService(
     {
         var slug = await GenerateUniqueSlugAsync(companyName, cancellationToken);
 
-        var tenant = Tenant.Register(companyName, slug);
+        var tenant = Tenant.Register(companyName, slug, timeProvider);
 
         dbContext.Tenants.Add(tenant);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -45,7 +46,7 @@ public sealed partial class TenantService(
             // Raises TenantCreatedEvent on the aggregate; this SaveChanges also flushes the
             // ambient UserOnboardingRequestedEvent queued by CreateOnboardingUserAsync above -
             // both are dispatched together, after commit, by DomainEventDispatchingInterceptor.
-            tenant.MarkProvisioned(adminEmail, keycloakUserId!);
+            tenant.MarkProvisioned(adminEmail, keycloakUserId!, timeProvider);
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return new TenantProvisionResult(tenant, keycloakUserId, EmailConflict: false);
@@ -95,8 +96,8 @@ public sealed partial class TenantService(
         if (tenant is null)
             return null;
 
-        tenant.Rename(name);
-        tenant.SetActive(isActive);
+        tenant.Rename(name, timeProvider);
+        tenant.SetActive(isActive, timeProvider);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -112,7 +113,7 @@ public sealed partial class TenantService(
         if (tenant is null)
             return null;
 
-        tenant.SetActive(isActive);
+        tenant.SetActive(isActive, timeProvider);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -161,7 +162,7 @@ public sealed partial class TenantService(
                 TenantId: tenantId,
                 Email: email,
                 KeycloakUserId: keycloakUserId,
-                OccurredAt: DateTimeOffset.UtcNow);
+                OccurredAt: timeProvider.GetUtcNow());
 
             // Not backed by any DB column change (Keycloak-only side effect), so it's queued
             // ambiently rather than raised on an aggregate - the next SaveChanges flushes it.

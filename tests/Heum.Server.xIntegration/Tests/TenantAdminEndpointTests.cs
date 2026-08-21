@@ -20,7 +20,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         db.Tenants.RemoveRange(db.Tenants);
 
-        _tenant = Tenant.Register("My Tenant", "my-tenant");
+        _tenant = Tenant.Register("My Tenant", "my-tenant", TimeProvider.System);
         db.Tenants.Add(_tenant);
         await db.SaveChangesAsync();
 

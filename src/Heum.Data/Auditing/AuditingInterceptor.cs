@@ -10,7 +10,7 @@ namespace Heum.Data.Auditing;
 /// Captures every insert/update/delete performed through the DbContext into a separate
 /// <see cref="AuditTrail"/> table, without requiring audit properties on domain entities.
 /// </summary>
-public class AuditingInterceptor(ICurrentUserService currentUserService) : SaveChangesInterceptor
+public class AuditingInterceptor(ICurrentUserService currentUserService, TimeProvider timeProvider) : SaveChangesInterceptor
 {
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
@@ -43,7 +43,7 @@ public class AuditingInterceptor(ICurrentUserService currentUserService) : SaveC
             return;
 
         var userId = currentUserService.UserId;
-        var timestamp = DateTime.UtcNow;
+        var timestamp = timeProvider.GetUtcNow().UtcDateTime;
 
         foreach (var entry in entries)
         {

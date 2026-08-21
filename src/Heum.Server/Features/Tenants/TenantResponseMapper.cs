@@ -2,7 +2,6 @@ using Heum.Data.Auditing;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Models;
 using Heum.Server.Features.Tenants.Models;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Heum.Server.Features.Tenants;
 
@@ -37,7 +36,7 @@ internal static class TenantResponseMapper
             : null,
     };
 
-    public static TenantUserResponse NewlyCreatedUser(string id, string email) => new()
+    public static TenantUserResponse NewlyCreatedUser(string id, string email, TimeProvider timeProvider) => new()
     {
         Id = id,
         Username = email,
@@ -46,7 +45,7 @@ internal static class TenantResponseMapper
         LastName = null,
         Enabled = true,
         EmailVerified = false,
-        CreatedAtUtc = DateTimeOffset.UtcNow,
+        CreatedAtUtc = timeProvider.GetUtcNow(),
     };
 
     public static TenantHistoryEntryResponse ToResponse(AuditTrail entry) => new()
@@ -59,10 +58,4 @@ internal static class TenantResponseMapper
         TimestampUtc = entry.TimestampUtc,
     };
 
-    public static ProblemDetails EmailConflict(string email) => new()
-    {
-        Title = "Email already in use",
-        Detail = $"A user with email '{email}' already exists.",
-        Status = StatusCodes.Status409Conflict,
-    };
 }

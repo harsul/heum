@@ -56,7 +56,7 @@ public static class TenantsEndpoints
             cancellationToken);
 
         if (result.EmailConflict)
-            return TypedResults.Conflict(TenantResponseMapper.EmailConflict(request.AdminEmail));
+            return TypedResults.Conflict(TenantProblems.EmailConflict(request.AdminEmail));
 
         return TypedResults.Created($"/api/tenants/{result.Tenant!.Id}", new RegisterTenantResponse
         {
@@ -67,97 +67,94 @@ public static class TenantsEndpoints
     }
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound, BadRequest<ProblemDetails>>> GetMyTenantAsync(
-        ClaimsPrincipal user,
+        ITenantContext tenantContext,
         ITenantService tenantService,
         CancellationToken cancellationToken)
     {
-        if (!TryGetTenantId(user, out var tenantId))
-            return NoTenantProblem();
+        if (!tenantContext.HasTenant)
+            return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        var tenant = await tenantService.GetTenantAsync(tenantId, cancellationToken);
+        var tenant = await tenantService.GetTenantAsync(tenantContext.TenantId, cancellationToken);
         return tenant is null ? TypedResults.NotFound() : TypedResults.Ok(TenantResponseMapper.ToResponse(tenant));
     }
 
     internal static async Task<Results<Ok<IReadOnlyList<TenantUserResponse>>, BadRequest<ProblemDetails>>> GetMyTenantUsersAsync(
-        ClaimsPrincipal user,
+        ITenantContext tenantContext,
         IKeycloakService keycloakService,
         CancellationToken cancellationToken)
     {
-        if (!TryGetTenantId(user, out var tenantId))
-            return NoTenantProblem();
+        if (!tenantContext.HasTenant)
+            return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        var users = await keycloakService.ListTenantUsersAsync(tenantId, cancellationToken);
+        var users = await keycloakService.ListTenantUsersAsync(tenantContext.TenantId, cancellationToken);
         return TypedResults.Ok<IReadOnlyList<TenantUserResponse>>(users.Select(TenantResponseMapper.ToResponse).ToList());
     }
 
     internal static async Task<Results<Created<TenantUserResponse>, BadRequest<ProblemDetails>, Conflict<ProblemDetails>>> AddMyTenantUserAsync(
-        ClaimsPrincipal user,
+        ITenantContext tenantContext,
         AddTenantUserRequest request,
         ITenantService tenantService,
+        TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
-        if (!TryGetTenantId(user, out var tenantId))
-            return NoTenantProblem();
+        if (!tenantContext.HasTenant)
+            return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        var result = await tenantService.AddTenantUserAsync(tenantId, request.Email, cancellationToken);
+        var result = await tenantService.AddTenantUserAsync(tenantContext.TenantId, request.Email, cancellationToken);
 
         if (result.EmailConflict)
-            return TypedResults.Conflict(TenantResponseMapper.EmailConflict(request.Email));
+            return TypedResults.Conflict(TenantProblems.EmailConflict(request.Email));
 
         return TypedResults.Created(
             $"/api/tenants/me/users/{result.KeycloakUserId}",
-            TenantResponseMapper.NewlyCreatedUser(result.KeycloakUserId!, request.Email));
+            TenantResponseMapper.NewlyCreatedUser(result.KeycloakUserId!, request.Email, timeProvider));
     }
 
     internal static async Task<Results<NoContent, NotFound, BadRequest<ProblemDetails>>> EnableMyTenantUserAsync(
         ClaimsPrincipal user,
         string userId,
+        ITenantContext tenantContext,
         IKeycloakService keycloakService,
         CancellationToken cancellationToken)
-        => await SetMyTenantUserEnabledAsync(user, userId, enabled: true, keycloakService, cancellationToken);
+        => await SetMyTenantUserEnabledAsync(user, userId, enabled: true, tenantContext, keycloakService, cancellationToken);
 
     internal static async Task<Results<NoContent, NotFound, BadRequest<ProblemDetails>>> DisableMyTenantUserAsync(
         ClaimsPrincipal user,
         string userId,
+        ITenantContext tenantContext,
         IKeycloakService keycloakService,
         CancellationToken cancellationToken)
-        => await SetMyTenantUserEnabledAsync(user, userId, enabled: false, keycloakService, cancellationToken);
+        => await SetMyTenantUserEnabledAsync(user, userId, enabled: false, tenantContext, keycloakService, cancellationToken);
 
     private static async Task<Results<NoContent, NotFound, BadRequest<ProblemDetails>>> SetMyTenantUserEnabledAsync(
         ClaimsPrincipal user,
         string userId,
         bool enabled,
+        ITenantContext tenantContext,
         IKeycloakService keycloakService,
         CancellationToken cancellationToken)
     {
-        if (!TryGetTenantId(user, out var tenantId))
-            return NoTenantProblem();
+        if (!tenantContext.HasTenant)
+            return TypedResults.BadRequest(TenantProblems.NoTenant());
 
         if (!enabled && string.Equals(userId, GetKeycloakUserId(user), StringComparison.Ordinal))
-        {
-            return TypedResults.BadRequest(new ProblemDetails
-            {
-                Title = "Cannot disable your own account",
-                Detail = "You can't disable the account you're currently signed in with.",
-                Status = StatusCodes.Status400BadRequest,
-            });
-        }
+            return TypedResults.BadRequest(TenantProblems.CannotDisableSelf());
 
-        var succeeded = await keycloakService.SetTenantUserEnabledAsync(tenantId, userId, enabled, cancellationToken);
+        var succeeded = await keycloakService.SetTenantUserEnabledAsync(tenantContext.TenantId, userId, enabled, cancellationToken);
         return succeeded ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
     internal static async Task<Results<Ok<TenantHistoryResponse>, BadRequest<ProblemDetails>>> GetMyTenantHistoryAsync(
-        ClaimsPrincipal user,
+        ITenantContext tenantContext,
         ITenantService tenantService,
         CancellationToken cancellationToken,
         int page = 1,
         int pageSize = 20)
     {
-        if (!TryGetTenantId(user, out var tenantId))
-            return NoTenantProblem();
+        if (!tenantContext.HasTenant)
+            return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        var (items, totalCount) = await tenantService.GetTenantHistoryAsync(tenantId, page, pageSize, cancellationToken);
+        var (items, totalCount) = await tenantService.GetTenantHistoryAsync(tenantContext.TenantId, page, pageSize, cancellationToken);
 
         return TypedResults.Ok(new TenantHistoryResponse
         {
@@ -182,10 +179,4 @@ public static class TenantsEndpoints
         return Guid.TryParse(claim, out tenantId);
     }
 
-    private static BadRequest<ProblemDetails> NoTenantProblem() => TypedResults.BadRequest(new ProblemDetails
-    {
-        Title = "No tenant associated with this account",
-        Detail = "This account is not associated with a tenant.",
-        Status = StatusCodes.Status400BadRequest,
-    });
 }

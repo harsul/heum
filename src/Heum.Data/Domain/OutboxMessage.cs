@@ -17,7 +17,7 @@ public class OutboxMessage
     /// <summary>JSON-serialized event payload.</summary>
     public string Payload { get; set; } = string.Empty;
 
-    public DateTime OccurredAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime OccurredAtUtc { get; set; }
 
     public DateTime? ProcessedAtUtc { get; set; }
 
