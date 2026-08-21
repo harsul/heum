@@ -320,9 +320,8 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     {
         await using var scope = fixture.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
-        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
-        var otherTenant = await db.Tenants.OrderByDescending(t => t.Name)
-            .Skip(1).FirstAsync(TestContext.Current.CancellationToken);
+        var tenant = await db.Tenants.OrderBy(t => t.Name).FirstAsync(TestContext.Current.CancellationToken);
+        var otherTenant = await db.Tenants.OrderBy(t => t.Name).Skip(1).FirstAsync(TestContext.Current.CancellationToken);
 
         await SeedAuditTrailAsync(tenant.Id, AuditAction.Insert, DateTime.UtcNow.AddMinutes(-2));
         await SeedAuditTrailAsync(tenant.Id, AuditAction.Update, DateTime.UtcNow.AddMinutes(-1));
