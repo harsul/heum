@@ -7,6 +7,7 @@ using Heum.Infrastructure.Messaging;
 using Heum.Server.Features.Admin.Tenants;
 using Heum.Server.Features.Tenants;
 using Heum.Server.Services;
+using Heum.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
 

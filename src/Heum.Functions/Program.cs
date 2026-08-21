@@ -1,4 +1,5 @@
 ﻿using Heum.Infrastructure.Keycloak;
+using Heum.ServiceDefaults;
 using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.Hosting;
 

@@ -1,6 +1,7 @@
 using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.MigrationService;
+using Heum.ServiceDefaults;
 
 var builder = Host.CreateApplicationBuilder(args);
 
