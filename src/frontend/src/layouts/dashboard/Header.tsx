@@ -17,7 +17,12 @@ export function Header({ onOpenNav }: HeaderProps) {
       position="sticky"
       elevation={0}
       sx={{
+        mx: 1.5,
+        mt: 1.5,
+        width: 'calc(100% - 24px)',
+        borderRadius: '12px',
         backdropFilter: 'blur(12px)',
+        top: 12,
       }}
     >
       <Toolbar sx={{ gap: 1 }}>
