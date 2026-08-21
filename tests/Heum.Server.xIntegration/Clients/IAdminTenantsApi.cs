@@ -25,6 +25,13 @@ public interface IAdminTenantsApi
         Guid id,
         CancellationToken cancellationToken = default);
 
+    [Get("/api/admin/tenants/{id}/history")]
+    Task<IApiResponse<TenantHistoryResponse>> GetTenantHistoryAsync(
+        Guid id,
+        int? page = null,
+        int? pageSize = null,
+        CancellationToken cancellationToken = default);
+
     [Post("/api/admin/tenants/{id}/users")]
     Task<IApiResponse<TenantUserResponse>> AddTenantUserAsync(
         Guid id,

@@ -1,5 +1,6 @@
 using System.Net;
 using Heum.Data;
+using Heum.Data.Auditing;
 using Heum.Data.Models;
 using Heum.Server.Features.Admin.Tenants.Models;
 using Heum.Server.Features.Tenants.Models;
@@ -306,5 +307,89 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var response = await api.DisableTenantUserAsync(tenant.Id, "some-user-id", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetTenantHistory_Returns200_WithOnlyThisTenantsEntries()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+        var otherTenant = await db.Tenants.OrderByDescending(t => t.Name)
+            .Skip(1).FirstAsync(TestContext.Current.CancellationToken);
+
+        await SeedAuditTrailAsync(tenant.Id, AuditAction.Insert, DateTime.UtcNow.AddMinutes(-2));
+        await SeedAuditTrailAsync(tenant.Id, AuditAction.Update, DateTime.UtcNow.AddMinutes(-1));
+        await SeedAuditTrailAsync(otherTenant.Id, AuditAction.Update, DateTime.UtcNow);
+
+        var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.SystemAdmin);
+
+        var response = await api.GetTenantHistoryAsync(tenant.Id, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(2, response.Content!.TotalCount);
+        Assert.Equal(2, response.Content.Items.Count);
+        Assert.Equal("Update", response.Content.Items[0].Action);
+        Assert.Equal("Insert", response.Content.Items[1].Action);
+    }
+
+    [Fact]
+    public async Task GetTenantHistory_RespectsPaging()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        for (var i = 0; i < 3; i++)
+            await SeedAuditTrailAsync(tenant.Id, AuditAction.Update, DateTime.UtcNow.AddMinutes(-i));
+
+        var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.SystemAdmin);
+
+        var response = await api.GetTenantHistoryAsync(tenant.Id, page: 1, pageSize: 2, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(3, response.Content!.TotalCount);
+        Assert.Equal(2, response.Content.Items.Count);
+        Assert.Equal(1, response.Content.Page);
+        Assert.Equal(2, response.Content.PageSize);
+    }
+
+    [Fact]
+    public async Task GetTenantHistory_Returns404_ForUnknownTenant()
+    {
+        var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.SystemAdmin);
+
+        var response = await api.GetTenantHistoryAsync(Guid.NewGuid(), cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetTenantHistory_Returns403_ForTenantAdminRole()
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
+
+        var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.TenantAdmin(tenant.Id));
+
+        var response = await api.GetTenantHistoryAsync(tenant.Id, cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    private async Task SeedAuditTrailAsync(Guid tenantId, AuditAction action, DateTime timestampUtc)
+    {
+        await using var scope = fixture.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        db.Set<AuditTrail>().Add(new AuditTrail
+        {
+            EntityName = nameof(Tenant),
+            PrimaryKey = tenantId.ToString(),
+            Action = action,
+            UserId = "tester",
+            TimestampUtc = timestampUtc,
+        });
+        await db.SaveChangesAsync();
     }
 }
