@@ -1,5 +1,9 @@
+using DotNet.Testcontainers.Builders;
 using Heum.Data;
+using Heum.Data.Auditing;
 using Heum.Data.Domain;
+using Heum.Data.Multitenancy;
+using Heum.Data.SoftDelete;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
 using Heum.Server.Services;
@@ -15,18 +19,32 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Refit;
+using Testcontainers.PostgreSql;
 
 namespace Heum.Server.xIntegration.Infrastructure;
 
 public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
+        .Build();
+
     public FakeKeycloakService FakeKeycloak { get; } = new();
     public FakeEventPublisher FakeEvents { get; } = new();
 
-    ValueTask IAsyncLifetime.InitializeAsync()
+    async ValueTask IAsyncLifetime.InitializeAsync()
     {
+        await _postgres.StartAsync();
         _ = Server; // Force WAF host to build eagerly
-        return ValueTask.CompletedTask;
+
+        await using var scope = Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        await db.Database.MigrateAsync();
+    }
+
+    public override async ValueTask DisposeAsync()
+    {
+        await base.DisposeAsync();
+        await _postgres.DisposeAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -47,18 +65,19 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
                 opts.DefaultChallengeScheme    = TestAuthHandler.SchemeName;
                 opts.DefaultForbidScheme       = TestAuthHandler.SchemeName;
             });
-            
+
             services.RemoveAll<DbContextOptions<HeumDbContext>>();
             services.RemoveAll<HeumDbContext>();
             services.AddScoped(sp =>
                 new HeumDbContext(
                     new DbContextOptionsBuilder<HeumDbContext>()
-                        .UseInMemoryDatabase("heum-test")
-                        // Domain events (e.g. TenantCreatedEvent) are written to the OutboxMessages
-                        // table by this interceptor, same as in production - without it, nothing
-                        // would ever be there for IOutboxProcessor to publish in tests.
-                        .AddInterceptors(sp.GetRequiredService<DomainEventDispatchingInterceptor>())
-                        .Options));
+                        .UseNpgsql(_postgres.GetConnectionString())
+                        .AddInterceptors(
+                            sp.GetRequiredService<SoftDeleteInterceptor>(),
+                            sp.GetRequiredService<AuditingInterceptor>(),
+                            sp.GetRequiredService<DomainEventDispatchingInterceptor>())
+                        .Options,
+                    sp.GetService<ITenantProvider>()));
 
             services.RemoveAll<IKeycloakService>();
             services.AddSingleton<IKeycloakService>(FakeKeycloak);
@@ -83,6 +102,22 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
                 services.Remove(descriptor);
             }
         });
+    }
+
+    /// <summary>
+    /// Truncates all data tables and resets fake services between tests.
+    /// Call from each test class's <see cref="IAsyncLifetime.InitializeAsync"/> instead of
+    /// manually removing individual entity sets.
+    /// </summary>
+    public async Task ResetDatabaseAsync()
+    {
+        await using var scope = Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+        await db.Database.ExecuteSqlRawAsync(
+            """TRUNCATE TABLE "Tenants", "AuditTrails", "OutboxMessages" RESTART IDENTITY CASCADE""");
+
+        FakeEvents.Reset();
+        FakeKeycloak.Reset();
     }
 
     public T GetClient<T>(ClientScope scope)
