@@ -18,6 +18,16 @@ public static class KeycloakExtensions
 
         builder.Services.AddTransient<KeycloakAdminAuthHandler>();
 
+        // Dedicated client for fetching the admin access token itself. Kept separate from the
+        // client below (and from KeycloakAdminAuthHandler) so the token request goes through a
+        // real HttpClient.SendAsync call - which is what resolves the "http+https://" service
+        // discovery scheme against BaseAddress - and never carries the Authorization header the
+        // auth handler would otherwise attach.
+        builder.Services.AddHttpClient(KeycloakAdminAuthHandler.TokenClientName, client =>
+        {
+            client.BaseAddress = new Uri("http+https://keycloak");
+        });
+
         builder.Services.AddHttpClient<IKeycloakAdminClient, KeycloakAdminClient>(client =>
         {
             client.BaseAddress = new Uri("http+https://keycloak");
