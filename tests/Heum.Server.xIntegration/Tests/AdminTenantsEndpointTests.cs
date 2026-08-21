@@ -355,7 +355,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(3, response.Content!.TotalCount);
-        Assert.Equal(3, response.Content.Items.Count);
+        Assert.Equal(2, response.Content.Items.Count);
         Assert.Equal(1, response.Content.Page);
         Assert.Equal(2, response.Content.PageSize);
     }
