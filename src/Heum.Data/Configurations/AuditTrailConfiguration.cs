@@ -1,4 +1,5 @@
 using Heum.Data.Auditing;
+using Heum.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

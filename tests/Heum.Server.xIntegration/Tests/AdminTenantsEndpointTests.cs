@@ -20,8 +20,8 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         db.Tenants.RemoveRange(db.Tenants);
         db.Tenants.AddRange(
-            new Tenant { Id = Guid.NewGuid(), Name = "Alpha", Slug = "alpha" },
-            new Tenant { Id = Guid.NewGuid(), Name = "Beta", Slug = "beta" });
+            Tenant.Register("Alpha", "alpha"),
+            Tenant.Register("Beta", "beta"));
         await db.SaveChangesAsync();
 
         // The seeding above goes through AuditingInterceptor like any other SaveChanges, so it
@@ -260,7 +260,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         await using var scope = fixture.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
-        tenant.IsActive = false;
+        tenant.SetActive(false);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.SystemAdmin);
@@ -320,9 +320,8 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     {
         await using var scope = fixture.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
-        var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
-        var otherTenant = await db.Tenants.OrderByDescending(t => t.Name)
-            .Skip(1).FirstAsync(TestContext.Current.CancellationToken);
+        var tenant = await db.Tenants.OrderBy(t => t.Name).FirstAsync(TestContext.Current.CancellationToken);
+        var otherTenant = await db.Tenants.OrderBy(t => t.Name).Skip(1).FirstAsync(TestContext.Current.CancellationToken);
 
         await SeedAuditTrailAsync(tenant.Id, AuditAction.Insert, DateTime.UtcNow.AddMinutes(-2));
         await SeedAuditTrailAsync(tenant.Id, AuditAction.Update, DateTime.UtcNow.AddMinutes(-1));

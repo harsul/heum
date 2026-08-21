@@ -9,4 +9,4 @@ public record UserOnboardingRequestedEvent(
     Guid TenantId,
     string Email,
     string KeycloakUserId,
-    DateTimeOffset OccurredAt);
+    DateTimeOffset OccurredAt) : IDomainEvent;

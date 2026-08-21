@@ -3,9 +3,9 @@ using System.Text.RegularExpressions;
 using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Data.Auditing;
+using Heum.Data.Domain;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
-using Heum.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heum.Server.Services;
@@ -14,7 +14,7 @@ namespace Heum.Server.Services;
 public sealed partial class TenantService(
     HeumDbContext dbContext,
     IKeycloakService keycloakService,
-    IEventPublisher eventPublisher) : ITenantService
+    IDomainEventCollector domainEventCollector) : ITenantService
 {
     private const int MaxSlugSuffixAttempts = 50;
 
@@ -25,12 +25,7 @@ public sealed partial class TenantService(
     {
         var slug = await GenerateUniqueSlugAsync(companyName, cancellationToken);
 
-        var tenant = new Tenant
-        {
-            Id = Guid.NewGuid(),
-            Name = companyName,
-            Slug = slug,
-        };
+        var tenant = Tenant.Register(companyName, slug);
 
         dbContext.Tenants.Add(tenant);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -47,14 +42,11 @@ public sealed partial class TenantService(
                 return new TenantProvisionResult(Tenant: null, KeycloakUserId: null, EmailConflict: true);
             }
 
-            var tenantCreated = new TenantCreatedEvent(
-                TenantId: tenant.Id,
-                Slug: tenant.Slug,
-                AdminEmail: adminEmail,
-                KeycloakUserId: keycloakUserId!,
-                OccurredAt: DateTimeOffset.UtcNow);
-
-            await eventPublisher.PublishAsync(tenantCreated, cancellationToken);
+            // Raises TenantCreatedEvent on the aggregate; this SaveChanges also flushes the
+            // ambient UserOnboardingRequestedEvent queued by CreateOnboardingUserAsync above -
+            // both are dispatched together, after commit, by DomainEventDispatchingInterceptor.
+            tenant.MarkProvisioned(adminEmail, keycloakUserId!);
+            await dbContext.SaveChangesAsync(cancellationToken);
 
             return new TenantProvisionResult(tenant, keycloakUserId, EmailConflict: false);
         }
@@ -75,6 +67,13 @@ public sealed partial class TenantService(
     {
         var (keycloakUserId, emailConflict) = await CreateOnboardingUserAsync(
             tenantId, email, isTenantAdmin: false, cancellationToken);
+
+        // Adding a teammate to an existing tenant doesn't otherwise touch the DB, so this
+        // SaveChanges exists purely to flush the ambient UserOnboardingRequestedEvent queued
+        // by CreateOnboardingUserAsync above through DomainEventDispatchingInterceptor.
+        if (!emailConflict)
+            await dbContext.SaveChangesAsync(cancellationToken);
+
         return new TenantUserProvisionResult(keycloakUserId, emailConflict);
     }
 
@@ -96,9 +95,8 @@ public sealed partial class TenantService(
         if (tenant is null)
             return null;
 
-        tenant.Name = name;
-        tenant.IsActive = isActive;
-        tenant.UpdatedAtUtc = DateTime.UtcNow;
+        tenant.Rename(name);
+        tenant.SetActive(isActive);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -114,8 +112,7 @@ public sealed partial class TenantService(
         if (tenant is null)
             return null;
 
-        tenant.IsActive = isActive;
-        tenant.UpdatedAtUtc = DateTime.UtcNow;
+        tenant.SetActive(isActive);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -166,7 +163,9 @@ public sealed partial class TenantService(
                 KeycloakUserId: keycloakUserId,
                 OccurredAt: DateTimeOffset.UtcNow);
 
-            await eventPublisher.PublishAsync(onboardingRequested, cancellationToken);
+            // Not backed by any DB column change (Keycloak-only side effect), so it's queued
+            // ambiently rather than raised on an aggregate - the next SaveChanges flushes it.
+            domainEventCollector.Enqueue(onboardingRequested);
 
             return (keycloakUserId, EmailConflict: false);
         }

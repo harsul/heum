@@ -1,4 +1,6 @@
-namespace Heum.Data.Auditing;
+using Heum.Data.Auditing;
+
+namespace Heum.Data.Models;
 
 /// <summary>
 /// Represents a single mutation (insert/update/delete) captured for an entity, independent
