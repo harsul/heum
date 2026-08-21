@@ -5,4 +5,4 @@ public record TenantCreatedEvent(
     string Slug,
     string AdminEmail,
     string KeycloakUserId,
-    DateTimeOffset OccurredAt);
+    DateTimeOffset OccurredAt) : IDomainEvent;

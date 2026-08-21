@@ -1,6 +1,7 @@
 using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Data.Auditing;
+using Heum.Data.Domain;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Messaging;
 using Heum.Server.Features.Admin.Tenants;
@@ -23,6 +24,8 @@ builder.AddAzureServiceBusClient("messaging");
 builder.AddEventPublishing(topics => topics
     .MapTopic<TenantCreatedEvent>("tenant-events")
     .MapTopic<UserOnboardingRequestedEvent>("user-events"));
+
+builder.Services.AddScoped<IDomainEventDispatcher, ServiceBusDomainEventDispatcher>();
 
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>

@@ -1,4 +1,5 @@
 using Heum.Data;
+using Heum.Data.Domain;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
 using Heum.Server.xIntegration.Infrastructure.Fakes;
@@ -47,10 +48,14 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
             
             services.RemoveAll<DbContextOptions<HeumDbContext>>();
             services.RemoveAll<HeumDbContext>();
-            services.AddScoped(_ =>
+            services.AddScoped(sp =>
                 new HeumDbContext(
                     new DbContextOptionsBuilder<HeumDbContext>()
                         .UseInMemoryDatabase("heum-test")
+                        // Domain events (e.g. TenantCreatedEvent) are dispatched by this interceptor
+                        // after SaveChanges, same as in production - without it, TenantService's calls
+                        // to Tenant's aggregate methods would never reach FakeEvents.
+                        .AddInterceptors(sp.GetRequiredService<DomainEventDispatchingInterceptor>())
                         .Options));
 
             services.RemoveAll<IKeycloakService>();

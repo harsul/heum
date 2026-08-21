@@ -20,8 +20,8 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         db.Tenants.RemoveRange(db.Tenants);
         db.Tenants.AddRange(
-            new Tenant { Id = Guid.NewGuid(), Name = "Alpha", Slug = "alpha" },
-            new Tenant { Id = Guid.NewGuid(), Name = "Beta", Slug = "beta" });
+            Tenant.Register("Alpha", "alpha"),
+            Tenant.Register("Beta", "beta"));
         await db.SaveChangesAsync();
 
         fixture.FakeEvents.Clear();
@@ -254,7 +254,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         await using var scope = fixture.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
         var tenant = await db.Tenants.FirstAsync(TestContext.Current.CancellationToken);
-        tenant.IsActive = false;
+        tenant.SetActive(false);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.SystemAdmin);
