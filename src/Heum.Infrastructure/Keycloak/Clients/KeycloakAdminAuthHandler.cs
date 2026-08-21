@@ -9,13 +9,18 @@ namespace Heum.Infrastructure.Keycloak.Clients;
 /// <summary>
 /// Attaches an admin Bearer token to every outgoing Keycloak Admin API request.
 /// The token is fetched via client_credentials and cached in distributed cache to
-/// avoid a round-trip on each call. Token requests use <see cref="DelegatingHandler.InnerHandler"/>
-/// directly so they bypass this handler and never carry a (nonexistent) Bearer header.
+/// avoid a round-trip on each call. Token requests go through a separate, dedicated
+/// <see cref="HttpClient"/> (see <see cref="TokenClientName"/>) rather than this handler's
+/// own pipeline, so they resolve service discovery/BaseAddress correctly and never carry
+/// a (nonexistent) Bearer header.
 /// </summary>
 internal sealed class KeycloakAdminAuthHandler(
     IOptions<KeycloakAdminOptions> options,
-    IDistributedCache cache) : DelegatingHandler
+    IDistributedCache cache,
+    IHttpClientFactory httpClientFactory) : DelegatingHandler
 {
+    public const string TokenClientName = "KeycloakAdminToken";
+
     private readonly KeycloakAdminOptions _options = options.Value;
     private const string AccessTokenCacheKey = "keycloak:admin:access_token";
     private static readonly TimeSpan TokenExpiryBuffer = TimeSpan.FromSeconds(30);
@@ -45,9 +50,12 @@ internal sealed class KeycloakAdminAuthHandler(
             ["client_secret"] = _options.ClientSecret,
         });
 
-        // Use base.SendAsync to bypass this handler so the token request itself
-        // never carries an Authorization header.
-        using var response = await base.SendAsync(tokenRequest, cancellationToken);
+        // Use a dedicated HttpClient (not base.SendAsync) so the request goes through
+        // HttpClient.SendAsync itself - which is what resolves BaseAddress/service discovery
+        // for the "http+https://" scheme - and so the token request never carries an
+        // Authorization header (this client has no auth handler attached).
+        using var tokenClient = httpClientFactory.CreateClient(TokenClientName);
+        using var response = await tokenClient.SendAsync(tokenRequest, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var token = await response.Content.ReadFromJsonAsync<KeycloakTokenResponse>(cancellationToken: cancellationToken)

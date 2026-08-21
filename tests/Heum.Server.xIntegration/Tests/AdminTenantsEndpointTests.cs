@@ -24,6 +24,12 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
             new Tenant { Id = Guid.NewGuid(), Name = "Beta", Slug = "beta" });
         await db.SaveChangesAsync();
 
+        // The seeding above goes through AuditingInterceptor like any other SaveChanges, so it
+        // leaves behind "Insert" AuditTrail rows for the tenants just created. Clear those so
+        // tests asserting on AuditTrail counts start from a clean slate.
+        db.Set<AuditTrail>().RemoveRange(db.Set<AuditTrail>());
+        await db.SaveChangesAsync();
+
         fixture.FakeEvents.Clear();
         fixture.FakeKeycloak.Reset();
     }
