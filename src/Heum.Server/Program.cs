@@ -3,7 +3,10 @@ using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Messaging;
+using Heum.Server.Extensions;
 using Heum.Server.Features.Admin.Tenants;
+using Heum.Server.Features.Invitations;
+using Heum.Server.Features.Settings;
 using Heum.Server.Features.Tenants;
 using Heum.Server.Services;
 using Heum.ServiceDefaults;
@@ -23,7 +26,8 @@ builder.AddRedisClientBuilder("cache")
 builder.AddAzureServiceBusClient("messaging");
 builder.AddEventPublishing(topics => topics
     .MapTopic<TenantCreatedEvent>("tenant-events")
-    .MapTopic<UserOnboardingRequestedEvent>("user-events"));
+    .MapTopic<UserOnboardingRequestedEvent>("user-events")
+    .MapTopic<InvitationCreatedEvent>("user-events"));
 
 // Transactional outbox: domain events are written to the OutboxMessages table in the same
 // transaction as the entity change that raised them (see DomainEventDispatchingInterceptor),
@@ -58,6 +62,8 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<ISettingsService, SettingsService>();
+builder.Services.AddScoped<IInvitationService, InvitationService>();
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 builder.Services.AddScoped<Heum.Data.Multitenancy.ITenantProvider>(sp => sp.GetRequiredService<TenantContext>());
@@ -70,12 +76,17 @@ builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddValidation();
 
+builder.Services.AddHeumApiVersioning();
+builder.Services.AddHeumRateLimiting();
+
 var app = builder.Build();
 
 // Migrations are applied by the Heum.MigrationService worker before this service starts.
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -88,9 +99,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseOutputCache();
 
-var api = app.MapGroup("/api");
+var api = app.MapVersionedApiGroup();
 
 api.MapTenantsEndpoints();
+api.MapSettingsEndpoints();
+api.MapInvitationsEndpoints();
 
 var admin = api.MapGroup("/admin").RequireAuthorization("SystemAdmin");
 admin.MapAdminTenantsEndpoints();

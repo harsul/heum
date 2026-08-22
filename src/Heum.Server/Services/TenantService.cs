@@ -27,8 +27,10 @@ public sealed partial class TenantService(
         var slug = await GenerateUniqueSlugAsync(companyName, cancellationToken);
 
         var tenant = Tenant.Register(companyName, slug, timeProvider);
+        var settings = TenantSettings.CreateDefault(tenant.Id, timeProvider);
 
         dbContext.Tenants.Add(tenant);
+        dbContext.TenantSettings.Add(settings);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         try
@@ -38,6 +40,7 @@ public sealed partial class TenantService(
 
             if (emailConflict)
             {
+                dbContext.TenantSettings.Remove(settings);
                 dbContext.Tenants.Remove(tenant);
                 await dbContext.SaveChangesAsync(cancellationToken);
                 return new TenantProvisionResult(Tenant: null, KeycloakUserId: null, EmailConflict: true);
@@ -53,8 +56,7 @@ public sealed partial class TenantService(
         }
         catch
         {
-            // Provisioning the Keycloak user failed after the tenant record was committed;
-            // roll back the tenant so provisioning can be safely retried.
+            dbContext.TenantSettings.Remove(settings);
             dbContext.Tenants.Remove(tenant);
             await dbContext.SaveChangesAsync(cancellationToken);
             throw;

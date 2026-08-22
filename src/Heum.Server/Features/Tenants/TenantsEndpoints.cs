@@ -16,7 +16,8 @@ public static class TenantsEndpoints
 
         tenants.MapPost("/register", RegisterTenantAsync)
             .WithName("RegisterTenant")
-            .AllowAnonymous();
+            .AllowAnonymous()
+            .RequireRateLimiting("registration");
 
         // Self-service endpoints for a tenant's own admin(s) to manage their tenant, scoped to
         // whichever tenant the caller's token says they belong to (never a path parameter) -
