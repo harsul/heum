@@ -11,6 +11,8 @@ namespace Heum.Data;
 public class HeumDbContext(DbContextOptions<HeumDbContext> options, ITenantProvider? tenantProvider = null) : DbContext(options)
 {
     public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<TenantSettings> TenantSettings => Set<TenantSettings>();
+    public DbSet<Invitation> Invitations => Set<Invitation>();
     public DbSet<AuditTrail> AuditTrails => Set<AuditTrail>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
