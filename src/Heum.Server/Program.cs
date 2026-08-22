@@ -1,10 +1,9 @@
-using System.Security.Claims;
-using System.Threading.RateLimiting;
 using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Messaging;
+using Heum.Server.Extensions;
 using Heum.Server.Features.Admin.Tenants;
 using Heum.Server.Features.Invitations;
 using Heum.Server.Features.Settings;
@@ -12,7 +11,6 @@ using Heum.Server.Features.Tenants;
 using Heum.Server.Services;
 using Heum.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,59 +76,8 @@ builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddValidation();
 
-builder.Services.AddApiVersioning(options =>
-{
-    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
-    options.AssumeDefaultVersionWhenUnspecified = true;
-    options.ReportApiVersions = true;
-    options.ApiVersionReader = new Asp.Versioning.HeaderApiVersionReader("X-Api-Version");
-});
-
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    options.AddFixedWindowLimiter("fixed", o =>
-    {
-        o.PermitLimit = 60;
-        o.Window = TimeSpan.FromMinutes(1);
-        o.QueueLimit = 0;
-    });
-
-    options.AddFixedWindowLimiter("registration", o =>
-    {
-        o.PermitLimit = 5;
-        o.Window = TimeSpan.FromMinutes(15);
-        o.QueueLimit = 0;
-    });
-
-    options.AddFixedWindowLimiter("authenticated", o =>
-    {
-        o.PermitLimit = 120;
-        o.Window = TimeSpan.FromMinutes(1);
-        o.QueueLimit = 0;
-    });
-
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-    {
-        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userId is not null)
-        {
-            return RateLimitPartition.GetFixedWindowLimiter(userId, _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 120,
-                Window = TimeSpan.FromMinutes(1),
-            });
-        }
-
-        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 60,
-            Window = TimeSpan.FromMinutes(1),
-        });
-    });
-});
+builder.Services.AddHeumApiVersioning();
+builder.Services.AddHeumRateLimiting();
 
 var app = builder.Build();
 
@@ -152,14 +99,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseOutputCache();
 
-var versionSet = app.NewApiVersionSet()
-    .HasApiVersion(new Asp.Versioning.ApiVersion(1, 0))
-    .ReportApiVersions()
-    .Build();
-
-var api = app.MapGroup("/api")
-    .WithApiVersionSet(versionSet)
-    .MapToApiVersion(new Asp.Versioning.ApiVersion(1, 0));
+var api = app.MapVersionedApiGroup();
 
 api.MapTenantsEndpoints();
 api.MapSettingsEndpoints();
