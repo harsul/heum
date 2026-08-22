@@ -56,9 +56,12 @@ internal sealed class KeycloakAdminClient(
         IEnumerable<string> actions,
         CancellationToken cancellationToken = default)
     {
-        using var request = new HttpRequestMessage(
-            HttpMethod.Put,
-            $"/admin/realms/{_options.Realm}/users/{userId}/execute-actions-email");
+        var clientId = Uri.EscapeDataString(_options.OnboardingClientId);
+        var redirectUri = Uri.EscapeDataString(_options.OnboardingRedirectUri);
+        var url = $"/admin/realms/{_options.Realm}/users/{userId}/execute-actions-email" +
+                  $"?client_id={clientId}&redirect_uri={redirectUri}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Content = JsonContent.Create(actions.ToArray());
 
         using var response = await httpClient.SendAsync(request, cancellationToken);

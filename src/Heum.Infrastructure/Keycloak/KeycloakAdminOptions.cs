@@ -14,4 +14,13 @@ public class KeycloakAdminOptions
 
     [Required]
     public string ClientSecret { get; set; } = string.Empty;
+
+    // The Keycloak client ID to use when generating the onboarding action-email link.
+    // Keycloak validates the redirect_uri against this client's allowed redirect URIs.
+    public string OnboardingClientId { get; set; } = "react-frontend";
+
+    // Where Keycloak should redirect the user after completing the required actions
+    // (set password). Must be an allowed redirect URI for OnboardingClientId.
+    [Required]
+    public string OnboardingRedirectUri { get; set; } = string.Empty;
 }
