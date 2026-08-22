@@ -16,22 +16,18 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
 {
     async ValueTask IAsyncLifetime.InitializeAsync()
     {
+        await fixture.ResetDatabaseAsync();
+
         await using var scope = fixture.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
-        db.Tenants.RemoveRange(db.Tenants);
         db.Tenants.AddRange(
             Tenant.Register("Alpha", "alpha", TimeProvider.System),
             Tenant.Register("Beta", "beta", TimeProvider.System));
         await db.SaveChangesAsync();
 
-        // The seeding above goes through AuditingInterceptor like any other SaveChanges, so it
-        // leaves behind "Insert" AuditTrail rows for the tenants just created. Clear those so
-        // tests asserting on AuditTrail counts start from a clean slate.
-        db.Set<AuditTrail>().RemoveRange(db.Set<AuditTrail>());
-        await db.SaveChangesAsync();
-
-        fixture.FakeEvents.Clear();
-        fixture.FakeKeycloak.Reset();
+        // Seeding goes through AuditingInterceptor, so clear the resulting Insert AuditTrail rows
+        // so that tests which assert on AuditTrail counts start from a clean slate.
+        await db.Database.ExecuteSqlRawAsync("""TRUNCATE TABLE "AuditTrails" """);
     }
 
     ValueTask IAsyncDisposable.DisposeAsync() => ValueTask.CompletedTask;

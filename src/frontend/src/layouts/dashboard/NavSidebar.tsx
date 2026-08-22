@@ -30,11 +30,11 @@ function NavContent() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Visit Aspire website (opens in new tab)"
-          sx={{ display: 'flex', alignItems: 'center' }}
+          sx={{ display: 'flex', alignItems: 'center', color: 'inherit' }}
         >
           <Box component="img" src="/Aspire.png" alt="Aspire logo" sx={{ height: 32, width: 'auto' }} />
         </Link>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: '#FFFFFF' }}>
           Heum
         </Typography>
       </Box>
@@ -50,14 +50,15 @@ function NavContent() {
             sx={{
               mb: 0.5,
               borderRadius: 1.5,
-              color: 'text.secondary',
+              color: 'rgba(255, 255, 255, 0.72)',
               '& .MuiListItemIcon-root': { color: 'inherit' },
+              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
               '&.active': {
-                bgcolor: (theme) => `${theme.palette.primary.main}1f`,
-                color: 'primary.main',
-                fontWeight: 700,
-                '&:hover': { bgcolor: (theme) => `${theme.palette.primary.main}29` },
+                backgroundColor: 'rgba(255, 255, 255, 0.18)',
+                color: '#FFFFFF',
+                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.25)' },
               },
+              '&.Mui-disabled': { opacity: 0.4 },
             }}
           >
             <ListItemIcon sx={{ minWidth: 36 }}>
@@ -72,7 +73,7 @@ function NavContent() {
       </List>
 
       <Box sx={{ px: 3, py: 2 }}>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
           Powered by .NET Aspire
         </Typography>
       </Box>
@@ -91,7 +92,7 @@ export function NavSidebar({ open, onClose }: NavSidebarProps) {
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': { width: NAV_WIDTH, boxSizing: 'border-box' },
+          '& .MuiDrawer-paper': { width: NAV_WIDTH, boxSizing: 'border-box', borderRadius: '0 16px 16px 0' },
         }}
       >
         <NavContent />
@@ -103,9 +104,12 @@ export function NavSidebar({ open, onClose }: NavSidebarProps) {
         sx={{
           display: { xs: 'none', md: 'block' },
           '& .MuiDrawer-paper': {
-            width: NAV_WIDTH,
+            width: NAV_WIDTH - 24,
+            margin: '12px 0 12px 12px',
+            height: 'calc(100vh - 24px)',
+            borderRadius: '16px',
             boxSizing: 'border-box',
-            borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+            overflowX: 'hidden',
           },
         }}
         open

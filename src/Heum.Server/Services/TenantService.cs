@@ -181,6 +181,9 @@ public sealed partial class TenantService(
     private async Task<string> GenerateUniqueSlugAsync(string companyName, CancellationToken cancellationToken)
     {
         var baseSlug = Slugify(companyName);
+        // Leave room for the worst-case collision suffix ("-50" = 3 chars) within the 100-char DB column.
+        if (baseSlug.Length > 97)
+            baseSlug = baseSlug[..97];
 
         for (var attempt = 1; attempt <= MaxSlugSuffixAttempts; attempt++)
         {

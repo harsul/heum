@@ -12,17 +12,8 @@ namespace Heum.Server.xIntegration.Tests;
 [Collection(nameof(IntegrationCollection))]
 public class TenantRegistrationTests(IntegrationFixture fixture) : IAsyncLifetime
 {
-    async ValueTask IAsyncLifetime.InitializeAsync()
-    {
-        await using var scope = fixture.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
-        db.Tenants.RemoveRange(db.Tenants);
-        db.OutboxMessages.RemoveRange(db.OutboxMessages);
-        await db.SaveChangesAsync();
-
-        fixture.FakeEvents.Clear();
-        fixture.FakeKeycloak.Reset();
-    }
+    async ValueTask IAsyncLifetime.InitializeAsync() =>
+        await fixture.ResetDatabaseAsync();
 
     ValueTask IAsyncDisposable.DisposeAsync() => ValueTask.CompletedTask;
 
