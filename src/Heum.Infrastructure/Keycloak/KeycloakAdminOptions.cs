@@ -21,6 +21,6 @@ public class KeycloakAdminOptions
 
     // Where Keycloak should redirect the user after completing the required actions
     // (set password). Must be an allowed redirect URI for OnboardingClientId.
-    [Required]
+    // Only required for the Functions project; the server does not send action emails.
     public string OnboardingRedirectUri { get; set; } = string.Empty;
 }
