@@ -54,6 +54,14 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints();
 
+var webfrontend = builder.AddViteApp("webfrontend", "../frontend")
+    .WithReference(server)
+    .WithReference(keycloak)
+    .WaitFor(server)
+    .WaitFor(keycloak);
+
+server.PublishWithContainerFiles(webfrontend, "wwwroot");
+
 // Background worker: sends the Keycloak onboarding action link (profile, password, verify
 // email) when a new tenant/user is provisioned.
 builder.AddAzureFunctionsProject<Projects.Heum_Functions>("useronboarding")
@@ -65,14 +73,7 @@ builder.AddAzureFunctionsProject<Projects.Heum_Functions>("useronboarding")
     .WaitFor(messaging)
     .WithEnvironment("KeycloakAdmin__Realm", "saas-app")
     .WithEnvironment("KeycloakAdmin__ClientId", "tenant-provisioning-service")
-    .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret);
-
-var webfrontend = builder.AddViteApp("webfrontend", "../frontend")
-    .WithReference(server)
-    .WithReference(keycloak)
-    .WaitFor(server)
-    .WaitFor(keycloak);
-
-server.PublishWithContainerFiles(webfrontend, "wwwroot");
+    .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)
+    .WithEnvironment("KeycloakAdmin__OnboardingRedirectUri", webfrontend.GetEndpoint("http").Property(EndpointProperty.Url));
 
 builder.Build().Run();
