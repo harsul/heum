@@ -1,26 +1,42 @@
 import { createTheme } from '@mui/material/styles';
 
+const SHADOW_SM = '0 0 2px 0 rgba(145,158,171,0.20), 0 12px 24px -4px rgba(145,158,171,0.12)';
+const SHADOW_MD = '0 0 2px 0 rgba(145,158,171,0.24), 0 16px 32px -4px rgba(145,158,171,0.24)';
+
 const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: 'light',
     primary: {
-      main: '#7c92f5',
-      dark: '#5b6fd8',
+      main: '#00AB55',
+      light: '#5BE49B',
+      dark: '#007B40',
     },
     secondary: {
-      main: '#8b5ecf',
-      dark: '#6b46a3',
+      main: '#00AB55',
+      dark: '#007B40',
+    },
+    success: {
+      main: '#00AB55',
+      light: '#5BE49B',
+      dark: '#007B40',
+    },
+    text: {
+      primary: '#212B36',
+      secondary: '#637381',
     },
     background: {
-      default: '#1a1a2e',
-      paper: 'rgba(30, 30, 46, 0.95)',
+      default: '#F4F6F8',
+      paper: '#FFFFFF',
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: "'Public Sans', sans-serif",
     h1: { fontWeight: 700, letterSpacing: '-0.02em' },
-    h2: { fontWeight: 600 },
+    h2: { fontWeight: 700 },
+    h4: { fontWeight: 700 },
+    h6: { fontWeight: 700 },
     button: { fontWeight: 600, textTransform: 'none' },
+    body2: { color: '#637381' },
   },
   shape: {
     borderRadius: 8,
@@ -29,8 +45,7 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-          backgroundAttachment: 'fixed',
+          background: '#F4F6F8',
           minHeight: '100vh',
         },
       },
@@ -39,9 +54,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          backgroundColor: 'rgba(30, 30, 46, 0.95)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: 'none',
+          backgroundColor: '#FFFFFF',
+          borderRadius: 16,
+          border: 'none',
+          boxShadow: SHADOW_SM,
         },
       },
     },
@@ -57,9 +73,11 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
-          background: 'rgba(26, 26, 46, 0.9)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: 'rgba(255, 255, 255, 0.80)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(145, 158, 171, 0.16)',
           boxShadow: 'none',
+          color: '#212B36',
         },
       },
     },
@@ -67,7 +85,9 @@ const theme = createTheme({
       styleOverrides: {
         paper: {
           backgroundImage: 'none',
-          background: '#16162a',
+          backgroundColor: '#007B40',
+          color: '#FFFFFF',
+          borderRight: 'none',
         },
       },
     },
@@ -75,9 +95,6 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           transition: 'none',
-          '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.06)',
-          },
         },
       },
     },
@@ -97,7 +114,41 @@ const theme = createTheme({
         },
       },
     },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          fontWeight: 600,
+        },
+      },
+    },
   },
+  shadows: [
+    'none',
+    '0 1px 2px 0 rgba(145,158,171,0.16)',
+    SHADOW_SM,
+    SHADOW_SM,
+    SHADOW_SM,
+    SHADOW_SM,
+    SHADOW_SM,
+    SHADOW_SM,
+    SHADOW_SM,
+    SHADOW_SM,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+    SHADOW_MD,
+  ],
 });
 
 export default theme;
