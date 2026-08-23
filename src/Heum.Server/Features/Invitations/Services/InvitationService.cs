@@ -6,7 +6,7 @@ using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace Heum.Server.Features.Invitations;
+namespace Heum.Server.Features.Invitations.Services;
 
 internal sealed class InvitationService(
     HeumDbContext dbContext,

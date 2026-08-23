@@ -1,4 +1,5 @@
 ﻿using Heum.Data.Models;
+using Heum.Server.Features.Tenants.Endpoints;
 
 namespace Heum.Server.Features.Tenants.Services;
 

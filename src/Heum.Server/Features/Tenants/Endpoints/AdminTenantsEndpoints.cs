@@ -4,7 +4,7 @@ using Heum.Server.Features.Tenants.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Heum.Server.Features.Tenants;
+namespace Heum.Server.Features.Tenants.Endpoints;
 
 public static class AdminTenantsEndpoints
 {

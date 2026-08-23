@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Heum.Server.Features.Tenants;
+using Heum.Server.Features.Tenants.Endpoints;
 
 namespace Heum.Server.xUnit;
 

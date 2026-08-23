@@ -1,6 +1,6 @@
 using Heum.Data.Models;
 
-namespace Heum.Server.Features.Invitations;
+namespace Heum.Server.Features.Invitations.Services;
 
 public sealed record InvitationResult(Invitation? Invitation, bool DuplicatePending);
 public sealed record AcceptResult(bool Accepted, bool EmailConflict);
