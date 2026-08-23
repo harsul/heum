@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Heum.Server.Features.Admin.Tenants.Models;
+namespace Heum.Server.Features.Tenants.Models;
 
 public class UpdateTenantRequest
 {

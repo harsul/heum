@@ -1,8 +1,6 @@
-﻿using Heum.Data.Auditing;
-using Heum.Data.Models;
-using Heum.Server.Features.Tenants;
+﻿using Heum.Data.Models;
 
-namespace Heum.Server.Services;
+namespace Heum.Server.Features.Tenants.Services;
 
 public sealed record TenantProvisionResult(Tenant? Tenant, string? KeycloakUserId, bool EmailConflict);
 
@@ -10,7 +8,7 @@ public sealed record TenantUserProvisionResult(string? KeycloakUserId, bool Emai
 
 /// <summary>
 /// Owns all tenant persistence logic (provisioning + CRUD) so that <see cref="TenantsEndpoints"/>
-/// and <see cref="Heum.Server.Features.Admin.Tenants.AdminTenantsEndpoints"/> can both depend on
+/// and <see cref="AdminTenantsEndpoints"/> can both depend on
 /// it instead of talking to <c>HeumDbContext</c> directly.
 /// </summary>
 public interface ITenantService

@@ -1,12 +1,10 @@
 using Heum.Infrastructure.Keycloak.Services;
-using Heum.Server.Features.Admin.Tenants.Models;
-using Heum.Server.Features.Tenants;
 using Heum.Server.Features.Tenants.Models;
-using Heum.Server.Services;
+using Heum.Server.Features.Tenants.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Heum.Server.Features.Admin.Tenants;
+namespace Heum.Server.Features.Tenants;
 
 public static class AdminTenantsEndpoints
 {

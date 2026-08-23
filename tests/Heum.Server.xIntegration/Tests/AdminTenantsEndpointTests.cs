@@ -2,7 +2,6 @@ using System.Net;
 using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Data.Models;
-using Heum.Server.Features.Admin.Tenants.Models;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;

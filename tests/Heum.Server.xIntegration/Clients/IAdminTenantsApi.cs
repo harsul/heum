@@ -1,4 +1,3 @@
-using Heum.Server.Features.Admin.Tenants.Models;
 using Heum.Server.Features.Tenants.Models;
 using Refit;
 

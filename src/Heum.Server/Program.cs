@@ -4,14 +4,15 @@ using Heum.Data.Auditing;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Messaging;
 using Heum.Server.Extensions;
-using Heum.Server.Features.Admin.Tenants;
 using Heum.Server.Features.Invitations;
 using Heum.Server.Features.Settings;
 using Heum.Server.Features.Tenants;
+using Heum.Server.Features.Tenants.Services;
 using Heum.Server.Services;
 using Heum.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
+using TenantService = Heum.Server.Features.Tenants.Services.TenantService;
 
 var builder = WebApplication.CreateBuilder(args);
 
