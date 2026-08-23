@@ -36,6 +36,10 @@ var migrations = builder.AddProject<Projects.Heum_MigrationService>("migrations"
     .WithReference(database)
     .WaitFor(database);
 
+var backgroundServices = builder.AddProject<Projects.Heum_BackgroundService>("background-services")
+    .WithReference(database)
+    .WaitFor(database);
+
 var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithReference(cache)
     .WithReference(database)

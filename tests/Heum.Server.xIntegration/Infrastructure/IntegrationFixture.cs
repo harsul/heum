@@ -1,4 +1,6 @@
 using DotNet.Testcontainers.Builders;
+using Heum.BackgroundService;
+using Heum.BackgroundService.Outbox;
 using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Data.Domain;

@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Heum.BackgroundService;
+using Heum.BackgroundService.Outbox;
 using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Data.Domain;

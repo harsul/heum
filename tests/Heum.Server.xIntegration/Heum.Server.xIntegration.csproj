@@ -25,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Heum.BackgroundService\Heum.BackgroundService.csproj" />
     <ProjectReference Include="..\..\src\Heum.Server\Heum.Server.csproj" />
   </ItemGroup>
 

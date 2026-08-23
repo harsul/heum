@@ -1,4 +1,4 @@
-namespace Heum.Server.Services;
+namespace Heum.BackgroundService.Outbox;
 
 /// <summary>
 /// Configurable via an "OutboxProcessor" section in appsettings (falls back to these defaults).

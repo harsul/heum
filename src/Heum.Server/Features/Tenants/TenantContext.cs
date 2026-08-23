@@ -1,7 +1,7 @@
 using Heum.Data.Multitenancy;
 using Heum.Infrastructure.Keycloak;
 
-namespace Heum.Server.Services;
+namespace Heum.Server.Features.Tenants;
 
 public class TenantContext(IHttpContextAccessor httpContextAccessor) : ITenantContext, ITenantProvider
 {
