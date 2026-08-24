@@ -3,6 +3,7 @@ import type { Tenant, TenantUser } from '../../tenants/types/tenant';
 
 export interface AddMyTenantUserPayload {
   email: string;
+  role?: string;
 }
 
 export async function fetchMyTenant(): Promise<Tenant> {
@@ -26,4 +27,9 @@ export async function enableMyTenantUser(userId: string): Promise<void> {
 
 export async function disableMyTenantUser(userId: string): Promise<void> {
   await apiClient.post(`/tenants/me/users/${userId}/disable`);
+}
+
+export async function fetchMyTenantRoles(): Promise<string[]> {
+  const { data } = await apiClient.get<string[]>('/tenants/me/roles');
+  return data;
 }

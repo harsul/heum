@@ -19,6 +19,7 @@ import { getApiErrorMessage } from '../../../utils/apiError';
 import { AddUserByEmailDialog } from '../../../components/AddUserByEmailDialog';
 import { useTenantUsers } from '../hooks/useTenantUsers';
 import { useAddTenantUser } from '../hooks/useAddTenantUser';
+import { useAdminAssignableRoles } from '../hooks/useAdminAssignableRoles';
 
 interface TenantUsersTableProps {
   tenantId: string;
@@ -27,6 +28,7 @@ interface TenantUsersTableProps {
 export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
   const { data: users = [], isLoading, isError } = useTenantUsers(tenantId);
   const addTenantUser = useAddTenantUser(tenantId);
+  const { data: roles, isLoading: rolesLoading } = useAdminAssignableRoles();
   const [isAddingUser, setIsAddingUser] = useState(false);
 
   return (
@@ -128,6 +130,8 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
         open={isAddingUser}
         saving={addTenantUser.isPending}
         errorMessage={getApiErrorMessage(addTenantUser.error, 'Failed to add user.')}
+        roles={roles}
+        rolesLoading={rolesLoading}
         onClose={() => setIsAddingUser(false)}
         onAdd={(values) => {
           addTenantUser.mutate(values, { onSuccess: () => setIsAddingUser(false) });
