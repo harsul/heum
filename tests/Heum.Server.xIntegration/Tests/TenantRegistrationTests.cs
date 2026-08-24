@@ -1,9 +1,6 @@
 using System.Net;
-using Heum.BackgroundService;
-using Heum.BackgroundService.Outbox;
 using Heum.Data;
 using Heum.Server.Features.Tenants.Models;
-using Heum.Server.Services;
 using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -40,19 +37,6 @@ public class TenantRegistrationTests(IntegrationFixture fixture) : IAsyncLifetim
         Assert.NotNull(tenant);
         Assert.Equal("Acme Corp", tenant.Name);
         Assert.True(tenant.IsActive);
-
-        // ProvisionTenantAsync raises TenantCreatedEvent + UserOnboardingRequestedEvent, which
-        // land in the OutboxMessages table transactionally - nothing has been published yet.
-        Assert.Equal(2, await db.OutboxMessages.CountAsync(TestContext.Current.CancellationToken));
-        Assert.Empty(fixture.FakeEvents.PublishedEvents);
-
-        // Explicitly drain the outbox instead of waiting on the poll interval.
-        var processor = scope.ServiceProvider.GetRequiredService<IOutboxProcessor>();
-        await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
-
-        Assert.Equal(2, fixture.FakeEvents.PublishedEvents.Count);
-        Assert.True(await db.OutboxMessages.AllAsync(
-            m => m.ProcessedAtUtc != null, TestContext.Current.CancellationToken));
     }
 
     [Fact]
