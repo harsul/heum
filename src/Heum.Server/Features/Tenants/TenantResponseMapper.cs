@@ -1,6 +1,7 @@
 using Heum.Data.Auditing;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Models;
+using Heum.Server.Features.Tenants.Endpoints;
 using Heum.Server.Features.Tenants.Models;
 
 namespace Heum.Server.Features.Tenants;

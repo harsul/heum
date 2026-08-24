@@ -1,4 +1,4 @@
-namespace Heum.Server.Services;
+namespace Heum.Server.Features.Tenants;
 
 public interface ITenantContext
 {

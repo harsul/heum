@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Options;
 
-namespace Heum.Server.Services;
+namespace Heum.BackgroundService.Outbox;
 
 /// <inheritdoc cref="IOutboxProcessor" />
 internal sealed class OutboxProcessor(

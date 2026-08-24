@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace Heum.Server.Services;
+namespace Heum.BackgroundService.Outbox;
 
 /// <summary>
 /// Polls for pending <see cref="Heum.Data.Domain.OutboxMessage"/> rows on a timer and publishes
@@ -11,7 +11,7 @@ namespace Heum.Server.Services;
 public sealed class OutboxProcessorHostedService(
     IServiceScopeFactory scopeFactory,
     IOptions<OutboxProcessorOptions> options,
-    ILogger<OutboxProcessorHostedService> logger) : BackgroundService
+    ILogger<OutboxProcessorHostedService> logger) : Microsoft.Extensions.Hosting.BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

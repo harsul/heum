@@ -1,6 +1,6 @@
 using Heum.Data.Models;
 
-namespace Heum.Server.Features.Settings;
+namespace Heum.Server.Features.Settings.Services;
 
 public interface ISettingsService
 {

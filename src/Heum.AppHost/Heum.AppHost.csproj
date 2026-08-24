@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Heum.BackgroundService\Heum.BackgroundService.csproj" />
     <ProjectReference Include="..\Heum.Functions\Heum.Functions.csproj" />
     <ProjectReference Include="..\Heum.MigrationService\Heum.MigrationService.csproj" />
     <ProjectReference Include="..\Heum.Server\Heum.Server.csproj" />

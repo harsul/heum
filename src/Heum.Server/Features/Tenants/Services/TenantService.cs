@@ -2,13 +2,12 @@
 using System.Text.RegularExpressions;
 using Heum.Contracts.Events;
 using Heum.Data;
-using Heum.Data.Auditing;
 using Heum.Data.Domain;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace Heum.Server.Services;
+namespace Heum.Server.Features.Tenants.Services;
 
 /// <inheritdoc cref="ITenantService" />
 public sealed partial class TenantService(

@@ -2,7 +2,7 @@ using Heum.Data;
 using Heum.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Heum.Server.Features.Settings;
+namespace Heum.Server.Features.Settings.Services;
 
 internal sealed class SettingsService(HeumDbContext dbContext, TimeProvider timeProvider) : ISettingsService
 {

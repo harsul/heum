@@ -4,14 +4,18 @@ using Heum.Data.Auditing;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Messaging;
 using Heum.Server.Extensions;
-using Heum.Server.Features.Admin.Tenants;
 using Heum.Server.Features.Invitations;
+using Heum.Server.Features.Invitations.Services;
 using Heum.Server.Features.Settings;
+using Heum.Server.Features.Settings.Services;
 using Heum.Server.Features.Tenants;
+using Heum.Server.Features.Tenants.Endpoints;
+using Heum.Server.Features.Tenants.Services;
 using Heum.Server.Services;
 using Heum.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
+using TenantService = Heum.Server.Features.Tenants.Services.TenantService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,14 +32,6 @@ builder.AddEventPublishing(topics => topics
     .MapTopic<TenantCreatedEvent>("tenant-events")
     .MapTopic<UserOnboardingRequestedEvent>("user-events")
     .MapTopic<InvitationCreatedEvent>("user-events"));
-
-// Transactional outbox: domain events are written to the OutboxMessages table in the same
-// transaction as the entity change that raised them (see DomainEventDispatchingInterceptor),
-// and OutboxProcessorHostedService polls that table to actually publish them to Service Bus.
-builder.Services.Configure<OutboxProcessorOptions>(
-    builder.Configuration.GetSection(OutboxProcessorOptions.SectionName));
-builder.Services.AddScoped<IOutboxProcessor, OutboxProcessor>();
-builder.Services.AddHostedService<OutboxProcessorHostedService>();
 
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>

@@ -1,5 +1,6 @@
 using Heum.Data.Models;
 using Heum.Server.Features.Settings.Models;
+using Heum.Server.Features.Settings.Services;
 using Heum.Server.Features.Tenants;
 using Heum.Server.Services;
 using Microsoft.AspNetCore.Http.HttpResults;

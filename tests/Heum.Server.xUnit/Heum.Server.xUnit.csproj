@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Heum.BackgroundService\Heum.BackgroundService.csproj" />
     <ProjectReference Include="..\..\src\Heum.Contracts\Heum.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Heum.Data\Heum.Data.csproj" />
     <ProjectReference Include="..\..\src\Heum.Infrastructure\Heum.Infrastructure.csproj" />

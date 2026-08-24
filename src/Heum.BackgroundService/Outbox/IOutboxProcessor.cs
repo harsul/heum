@@ -1,4 +1,4 @@
-namespace Heum.Server.Services;
+namespace Heum.BackgroundService.Outbox;
 
 /// <summary>
 /// Publishes pending <see cref="Heum.Data.Domain.OutboxMessage"/> rows to Service Bus. Split out
