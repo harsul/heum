@@ -1,6 +1,3 @@
-using DotNet.Testcontainers.Builders;
-using Heum.BackgroundService;
-using Heum.BackgroundService.Outbox;
 using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Data.Domain;
@@ -8,7 +5,6 @@ using Heum.Data.Multitenancy;
 using Heum.Data.SoftDelete;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
-using Heum.Server.Services;
 using Heum.Server.xIntegration.Infrastructure.Fakes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
@@ -19,7 +15,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using Refit;
 using Testcontainers.PostgreSql;
 
@@ -92,17 +87,6 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
 
             services.RemoveAll<IOutputCacheStore>();
             services.AddOutputCache();
-
-            // Outbox draining is triggered explicitly via IOutboxProcessor in tests instead of
-            // waiting on OutboxProcessorHostedService's poll interval, so tests stay deterministic
-            // (and don't race the interval against test assertions/cleanup).
-            foreach (var descriptor in services
-                         .Where(d => d.ServiceType == typeof(IHostedService)
-                                     && d.ImplementationType == typeof(OutboxProcessorHostedService))
-                         .ToList())
-            {
-                services.Remove(descriptor);
-            }
         });
     }
 

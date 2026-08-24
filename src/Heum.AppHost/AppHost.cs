@@ -31,14 +31,15 @@ userEventsTopic.AddServiceBusSubscription("user-onboarding-sub");
 
 var keycloakAdminSecret = builder.AddParameter("KeycloakAdminSecret", secret: true);
 
-// Applies EF Core migrations before the services that depend on the schema start.
 var migrations = builder.AddProject<Projects.Heum_MigrationService>("migrations")
     .WithReference(database)
     .WaitFor(database);
 
 var backgroundServices = builder.AddProject<Projects.Heum_BackgroundService>("background-services")
     .WithReference(database)
-    .WaitFor(database);
+    .WithReference(messaging)
+    .WaitFor(database)
+    .WaitFor(messaging);
 
 var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithReference(cache)
@@ -52,10 +53,7 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WaitFor(mailpit)
     .WaitFor(messaging)
     .WaitForCompletion(migrations)
-    .WithEnvironment("KeycloakAdmin__Realm", "saas-app")
-    .WithEnvironment("KeycloakAdmin__ClientId", "tenant-provisioning-service")
     .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)
-    .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints();
 
 var webfrontend = builder.AddViteApp("webfrontend", "../frontend")
@@ -66,8 +64,6 @@ var webfrontend = builder.AddViteApp("webfrontend", "../frontend")
 
 server.PublishWithContainerFiles(webfrontend, "wwwroot");
 
-// Background worker: sends the Keycloak onboarding action link (profile, password, verify
-// email) when a new tenant/user is provisioned.
 builder.AddAzureFunctionsProject<Projects.Heum_Functions>("useronboarding")
     .WithReference(cache)
     .WithReference(keycloak)
@@ -75,8 +71,6 @@ builder.AddAzureFunctionsProject<Projects.Heum_Functions>("useronboarding")
     .WaitFor(cache)
     .WaitFor(keycloak)
     .WaitFor(messaging)
-    .WithEnvironment("KeycloakAdmin__Realm", "saas-app")
-    .WithEnvironment("KeycloakAdmin__ClientId", "tenant-provisioning-service")
     .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)
     .WithEnvironment("KeycloakAdmin__OnboardingRedirectUri", webfrontend.GetEndpoint("http").Property(EndpointProperty.Url));
 
