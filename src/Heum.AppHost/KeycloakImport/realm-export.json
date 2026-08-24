@@ -28,21 +28,30 @@
         "description": "Full administrative access",
         "composite": false,
         "clientRole": false,
-        "containerId": "saas-app"
+        "containerId": "saas-app",
+        "attributes": {
+          "roleType": ["Application"]
+        }
       },
       {
         "name": "User",
         "description": "Standard authenticated user",
         "composite": false,
         "clientRole": false,
-        "containerId": "saas-app"
+        "containerId": "saas-app",
+        "attributes": {
+          "roleType": ["Application"]
+        }
       },
       {
         "name": "SystemAdmin",
         "description": "Platform staff who can manage tenants across the whole system",
         "composite": false,
         "clientRole": false,
-        "containerId": "saas-app"
+        "containerId": "saas-app",
+        "attributes": {
+          "roleType": ["System"]
+        }
       }
     ],
     "client": {}
