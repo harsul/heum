@@ -6,8 +6,8 @@ namespace Heum.Infrastructure.Keycloak.Clients;
 
 /// <summary>
 /// Calls the Keycloak Admin REST API. Authenticates using the client-credentials grant for
-/// the "tenant-provisioning-service" confidential client, which has been granted the
-/// realm-management "manage-users" role. Contains no business logic - see
+/// the "dotnet-admin-api" confidential client, which has been granted the
+/// realm-management "manage-users" and "query-realms" roles. Contains no business logic - see
 /// <see cref="IKeycloakService"/> for tenant-oriented operations built on top of this.
 /// Authorization is handled transparently by <see cref="KeycloakAdminAuthHandler"/>.
 /// </summary>

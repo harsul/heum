@@ -113,9 +113,9 @@
       "protocol": "openid-connect"
     },
     {
-      "clientId": "tenant-provisioning-service",
-      "name": "Tenant Provisioning Service",
-      "description": "Confidential service-account client used by the .NET API to call the Keycloak Admin REST API when provisioning new tenants",
+      "clientId": "dotnet-admin-api",
+      "name": ".NET Admin API",
+      "description": "Confidential service-account client used by the .NET API to call the Keycloak Admin REST API",
       "enabled": true,
       "publicClient": false,
       "bearerOnly": false,
@@ -190,9 +190,9 @@
       "realmRoles": ["SystemAdmin"]
     },
     {
-      "username": "service-account-tenant-provisioning-service",
+      "username": "service-account-dotnet-admin-api",
       "enabled": true,
-      "serviceAccountClientId": "tenant-provisioning-service",
+      "serviceAccountClientId": "dotnet-admin-api",
       "clientRoles": {
         "realm-management": ["manage-users", "query-realms"]
       }
