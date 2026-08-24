@@ -5,7 +5,7 @@ namespace Heum.Server.Features.Tenants.Services;
 
 public sealed record TenantProvisionResult(Tenant? Tenant, string? KeycloakUserId, bool EmailConflict);
 
-public sealed record TenantUserProvisionResult(string? KeycloakUserId, bool EmailConflict);
+public sealed record TenantUserProvisionResult(string? KeycloakUserId, bool EmailConflict, bool InvalidRole = false);
 
 /// <summary>
 /// Owns all tenant persistence logic (provisioning + CRUD) so that <see cref="TenantsEndpoints"/>
@@ -28,9 +28,15 @@ public interface ITenantService
     /// Adds another user to an existing tenant, triggering the same onboarding email as
     /// tenant provisioning. Assumes the caller has already verified the tenant exists.
     /// </summary>
+    /// <param name="role">
+    /// An optional realm role to assign on top of the baseline "User" role (e.g. "Admin").
+    /// Must be one of the roles returned by <see cref="IKeycloakService.GetAssignableRolesAsync"/>.
+    /// Pass <c>null</c> to create a plain user with "User" only.
+    /// </param>
     Task<TenantUserProvisionResult> AddTenantUserAsync(
         Guid tenantId,
         string email,
+        string? role,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Tenant>> ListTenantsAsync(CancellationToken cancellationToken = default);

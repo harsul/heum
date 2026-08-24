@@ -42,4 +42,10 @@ internal interface IKeycloakAdminClient
         string userId,
         bool enabled,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Calls <c>GET /admin/realms/{realm}/roles?briefRepresentation=false</c>.
+    /// Returns full role representations including custom attributes.
+    /// </summary>
+    Task<IReadOnlyList<KeycloakRoleRepresentation>> GetRolesAsync(CancellationToken cancellationToken = default);
 }

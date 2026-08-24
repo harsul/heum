@@ -103,4 +103,19 @@ internal sealed class KeycloakAdminClient(
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
     }
+
+    public async Task<IReadOnlyList<KeycloakRoleRepresentation>> GetRolesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/admin/realms/{_options.Realm}/roles?briefRepresentation=false");
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var roles = await response.Content.ReadFromJsonAsync<List<KeycloakRoleRepresentation>>(
+            cancellationToken: cancellationToken);
+        return roles ?? [];
+    }
 }

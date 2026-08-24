@@ -24,4 +24,11 @@ internal static class TenantProblems
         Detail = "You can't disable the account you're currently signed in with.",
         Status = StatusCodes.Status400BadRequest,
     };
+
+    public static ProblemDetails InvalidRole(string role) => new()
+    {
+        Title = "Invalid role",
+        Detail = $"'{role}' is not an assignable role. Use GET /api/tenants/me/roles to retrieve valid options.",
+        Status = StatusCodes.Status400BadRequest,
+    };
 }
