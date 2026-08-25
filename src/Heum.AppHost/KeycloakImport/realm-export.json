@@ -56,6 +56,35 @@
     ],
     "client": {}
   },
+  "clientScopes": [
+    {
+      "name": "tenant",
+      "description": "Exposes the tenant_id user attribute in ID, access, and userinfo tokens",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        }
+      ]
+    }
+  ],
   "clients": [
     {
       "clientId": "react-frontend",
@@ -81,23 +110,7 @@
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256"
-      },
-      "protocolMappers": [
-        {
-          "name": "tenant_id",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-attribute-mapper",
-          "config": {
-            "user.attribute": "tenant_id",
-            "claim.name": "tenant_id",
-            "jsonType.label": "String",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "true",
-            "multivalued": "false"
-          }
-        }
-      ]
+      }
     },
     {
       "clientId": "dotnet-api",
@@ -132,7 +145,8 @@
     "profile",
     "email",
     "roles",
-    "web-origins"
+    "web-origins",
+    "tenant"
   ],
   "defaultOptionalClientScopes": [
     "offline_access",
