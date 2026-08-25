@@ -194,7 +194,7 @@
       "enabled": true,
       "serviceAccountClientId": "dotnet-admin-api",
       "clientRoles": {
-        "realm-management": ["manage-users", "query-realms"]
+        "realm-management": ["manage-users", "view-realm"]
       }
     }
   ]
