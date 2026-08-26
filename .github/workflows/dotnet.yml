@@ -32,8 +32,11 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
 
+    - name: Install dotnet-coverage
+      run: dotnet tool install --global dotnet-coverage
+
     - name: Test
-      run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+      run: dotnet-coverage collect --output ./coverage/coverage.cobertura.xml --output-format cobertura "dotnet test --no-build --verbosity normal"
 
     - name: Upload coverage
       uses: actions/upload-artifact@v4
