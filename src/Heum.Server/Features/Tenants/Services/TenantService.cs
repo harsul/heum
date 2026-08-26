@@ -35,7 +35,7 @@ public sealed partial class TenantService(
         try
         {
             var (keycloakUserId, emailConflict) = await CreateOnboardingUserAsync(
-                tenant.Id, adminEmail, isTenantAdmin: true, cancellationToken);
+                tenant.Id, adminEmail, role: "Admin", cancellationToken);
 
             if (emailConflict)
             {
@@ -65,10 +65,18 @@ public sealed partial class TenantService(
     public async Task<TenantUserProvisionResult> AddTenantUserAsync(
         Guid tenantId,
         string email,
+        string? role,
         CancellationToken cancellationToken = default)
     {
+        if (role is not null)
+        {
+            var assignable = await keycloakService.GetAssignableRolesAsync(cancellationToken);
+            if (!assignable.Contains(role))
+                return new TenantUserProvisionResult(KeycloakUserId: null, EmailConflict: false, InvalidRole: true);
+        }
+
         var (keycloakUserId, emailConflict) = await CreateOnboardingUserAsync(
-            tenantId, email, isTenantAdmin: false, cancellationToken);
+            tenantId, email, role, cancellationToken);
 
         // Adding a teammate to an existing tenant doesn't otherwise touch the DB, so this
         // SaveChanges exists purely to flush the ambient UserOnboardingRequestedEvent queued
@@ -151,13 +159,13 @@ public sealed partial class TenantService(
     private async Task<(string? KeycloakUserId, bool EmailConflict)> CreateOnboardingUserAsync(
         Guid tenantId,
         string email,
-        bool isTenantAdmin,
+        string? role,
         CancellationToken cancellationToken)
     {
         try
         {
             var keycloakUserId = await keycloakService.CreateTenantUserAsync(
-                email, tenantId, isTenantAdmin, cancellationToken);
+                email, tenantId, role, cancellationToken);
 
             var onboardingRequested = new UserOnboardingRequestedEvent(
                 TenantId: tenantId,

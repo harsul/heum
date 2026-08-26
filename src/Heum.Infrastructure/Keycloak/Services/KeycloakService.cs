@@ -11,9 +11,12 @@ internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycl
     public async Task<string> CreateTenantUserAsync(
         string email,
         Guid tenantId,
-        bool isTenantAdmin,
+        string? role,
         CancellationToken cancellationToken = default)
     {
+        if (role == "SystemAdmin")
+            throw new InvalidOperationException("The SystemAdmin role cannot be assigned through the API.");
+
         var user = new KeycloakUserRepresentation
         {
             Username = email,
@@ -27,10 +30,24 @@ internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycl
             },
             Credentials = [],
             RequiredActions = [.. OnboardingRequiredActions],
-            RealmRoles = isTenantAdmin ? ["Admin", "User"] : ["User"],
+            RealmRoles = role is not null ? [role, "User"] : ["User"],
         };
 
         return await adminClient.CreateUserAsync(user, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> GetAssignableRolesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var roles = await adminClient.GetRolesAsync(cancellationToken);
+        return roles
+            .Where(r =>
+                r.Attributes is { } attrs &&
+                attrs.TryGetValue("roleType", out var values) &&
+                values.Contains("Application") &&
+                r.Name != "User")
+            .Select(r => r.Name)
+            .ToList();
     }
 
     public async Task<IReadOnlyList<KeycloakUserSummary>> ListTenantUsersAsync(

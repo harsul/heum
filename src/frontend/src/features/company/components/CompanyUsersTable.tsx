@@ -24,6 +24,7 @@ import { getApiErrorMessage } from '../../../utils/apiError';
 import { AddUserByEmailDialog } from '../../../components/AddUserByEmailDialog';
 import { useMyTenantUsers } from '../hooks/useMyTenantUsers';
 import { useAddMyTenantUser } from '../hooks/useAddMyTenantUser';
+import { useMyTenantRoles } from '../hooks/useMyTenantRoles';
 import { useSetMyTenantUserEnabled } from '../hooks/useSetMyTenantUserEnabled';
 
 export function CompanyUsersTable() {
@@ -31,6 +32,7 @@ export function CompanyUsersTable() {
   const currentUserId = auth.user?.profile.sub;
   const { data: users = [], isLoading, isError } = useMyTenantUsers();
   const addUser = useAddMyTenantUser();
+  const { data: roles, isLoading: rolesLoading } = useMyTenantRoles();
   const setUserEnabled = useSetMyTenantUserEnabled();
   const [isAddingUser, setIsAddingUser] = useState(false);
 
@@ -169,6 +171,8 @@ export function CompanyUsersTable() {
         open={isAddingUser}
         saving={addUser.isPending}
         errorMessage={getApiErrorMessage(addUser.error, 'Failed to add user.')}
+        roles={roles}
+        rolesLoading={rolesLoading}
         onClose={() => setIsAddingUser(false)}
         onAdd={(values) => {
           addUser.mutate(values, { onSuccess: () => setIsAddingUser(false) });

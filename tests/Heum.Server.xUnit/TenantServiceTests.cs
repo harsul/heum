@@ -94,7 +94,7 @@ public sealed class TenantServiceTests : IDisposable
         await _service.ProvisionTenantAsync("Corp", "admin@corp.com", TestContext.Current.CancellationToken);
 
         Assert.Equal(1, _keycloak.CreateTenantUserCallCount);
-        Assert.True(_keycloak.LastIsTenantAdmin);
+        Assert.Equal("Admin", _keycloak.LastRole);
     }
 
     [Fact]
@@ -140,10 +140,10 @@ public sealed class TenantServiceTests : IDisposable
         var provision = await _service.ProvisionTenantAsync("Corp", "admin@corp.com", TestContext.Current.CancellationToken);
         _keycloak.Reset();
 
-        await _service.AddTenantUserAsync(provision.Tenant!.Id, "teammate@corp.com", TestContext.Current.CancellationToken);
+        await _service.AddTenantUserAsync(provision.Tenant!.Id, "teammate@corp.com", role: null, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, _keycloak.CreateTenantUserCallCount);
-        Assert.False(_keycloak.LastIsTenantAdmin);
+        Assert.Null(_keycloak.LastRole);
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public sealed class TenantServiceTests : IDisposable
         var provision = await _service.ProvisionTenantAsync("Corp", "admin@corp.com", TestContext.Current.CancellationToken);
         _keycloak.UserIdToReturn = "kc-new-user";
 
-        var result = await _service.AddTenantUserAsync(provision.Tenant!.Id, "mate@corp.com", TestContext.Current.CancellationToken);
+        var result = await _service.AddTenantUserAsync(provision.Tenant!.Id, "mate@corp.com", role: null, TestContext.Current.CancellationToken);
 
         Assert.False(result.EmailConflict);
         Assert.Equal("kc-new-user", result.KeycloakUserId);
@@ -164,7 +164,7 @@ public sealed class TenantServiceTests : IDisposable
         var provision = await _service.ProvisionTenantAsync("Corp", "admin@corp.com", TestContext.Current.CancellationToken);
         _keycloak.ExceptionToThrow = new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
 
-        var result = await _service.AddTenantUserAsync(provision.Tenant!.Id, "existing@corp.com", TestContext.Current.CancellationToken);
+        var result = await _service.AddTenantUserAsync(provision.Tenant!.Id, "existing@corp.com", role: null, TestContext.Current.CancellationToken);
 
         Assert.True(result.EmailConflict);
         Assert.Null(result.KeycloakUserId);

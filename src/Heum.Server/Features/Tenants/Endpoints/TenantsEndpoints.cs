@@ -32,6 +32,9 @@ public static class TenantsEndpoints
         myTenant.MapGet("/users", GetMyTenantUsersAsync)
             .WithName("GetMyTenantUsers");
 
+        myTenant.MapGet("/roles", GetMyTenantAssignableRolesAsync)
+            .WithName("GetMyTenantAssignableRoles");
+
         myTenant.MapPost("/users", AddMyTenantUserAsync)
             .WithName("AddMyTenantUser");
 
@@ -92,6 +95,14 @@ public static class TenantsEndpoints
         return TypedResults.Ok<IReadOnlyList<TenantUserResponse>>(users.Select(TenantResponseMapper.ToResponse).ToList());
     }
 
+    internal static async Task<Ok<IReadOnlyList<string>>> GetMyTenantAssignableRolesAsync(
+        IKeycloakService keycloakService,
+        CancellationToken cancellationToken)
+    {
+        var roles = await keycloakService.GetAssignableRolesAsync(cancellationToken);
+        return TypedResults.Ok<IReadOnlyList<string>>(roles);
+    }
+
     internal static async Task<Results<Created<TenantUserResponse>, BadRequest<ProblemDetails>, Conflict<ProblemDetails>>> AddMyTenantUserAsync(
         ITenantContext tenantContext,
         AddTenantUserRequest request,
@@ -102,7 +113,10 @@ public static class TenantsEndpoints
         if (!tenantContext.HasTenant)
             return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        var result = await tenantService.AddTenantUserAsync(tenantContext.TenantId, request.Email, cancellationToken);
+        var result = await tenantService.AddTenantUserAsync(tenantContext.TenantId, request.Email, request.Role, cancellationToken);
+
+        if (result.InvalidRole)
+            return TypedResults.BadRequest(TenantProblems.InvalidRole(request.Role!));
 
         if (result.EmailConflict)
             return TypedResults.Conflict(TenantProblems.EmailConflict(request.Email));

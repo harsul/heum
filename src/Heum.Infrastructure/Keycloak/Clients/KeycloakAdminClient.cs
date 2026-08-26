@@ -6,8 +6,8 @@ namespace Heum.Infrastructure.Keycloak.Clients;
 
 /// <summary>
 /// Calls the Keycloak Admin REST API. Authenticates using the client-credentials grant for
-/// the "tenant-provisioning-service" confidential client, which has been granted the
-/// realm-management "manage-users" role. Contains no business logic - see
+/// the "dotnet-admin-api" confidential client, which has been granted the
+/// realm-management "manage-users" and "view-realm" roles. Contains no business logic - see
 /// <see cref="IKeycloakService"/> for tenant-oriented operations built on top of this.
 /// Authorization is handled transparently by <see cref="KeycloakAdminAuthHandler"/>.
 /// </summary>
@@ -102,5 +102,20 @@ internal sealed class KeycloakAdminClient(
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<IReadOnlyList<KeycloakRoleRepresentation>> GetRolesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/admin/realms/{_options.Realm}/roles?briefRepresentation=false");
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var roles = await response.Content.ReadFromJsonAsync<List<KeycloakRoleRepresentation>>(
+            cancellationToken: cancellationToken);
+        return roles ?? [];
     }
 }

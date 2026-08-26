@@ -18,17 +18,25 @@ public interface IKeycloakService
     /// attribute, and flagged with the required action needed to complete onboarding
     /// (set a password) the next time they authenticate.
     /// </summary>
-    /// <param name="isTenantAdmin">
-    /// Whether this user should be granted the "Admin" realm role (in addition to the
-    /// baseline "User" role), which lets them manage their own tenant's users. Set for a
-    /// tenant's first/admin user; teammates added later get "User" only.
+    /// <param name="role">
+    /// An additional realm role to grant the user on top of the baseline "User" role
+    /// (e.g. "Admin"). Pass <c>null</c> to create a plain user with "User" only.
+    /// Must never be "SystemAdmin" — that role is reserved for platform operators and
+    /// is rejected by <see cref="KeycloakService"/> as a belt-and-suspenders guard.
     /// </param>
     /// <returns>The Keycloak user id (subject) of the newly created user.</returns>
     Task<string> CreateTenantUserAsync(
         string email,
         Guid tenantId,
-        bool isTenantAdmin,
+        string? role,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the realm roles tagged with <c>roleType=Application</c> in Keycloak,
+    /// excluding the base "User" role (which is always assigned automatically).
+    /// These are the roles callers may request when creating a tenant user.
+    /// </summary>
+    Task<IReadOnlyList<string>> GetAssignableRolesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Looks up all Keycloak users stamped with the given tenant id (via the "tenant_id"

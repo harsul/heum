@@ -27,6 +27,9 @@ public static class AdminTenantsEndpoints
         tenants.MapGet("/{id:guid}/history", GetTenantHistoryAsync)
             .WithName("AdminGetTenantHistory");
 
+        tenants.MapGet("/roles", GetAssignableRolesAsync)
+            .WithName("AdminGetAssignableRoles");
+
         tenants.MapPost("/{id:guid}/users", AddTenantUserAsync)
             .WithName("AdminAddTenantUser");
 
@@ -125,7 +128,15 @@ public static class AdminTenantsEndpoints
         });
     }
 
-    internal static async Task<Results<Created<TenantUserResponse>, NotFound, Conflict<ProblemDetails>>> AddTenantUserAsync(
+    internal static async Task<Ok<IReadOnlyList<string>>> GetAssignableRolesAsync(
+        IKeycloakService keycloakService,
+        CancellationToken cancellationToken)
+    {
+        var roles = await keycloakService.GetAssignableRolesAsync(cancellationToken);
+        return TypedResults.Ok<IReadOnlyList<string>>(roles);
+    }
+
+    internal static async Task<Results<Created<TenantUserResponse>, NotFound, BadRequest<ProblemDetails>, Conflict<ProblemDetails>>> AddTenantUserAsync(
         Guid id,
         AddTenantUserRequest request,
         ITenantService tenantService,
@@ -136,7 +147,10 @@ public static class AdminTenantsEndpoints
         if (tenant is null)
             return TypedResults.NotFound();
 
-        var result = await tenantService.AddTenantUserAsync(id, request.Email, cancellationToken);
+        var result = await tenantService.AddTenantUserAsync(id, request.Email, request.Role, cancellationToken);
+
+        if (result.InvalidRole)
+            return TypedResults.BadRequest(TenantProblems.InvalidRole(request.Role!));
 
         if (result.EmailConflict)
             return TypedResults.Conflict(TenantProblems.EmailConflict(request.Email));

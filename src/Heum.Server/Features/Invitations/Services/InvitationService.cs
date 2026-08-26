@@ -67,7 +67,7 @@ internal sealed class InvitationService(
         try
         {
             var keycloakUserId = await keycloakService.CreateTenantUserAsync(
-                invitation.Email, invitation.TenantId, isTenantAdmin: false, cancellationToken);
+                invitation.Email, invitation.TenantId, role: null, cancellationToken);
 
             domainEventCollector.Enqueue(new UserOnboardingRequestedEvent(
                 invitation.TenantId,

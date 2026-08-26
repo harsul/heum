@@ -28,6 +28,7 @@ export async function fetchTenantUsers(id: string): Promise<TenantUser[]> {
 
 export interface AddTenantUserPayload {
   email: string;
+  role?: string;
 }
 
 export async function addTenantUser(
@@ -55,6 +56,11 @@ export async function deactivateTenant(id: string): Promise<Tenant> {
 
 export async function reactivateTenant(id: string): Promise<Tenant> {
   const { data } = await apiClient.post<Tenant>(`/admin/tenants/${id}/reactivate`);
+  return data;
+}
+
+export async function fetchAdminAssignableRoles(): Promise<string[]> {
+  const { data } = await apiClient.get<string[]>('/admin/tenants/roles');
   return data;
 }
 

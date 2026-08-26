@@ -9,32 +9,37 @@ public sealed class FakeKeycloakService : IKeycloakService
     public Exception? ExceptionToThrow { get; set; }
     public string UserIdToReturn { get; set; } = Guid.NewGuid().ToString();
     public int CreateTenantUserCallCount { get; private set; }
-    public bool? LastIsTenantAdmin { get; private set; }
+    public string? LastRole { get; private set; }
     public bool? SetTenantUserEnabledResult { get; set; } = true;
+    public IReadOnlyList<string> AssignableRolesToReturn { get; set; } = ["Admin"];
 
     public void Reset()
     {
         ExceptionToThrow = null;
         UserIdToReturn = Guid.NewGuid().ToString();
         CreateTenantUserCallCount = 0;
-        LastIsTenantAdmin = null;
+        LastRole = null;
         SetTenantUserEnabledResult = true;
+        AssignableRolesToReturn = ["Admin"];
     }
 
     public Task<string> CreateTenantUserAsync(
         string email,
         Guid tenantId,
-        bool isTenantAdmin,
+        string? role,
         CancellationToken cancellationToken = default)
     {
         CreateTenantUserCallCount++;
-        LastIsTenantAdmin = isTenantAdmin;
+        LastRole = role;
 
         if (ExceptionToThrow is not null)
             throw ExceptionToThrow;
 
         return Task.FromResult(UserIdToReturn);
     }
+
+    public Task<IReadOnlyList<string>> GetAssignableRolesAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(AssignableRolesToReturn);
 
     public Task<IReadOnlyList<KeycloakUserSummary>> ListTenantUsersAsync(
         Guid tenantId,
