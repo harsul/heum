@@ -1,64 +1,59 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Hosting;
 
 namespace Heum.Server.Extensions;
 
 internal static class RateLimitingExtensions
 {
-    internal static IHostApplicationBuilder AddHeumRateLimiting(this IHostApplicationBuilder builder)
+    internal static IServiceCollection AddHeumRateLimiting(this IServiceCollection services)
     {
-        var options = builder.Configuration
-            .GetSection(RateLimitingOptions.SectionName)
-            .Get<RateLimitingOptions>() ?? new RateLimitingOptions();
-
-        builder.Services.AddRateLimiter(rateLimiter =>
+        services.AddRateLimiter(options =>
         {
-            rateLimiter.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-            rateLimiter.AddFixedWindowLimiter("fixed", o =>
+            options.AddFixedWindowLimiter("fixed", o =>
             {
-                o.PermitLimit = options.Fixed.PermitLimit;
-                o.Window = options.Fixed.Window;
-                o.QueueLimit = options.Fixed.QueueLimit;
+                o.PermitLimit = 60;
+                o.Window = TimeSpan.FromMinutes(1);
+                o.QueueLimit = 0;
             });
 
-            rateLimiter.AddFixedWindowLimiter("registration", o =>
+            options.AddFixedWindowLimiter("registration", o =>
             {
-                o.PermitLimit = options.Registration.PermitLimit;
-                o.Window = options.Registration.Window;
-                o.QueueLimit = options.Registration.QueueLimit;
+                o.PermitLimit = 5;
+                o.Window = TimeSpan.FromMinutes(15);
+                o.QueueLimit = 0;
             });
 
-            rateLimiter.AddFixedWindowLimiter("authenticated", o =>
+            options.AddFixedWindowLimiter("authenticated", o =>
             {
-                o.PermitLimit = options.Authenticated.PermitLimit;
-                o.Window = options.Authenticated.Window;
-                o.QueueLimit = options.Authenticated.QueueLimit;
+                o.PermitLimit = 120;
+                o.Window = TimeSpan.FromMinutes(1);
+                o.QueueLimit = 0;
             });
 
-            rateLimiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
                 var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (userId is not null)
                 {
                     return RateLimitPartition.GetFixedWindowLimiter(userId, _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = options.GlobalAuthenticated.PermitLimit,
-                        Window = options.GlobalAuthenticated.Window,
+                        PermitLimit = 120,
+                        Window = TimeSpan.FromMinutes(1),
                     });
                 }
 
                 var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                 return RateLimitPartition.GetFixedWindowLimiter(ip, _ => new FixedWindowRateLimiterOptions
                 {
-                    PermitLimit = options.GlobalAnonymous.PermitLimit,
-                    Window = options.GlobalAnonymous.Window,
+                    PermitLimit = 60,
+                    Window = TimeSpan.FromMinutes(1),
                 });
             });
         });
 
-        return builder;
+        return services;
     }
 }
