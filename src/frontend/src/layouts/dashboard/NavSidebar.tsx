@@ -30,7 +30,7 @@ function NavContent() {
             component={item.disabled ? 'div' : NavLink}
             to={item.disabled ? undefined : item.path}
             disabled={item.disabled}
-            end
+            end={item.disabled ? undefined : true}
             sx={{
               mb: 0.5,
               borderRadius: 1.5,

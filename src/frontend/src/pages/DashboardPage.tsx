@@ -1,6 +1,4 @@
-import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
 import PeopleAltIcon from '@mui/icons-material/PeopleAltOutlined';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCartOutlined';
 import PaidIcon from '@mui/icons-material/PaidOutlined';
@@ -27,15 +25,6 @@ const timelineEvents = [
 export function DashboardPage() {
   return (
     <DashboardLayout>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700 }}>
-          Hi, welcome back 👋
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Here&apos;s what&apos;s happening with your app today.
-        </Typography>
-      </Box>
-
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <AppWidgetSummary title="Total Users" total="2,431" icon={PeopleAltIcon} color="primary" />

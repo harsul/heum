@@ -30,7 +30,7 @@ export function TenantTableRow({ tenant, onEdit, onToggleActive, toggleActiveDis
   const navigate = useNavigate();
 
   return (
-    <TableRow tabIndex={-1}>
+    <TableRow hover tabIndex={-1}>
       <TableCell component="th" scope="row">
         <Stack
           direction="row"

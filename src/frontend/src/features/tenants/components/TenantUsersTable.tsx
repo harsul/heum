@@ -35,7 +35,7 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
     <Box>
       <Stack direction="row" sx={{ justifyContent: 'flex-end', mb: 2 }}>
         <Button
-          variant="outlined"
+          variant="contained"
           startIcon={<AddOutlinedIcon />}
           onClick={() => {
             addTenantUser.reset();

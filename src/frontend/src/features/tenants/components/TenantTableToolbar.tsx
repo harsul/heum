@@ -1,9 +1,6 @@
 import Toolbar from '@mui/material/Toolbar';
-import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import FilterListIcon from '@mui/icons-material/FilterListOutlined';
 import SearchIcon from '@mui/icons-material/SearchOutlined';
 
 interface TenantTableToolbarProps {
@@ -34,11 +31,6 @@ export function TenantTableToolbar({ filterName, onFilterName }: TenantTableTool
         sx={{ width: { xs: 1, sm: 280 } }}
       />
 
-      <Tooltip title="Filter list">
-        <IconButton>
-          <FilterListIcon />
-        </IconButton>
-      </Tooltip>
     </Toolbar>
   );
 }

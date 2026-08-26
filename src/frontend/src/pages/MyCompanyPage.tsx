@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
@@ -10,7 +9,6 @@ import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import Typography from '@mui/material/Typography';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { DetailField } from '../components/DetailField';
 import { CompanySettingsPanel } from '../features/company/components/CompanySettingsPanel';
@@ -26,15 +24,6 @@ export function MyCompanyPage() {
 
   return (
     <DashboardLayout>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          My Company
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Overview of your company and its users.
-        </Typography>
-      </Box>
-
       {isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />

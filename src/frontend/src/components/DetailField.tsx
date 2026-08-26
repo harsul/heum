@@ -12,7 +12,7 @@ export function DetailField({ label, value }: DetailFieldProps) {
       <Typography variant="caption" color="text.secondary">
         {label}
       </Typography>
-      <Typography variant="body1">{value}</Typography>
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>{value}</Typography>
     </Box>
   );
 }
