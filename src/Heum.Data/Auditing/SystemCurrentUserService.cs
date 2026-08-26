@@ -1,3 +1,5 @@
+using Heum.Application;
+
 namespace Heum.Data.Auditing;
 
 public sealed class SystemCurrentUserService : ICurrentUserService

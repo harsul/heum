@@ -1,3 +1,4 @@
+using Heum.Application;
 using Heum.BackgroundService.Outbox;
 using Heum.Contracts.Events;
 using Heum.Data;

@@ -1,4 +1,4 @@
-namespace Heum.Data.Auditing;
+namespace Heum.Application;
 
 /// <summary>
 /// Abstraction that resolves the identity of the user responsible for the current unit of work.
