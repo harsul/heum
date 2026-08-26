@@ -20,10 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Azure.Messaging.ServiceBus" Version="13.5.2" />
-    <PackageReference Include="Aspire.Keycloak.Authentication" Version="13.5.2-preview.1.26421.6" />
-    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.5.2" />
-    <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="13.5.2" />
+    <PackageReference Include="Aspire.Azure.Messaging.ServiceBus" Version="13.5.3" />
+    <PackageReference Include="Aspire.Keycloak.Authentication" Version="13.5.3-preview.1.26425.3" />
+    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.5.3" />
+    <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="13.5.3" />
     <PackageReference Include="Asp.Versioning.Http" Version="8.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" />
