@@ -69,11 +69,10 @@ builder.AddAzureFunctionsProject<Projects.Heum_Functions>("useronboarding")
     .WithReference(cache)
     .WithReference(keycloak)
     .WithReference(messaging)
-    .WithReference(webfrontend)
     .WaitFor(cache)
     .WaitFor(keycloak)
     .WaitFor(messaging)
-    .WaitFor(webfrontend)
-    .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret);
+    .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)
+    .WithEnvironment("KeycloakAdmin__OnboardingRedirectUri", webfrontend.GetEndpoint("http").Property(EndpointProperty.Url));
 
 builder.Build().Run();
