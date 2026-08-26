@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Heum.Application\Heum.Application.csproj" />
         <ProjectReference Include="..\Heum.Contracts\Heum.Contracts.csproj" />
     </ItemGroup>
 

@@ -5,6 +5,7 @@
       <Deploy />
     </Project>
     <Project Path="src/Heum.AppHost/Heum.AppHost.csproj" />
+    <Project Path="src/Heum.Application/Heum.Application.csproj" />
     <Project Path="src/Heum.BackgroundService/Heum.BackgroundService.csproj" />
     <Project Path="src/Heum.Contracts/Heum.Contracts.csproj" />
     <Project Path="src/Heum.Data/Heum.Data.csproj" />
