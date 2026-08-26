@@ -8,6 +8,7 @@ internal sealed class SettingsService(HeumDbContext dbContext, TimeProvider time
 {
     public async Task<TenantSettings?> GetAsync(Guid tenantId, CancellationToken cancellationToken = default)
         => await dbContext.TenantSettings
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(s => s.TenantId == tenantId, cancellationToken);
 
     public async Task<TenantSettings?> UpdateAsync(
