@@ -229,7 +229,10 @@ public static class AdminTenantsEndpoints
         if (tenant is null)
             return TypedResults.NotFound();
 
-        var settings = await settingsService.GetOrCreateAsync(id, cancellationToken);
+        var settings = await settingsService.GetAsync(id, cancellationToken);
+        if (settings is null)
+            return TypedResults.NotFound();
+
         return TypedResults.Ok(ToSettingsResponse(settings));
     }
 
@@ -245,6 +248,9 @@ public static class AdminTenantsEndpoints
             return TypedResults.NotFound();
 
         var settings = await settingsService.UpdateAsync(id, request.Locale, request.Timezone, cancellationToken);
+        if (settings is null)
+            return TypedResults.NotFound();
+
         return TypedResults.Ok(ToSettingsResponse(settings));
     }
 

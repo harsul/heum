@@ -1,8 +1,6 @@
-using Heum.Data.Models;
 using Heum.Server.Features.Settings.Models;
 using Heum.Server.Features.Settings.Services;
 using Heum.Server.Features.Tenants;
-using Heum.Server.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +21,7 @@ public static class SettingsEndpoints
         return group;
     }
 
-    internal static async Task<Results<Ok<TenantSettingsResponse>, BadRequest<ProblemDetails>>> GetSettingsAsync(
+    internal static async Task<Results<Ok<TenantSettingsResponse>, NotFound, BadRequest<ProblemDetails>>> GetSettingsAsync(
         ITenantContext tenantContext,
         ISettingsService settingsService,
         CancellationToken cancellationToken)
@@ -31,11 +29,14 @@ public static class SettingsEndpoints
         if (!tenantContext.HasTenant)
             return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        var settings = await settingsService.GetOrCreateAsync(tenantContext.TenantId, cancellationToken);
+        var settings = await settingsService.GetAsync(tenantContext.TenantId, cancellationToken);
+        if (settings is null)
+            return TypedResults.NotFound();
+
         return TypedResults.Ok(ToResponse(settings));
     }
 
-    internal static async Task<Results<Ok<TenantSettingsResponse>, BadRequest<ProblemDetails>>> UpdateSettingsAsync(
+    internal static async Task<Results<Ok<TenantSettingsResponse>, NotFound, BadRequest<ProblemDetails>>> UpdateSettingsAsync(
         ITenantContext tenantContext,
         UpdateSettingsRequest request,
         ISettingsService settingsService,
@@ -50,10 +51,13 @@ public static class SettingsEndpoints
             request.Timezone,
             cancellationToken);
 
+        if (settings is null)
+            return TypedResults.NotFound();
+
         return TypedResults.Ok(ToResponse(settings));
     }
 
-    private static TenantSettingsResponse ToResponse(TenantSettings settings) => new()
+    private static TenantSettingsResponse ToResponse(Heum.Data.Models.TenantSettings settings) => new()
     {
         Locale = settings.Locale,
         Timezone = settings.Timezone,
