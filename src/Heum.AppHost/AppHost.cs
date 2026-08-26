@@ -4,6 +4,7 @@ var cache = builder.AddRedis("cache");
 
 var postgres = builder.AddPostgres("postgres")
     .WithDataVolume("heum-postgres-data")
+    .WithPgAdmin()
     .WithLifetime(ContainerLifetime.Persistent);
 
 var database = postgres.AddDatabase("heumdb");
