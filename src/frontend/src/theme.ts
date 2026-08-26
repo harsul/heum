@@ -85,9 +85,10 @@ const theme = createTheme({
       styleOverrides: {
         paper: {
           backgroundImage: 'none',
-          backgroundColor: '#007B40',
-          color: '#FFFFFF',
+          backgroundColor: '#FFFFFF',
+          color: '#212B36',
           borderRight: 'none',
+          boxShadow: SHADOW_SM,
         },
       },
     },

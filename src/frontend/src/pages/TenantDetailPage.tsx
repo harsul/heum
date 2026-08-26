@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -10,12 +10,10 @@ import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
-import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
-import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
@@ -33,7 +31,6 @@ type TabValue = 'overview' | 'users' | 'history' | 'settings';
 
 export function TenantDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { data: tenant, isLoading, isError } = useTenant(id);
   const updateTenant = useUpdateTenant();
   const setTenantActive = useSetTenantActive();
@@ -42,21 +39,7 @@ export function TenantDetailPage() {
 
   return (
     <DashboardLayout>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 4 }}>
-        <IconButton onClick={() => navigate('/tenants')} aria-label="Back to tenants">
-          <ArrowBackOutlinedIcon />
-        </IconButton>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            Tenant overview
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Details for a single tenant on your platform.
-          </Typography>
-        </Box>
-      </Stack>
-
-      {isLoading && (
+{isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
@@ -140,28 +123,29 @@ export function TenantDetailPage() {
 
                 <Divider sx={{ my: 3 }} />
 
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                  Tenant status
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {tenant.isActive
-                    ? 'This tenant is active. Deactivating it will prevent its users from accessing the platform.'
-                    : 'This tenant is inactive. Reactivate it to restore access for its users.'}
-                </Typography>
-
-                <Divider sx={{ mb: 2 }} />
-
-                <Button
-                  variant="outlined"
-                  color={tenant.isActive ? 'error' : 'success'}
-                  startIcon={tenant.isActive ? <BlockOutlinedIcon /> : <CheckCircleOutlineIcon />}
-                  disabled={setTenantActive.isPending}
-                  onClick={() =>
-                    setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
-                  }
-                >
-                  {tenant.isActive ? 'Deactivate tenant' : 'Reactivate tenant'}
-                </Button>
+                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      Tenant status
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {tenant.isActive
+                        ? 'This tenant is active. Deactivating it will prevent its users from accessing the platform.'
+                        : 'This tenant is inactive. Reactivate it to restore access for its users.'}
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="outlined"
+                    color={tenant.isActive ? 'error' : 'success'}
+                    startIcon={tenant.isActive ? <BlockOutlinedIcon /> : <CheckCircleOutlineIcon />}
+                    disabled={setTenantActive.isPending}
+                    onClick={() =>
+                      setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
+                    }
+                  >
+                    {tenant.isActive ? 'Deactivate tenant' : 'Reactivate tenant'}
+                  </Button>
+                </Stack>
               </Box>
             )}
           </CardContent>
