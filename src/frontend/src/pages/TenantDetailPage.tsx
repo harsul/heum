@@ -23,6 +23,7 @@ import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { DetailField } from '../components/DetailField';
 import { EditTenantDialog } from '../features/tenants/components/EditTenantDialog';
 import { TenantHistoryTable } from '../features/tenants/components/TenantHistoryTable';
+import { TenantSettingsPanel } from '../features/tenants/components/TenantSettingsPanel';
 import { TenantUsersTable } from '../features/tenants/components/TenantUsersTable';
 import { useTenant } from '../features/tenants/hooks/useTenant';
 import { useSetTenantActive, useUpdateTenant } from '../features/tenants/hooks/useTenantMutations';
@@ -135,6 +136,10 @@ export function TenantDetailPage() {
 
             {activeTab === 'settings' && (
               <Box>
+                <TenantSettingsPanel tenantId={tenant.id} />
+
+                <Divider sx={{ my: 3 }} />
+
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                   Tenant status
                 </Typography>

@@ -16,8 +16,23 @@ internal sealed class SettingsService(HeumDbContext dbContext, TimeProvider time
 
         settings = TenantSettings.CreateDefault(tenantId, timeProvider);
         dbContext.TenantSettings.Add(settings);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return settings;
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return settings;
+        }
+        catch (DbUpdateException)
+        {
+            // Another concurrent request inserted first (unique constraint on TenantId).
+            // Detach the failed entity and return the row that now exists.
+            dbContext.Entry(settings).State = EntityState.Detached;
+            var existing = await dbContext.TenantSettings
+                .FirstOrDefaultAsync(s => s.TenantId == tenantId, cancellationToken);
+            if (existing is not null)
+                return existing;
+            throw;
+        }
     }
 
     public async Task<TenantSettings> UpdateAsync(

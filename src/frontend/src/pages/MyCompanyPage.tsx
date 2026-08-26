@@ -13,11 +13,12 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { DetailField } from '../components/DetailField';
+import { CompanySettingsPanel } from '../features/company/components/CompanySettingsPanel';
 import { CompanyUsersTable } from '../features/company/components/CompanyUsersTable';
 import { useMyTenant } from '../features/company/hooks/useMyTenant';
 import { formatDate, tenantInitials } from '../utils/format';
 
-type TabValue = 'overview' | 'users';
+type TabValue = 'overview' | 'users' | 'settings';
 
 export function MyCompanyPage() {
   const { data: tenant, isLoading, isError } = useMyTenant();
@@ -79,6 +80,7 @@ export function MyCompanyPage() {
             >
               <Tab label="Overview" value="overview" />
               <Tab label="Users" value="users" />
+              <Tab label="Settings" value="settings" />
             </Tabs>
 
             {activeTab === 'overview' && (
@@ -99,6 +101,8 @@ export function MyCompanyPage() {
             )}
 
             {activeTab === 'users' && <CompanyUsersTable />}
+
+            {activeTab === 'settings' && <CompanySettingsPanel />}
           </CardContent>
         </Card>
       )}
