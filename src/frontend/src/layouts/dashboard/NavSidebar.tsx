@@ -1,6 +1,5 @@
 ﻿import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
-import Link from '@mui/material/Link';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -24,39 +23,25 @@ function NavContent() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 3, py: 3 }}>
-        <Link
-          href="https://aspire.dev"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Visit Aspire website (opens in new tab)"
-          sx={{ display: 'flex', alignItems: 'center', color: 'inherit' }}
-        >
-          <Box component="img" src="/Aspire.png" alt="Aspire logo" sx={{ height: 32, width: 'auto' }} />
-        </Link>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#FFFFFF' }}>
-          Heum
-        </Typography>
-      </Box>
-
-      <List sx={{ px: 2, flex: 1 }}>
+<List sx={{ px: 1.5, flex: 1 }}>
         {navConfig.map((item) => (
           <ListItemButton
             key={item.title}
             component={item.disabled ? 'div' : NavLink}
             to={item.disabled ? undefined : item.path}
             disabled={item.disabled}
-            end
+            end={item.disabled ? undefined : true}
             sx={{
               mb: 0.5,
               borderRadius: 1.5,
-              color: 'rgba(255, 255, 255, 0.72)',
+              color: 'text.secondary',
               '& .MuiListItemIcon-root': { color: 'inherit' },
-              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
+              '&:hover': { backgroundColor: 'rgba(0, 171, 85, 0.08)', color: 'text.primary' },
               '&.active': {
-                backgroundColor: 'rgba(255, 255, 255, 0.18)',
-                color: '#FFFFFF',
-                '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.25)' },
+                backgroundColor: 'rgba(0, 171, 85, 0.12)',
+                color: '#00AB55',
+                '& .MuiListItemIcon-root': { color: '#00AB55' },
+                '&:hover': { backgroundColor: 'rgba(0, 171, 85, 0.16)' },
               },
               '&.Mui-disabled': { opacity: 0.4 },
             }}
@@ -72,8 +57,8 @@ function NavContent() {
         ))}
       </List>
 
-      <Box sx={{ px: 3, py: 2 }}>
-        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+      <Box sx={{ px: 2, py: 1.5 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
           Powered by .NET Aspire
         </Typography>
       </Box>

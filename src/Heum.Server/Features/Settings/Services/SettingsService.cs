@@ -6,27 +6,21 @@ namespace Heum.Server.Features.Settings.Services;
 
 internal sealed class SettingsService(HeumDbContext dbContext, TimeProvider timeProvider) : ISettingsService
 {
-    public async Task<TenantSettings> GetOrCreateAsync(Guid tenantId, CancellationToken cancellationToken = default)
-    {
-        var settings = await dbContext.TenantSettings
+    public async Task<TenantSettings?> GetAsync(Guid tenantId, CancellationToken cancellationToken = default)
+        => await dbContext.TenantSettings
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(s => s.TenantId == tenantId, cancellationToken);
 
-        if (settings is not null)
-            return settings;
-
-        settings = TenantSettings.CreateDefault(tenantId, timeProvider);
-        dbContext.TenantSettings.Add(settings);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return settings;
-    }
-
-    public async Task<TenantSettings> UpdateAsync(
+    public async Task<TenantSettings?> UpdateAsync(
         Guid tenantId,
         string locale,
         string timezone,
         CancellationToken cancellationToken = default)
     {
-        var settings = await GetOrCreateAsync(tenantId, cancellationToken);
+        var settings = await GetAsync(tenantId, cancellationToken);
+        if (settings is null)
+            return null;
+
         settings.Update(locale, timezone, timeProvider);
         await dbContext.SaveChangesAsync(cancellationToken);
         return settings;

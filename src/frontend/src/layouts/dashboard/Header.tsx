@@ -25,7 +25,7 @@ export function Header({ onOpenNav }: HeaderProps) {
         top: 12,
       }}
     >
-      <Toolbar sx={{ gap: 1 }}>
+      <Toolbar sx={{ gap: 1, px: 2 }}>
         <IconButton
           onClick={onOpenNav}
           sx={{ display: { xs: 'inline-flex', md: 'none' }, mr: 1 }}

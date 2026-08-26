@@ -51,3 +51,13 @@ export interface TenantHistoryPage {
   pageSize: number;
   totalCount: number;
 }
+
+/**
+ * Mirrors `Heum.Server.Features.Settings.Models.TenantSettingsResponse` returned by
+ * `GET /api/settings/` (tenant admin) and `GET /api/admin/tenants/{id}/settings` (system admin).
+ */
+export interface TenantSettings {
+  locale: string;
+  timezone: string;
+  updatedAtUtc: string;
+}

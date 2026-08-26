@@ -1,4 +1,7 @@
+using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
+using Heum.Server.Features.Settings.Models;
+using Heum.Server.Features.Settings.Services;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.Features.Tenants.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -47,6 +50,12 @@ public static class AdminTenantsEndpoints
 
         tenants.MapPost("/{id:guid}/reactivate", ReactivateTenantAsync)
             .WithName("AdminReactivateTenant");
+
+        tenants.MapGet("/{id:guid}/settings", GetTenantSettingsAsync)
+            .WithName("AdminGetTenantSettings");
+
+        tenants.MapPut("/{id:guid}/settings", UpdateTenantSettingsAsync)
+            .WithName("AdminUpdateTenantSettings");
 
         return group;
     }
@@ -209,6 +218,48 @@ public static class AdminTenantsEndpoints
         ITenantService tenantService,
         CancellationToken cancellationToken)
         => await SetActiveAsync(id, isActive: true, tenantService, cancellationToken);
+
+    internal static async Task<Results<Ok<TenantSettingsResponse>, NotFound>> GetTenantSettingsAsync(
+        Guid id,
+        ITenantService tenantService,
+        ISettingsService settingsService,
+        CancellationToken cancellationToken)
+    {
+        var tenant = await tenantService.GetTenantAsync(id, cancellationToken);
+        if (tenant is null)
+            return TypedResults.NotFound();
+
+        var settings = await settingsService.GetAsync(id, cancellationToken);
+        if (settings is null)
+            return TypedResults.NotFound();
+
+        return TypedResults.Ok(ToSettingsResponse(settings));
+    }
+
+    internal static async Task<Results<Ok<TenantSettingsResponse>, NotFound>> UpdateTenantSettingsAsync(
+        Guid id,
+        UpdateSettingsRequest request,
+        ITenantService tenantService,
+        ISettingsService settingsService,
+        CancellationToken cancellationToken)
+    {
+        var tenant = await tenantService.GetTenantAsync(id, cancellationToken);
+        if (tenant is null)
+            return TypedResults.NotFound();
+
+        var settings = await settingsService.UpdateAsync(id, request.Locale, request.Timezone, cancellationToken);
+        if (settings is null)
+            return TypedResults.NotFound();
+
+        return TypedResults.Ok(ToSettingsResponse(settings));
+    }
+
+    private static TenantSettingsResponse ToSettingsResponse(TenantSettings s) => new()
+    {
+        Locale = s.Locale,
+        Timezone = s.Timezone,
+        UpdatedAtUtc = s.UpdatedAtUtc,
+    };
 
     private static async Task<Results<Ok<TenantResponse>, NotFound>> SetActiveAsync(
         Guid id,

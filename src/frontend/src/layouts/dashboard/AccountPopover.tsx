@@ -7,8 +7,6 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from 'react-oidc-context';
 
@@ -93,22 +91,6 @@ export function AccountPopover() {
             ) : null}
           </Box>
         </Box>
-
-        <Divider sx={{ borderStyle: 'dashed' }} />
-
-        <MenuItem onClick={handleClose} sx={{ mx: 1, my: 0.5, borderRadius: 1 }} disabled>
-          <ListItemIcon>
-            <PersonOutlineIcon fontSize="small" />
-          </ListItemIcon>
-          Profile
-        </MenuItem>
-
-        <MenuItem onClick={handleClose} sx={{ mx: 1, my: 0.5, borderRadius: 1 }} disabled>
-          <ListItemIcon>
-            <SettingsOutlinedIcon fontSize="small" />
-          </ListItemIcon>
-          Settings
-        </MenuItem>
 
         <Divider sx={{ borderStyle: 'dashed' }} />
 

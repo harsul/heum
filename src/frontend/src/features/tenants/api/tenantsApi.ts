@@ -1,5 +1,5 @@
 ﻿import { apiClient } from '../../../lib/apiClient';
-import type { Tenant, TenantHistoryPage, TenantUser } from '../types/tenant';
+import type { Tenant, TenantHistoryPage, TenantSettings, TenantUser } from '../types/tenant';
 
 export interface UpdateTenantPayload {
   name: string;
@@ -72,5 +72,23 @@ export async function fetchTenantHistory(
   const { data } = await apiClient.get<TenantHistoryPage>(`/admin/tenants/${id}/history`, {
     params: { page, pageSize },
   });
+  return data;
+}
+
+export interface UpdateTenantSettingsPayload {
+  locale: string;
+  timezone: string;
+}
+
+export async function fetchTenantSettings(id: string): Promise<TenantSettings> {
+  const { data } = await apiClient.get<TenantSettings>(`/admin/tenants/${id}/settings`);
+  return data;
+}
+
+export async function updateTenantSettings(
+  id: string,
+  payload: UpdateTenantSettingsPayload,
+): Promise<TenantSettings> {
+  const { data } = await apiClient.put<TenantSettings>(`/admin/tenants/${id}/settings`, payload);
   return data;
 }

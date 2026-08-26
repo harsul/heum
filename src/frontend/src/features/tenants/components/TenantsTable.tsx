@@ -77,7 +77,10 @@ export function TenantsTable() {
         direction="row"
         sx={{ alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 3 }}
       >
-        <Typography variant="h6">Tenants</Typography>
+        <Box>
+          <Typography variant="h6">Tenants</Typography>
+          <Typography variant="body2" color="text.secondary">Companies onboarded to your platform.</Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddOutlinedIcon />}
