@@ -3,6 +3,7 @@ WORKDIR /src
 
 # Copy project files first for better layer caching on restore
 COPY src/Heum.Contracts/Heum.Contracts.csproj            src/Heum.Contracts/
+COPY src/Heum.Application/Heum.Application.csproj        src/Heum.Application/
 COPY src/Heum.Data/Heum.Data.csproj                      src/Heum.Data/
 COPY src/Heum.Infrastructure/Heum.Infrastructure.csproj  src/Heum.Infrastructure/
 COPY src/Heum.ServiceDefaults/Heum.ServiceDefaults.csproj src/Heum.ServiceDefaults/

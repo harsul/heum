@@ -15,7 +15,7 @@ var smtpEndpoint = mailpit.GetEndpoint("smtp");
 
 var keycloak = builder.AddKeycloak("keycloak", 8080)
     .WithDataVolume("heum-keycloak-data")
-    .WithRealmImport("./KeycloakImport")
+    .WithRealmImport("./Keycloak")
     .WithLifetime(ContainerLifetime.Persistent)
     .WaitFor(mailpit)
     .WithEnvironment("KC_SMTP_HOST", smtpEndpoint.Property(EndpointProperty.Host))

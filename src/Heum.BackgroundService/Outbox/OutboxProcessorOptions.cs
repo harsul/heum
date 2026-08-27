@@ -1,8 +1,5 @@
 namespace Heum.BackgroundService.Outbox;
 
-/// <summary>
-/// Configurable via an "OutboxProcessor" section in appsettings (falls back to these defaults).
-/// </summary>
 public sealed class OutboxProcessorOptions
 {
     public const string SectionName = "OutboxProcessor";

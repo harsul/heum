@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Heum.Application;
 using Heum.Data.Auditing;
 
 namespace Heum.Server.Services;

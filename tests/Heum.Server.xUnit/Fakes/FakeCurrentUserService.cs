@@ -1,3 +1,4 @@
+using Heum.Application;
 using Heum.Data.Auditing;
 
 namespace Heum.Server.xUnit.Fakes;
