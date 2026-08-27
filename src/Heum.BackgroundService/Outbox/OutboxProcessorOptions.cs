@@ -4,11 +4,11 @@ public sealed class OutboxProcessorOptions
 {
     public const string SectionName = "OutboxProcessor";
 
-    public TimeSpan PollingInterval { get; set; }
+    public TimeSpan PollingInterval { get; set; } = TimeSpan.FromSeconds(5);
 
-    public int BatchSize { get; set; }
+    public int BatchSize { get; set; } = 50;
 
-    public int MaxAttempts { get; set; }
+    public int MaxAttempts { get; set; } = 5;
 
-    public TimeSpan RetentionPeriod { get; set; }
+    public TimeSpan RetentionPeriod { get; set; } = TimeSpan.FromDays(7);
 }
