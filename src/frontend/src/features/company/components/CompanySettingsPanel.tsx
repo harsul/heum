@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
+import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -39,8 +39,13 @@ export function CompanySettingsPanel() {
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress size={24} />
+      <Box>
+        <Skeleton variant="text" width={140} sx={{ fontSize: '1.25rem', mb: 1 }} />
+        <Stack spacing={2} sx={{ maxWidth: 400 }}>
+          <Skeleton variant="rounded" height={56} />
+          <Skeleton variant="rounded" height={56} />
+          <Skeleton variant="rounded" width={64} height={36} />
+        </Stack>
       </Box>
     );
   }

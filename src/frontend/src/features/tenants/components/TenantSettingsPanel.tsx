@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
+import Skeleton from '@mui/material/Skeleton';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
 import InputLabel from '@mui/material/InputLabel';
@@ -101,9 +101,19 @@ export function TenantSettingsPanel({ tenantId }: TenantSettingsPanelProps) {
       </Typography>
 
       {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress size={24} />
-        </Box>
+        <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start' }}>
+          <Box sx={{ flex: 1 }}>
+            <Grid container spacing={2}>
+              <Grid size={4}>
+                <Skeleton variant="rounded" height={56} />
+              </Grid>
+              <Grid size={4}>
+                <Skeleton variant="rounded" height={56} />
+              </Grid>
+            </Grid>
+          </Box>
+          <Skeleton variant="rounded" width={64} height={36} />
+        </Stack>
       )}
 
       {isError && (

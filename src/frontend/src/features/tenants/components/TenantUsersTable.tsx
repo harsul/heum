@@ -4,7 +4,7 @@ import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
+import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -47,9 +47,38 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
       </Stack>
 
       {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress size={28} />
-        </Box>
+        <TableContainer sx={{ overflow: 'unset' }}>
+          <Table sx={{ minWidth: 640 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>User</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell align="center">Status</TableCell>
+                <TableCell align="center">Email verified</TableCell>
+                <TableCell>Created</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Array.from({ length: 5 }, (_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+                      <Skeleton variant="circular" width={32} height={32} />
+                      <Stack>
+                        <Skeleton variant="text" width={100} />
+                        <Skeleton variant="text" width={80} sx={{ fontSize: '0.75rem' }} />
+                      </Stack>
+                    </Stack>
+                  </TableCell>
+                  <TableCell><Skeleton variant="text" width={150} /></TableCell>
+                  <TableCell align="center"><Skeleton variant="rounded" width={60} height={24} /></TableCell>
+                  <TableCell align="center"><Skeleton variant="rounded" width={70} height={24} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={80} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       {isError && <Alert severity="error">Failed to load users from Keycloak. Please try again.</Alert>}
