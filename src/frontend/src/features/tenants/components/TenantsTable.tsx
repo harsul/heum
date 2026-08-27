@@ -3,7 +3,7 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
-import CircularProgress from '@mui/material/CircularProgress';
+import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -116,13 +116,22 @@ export function TenantsTable() {
             onRequestSort={handleRequestSort}
           />
           <TableBody>
-            {isLoading && (
-              <TableRow>
-                <TableCell colSpan={headCells.length} align="center" sx={{ py: 6 }}>
-                  <CircularProgress size={28} />
-                </TableCell>
-              </TableRow>
-            )}
+            {isLoading &&
+              Array.from({ length: 5 }, (_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+                      <Skeleton variant="circular" width={40} height={40} />
+                      <Skeleton variant="text" width={120} />
+                    </Stack>
+                  </TableCell>
+                  <TableCell><Skeleton variant="text" width={80} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={90} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={90} /></TableCell>
+                  <TableCell align="center"><Skeleton variant="rounded" width={56} height={24} /></TableCell>
+                  <TableCell><Skeleton variant="circular" width={28} height={28} /></TableCell>
+                </TableRow>
+              ))}
 
             {!isLoading &&
               paginatedTenants.map((tenant) => (

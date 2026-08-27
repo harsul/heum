@@ -3,7 +3,7 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
+import Skeleton from '@mui/material/Skeleton';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
@@ -139,9 +139,32 @@ export function TenantHistoryTable({ tenantId }: TenantHistoryTableProps) {
   return (
     <Box>
       {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress size={28} />
-        </Box>
+        <TableContainer sx={{ overflow: 'unset' }}>
+          <Table sx={{ minWidth: 640 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: 48 }} />
+                <TableCell>Timestamp</TableCell>
+                <TableCell>Action</TableCell>
+                <TableCell>Summary</TableCell>
+                <TableCell>User</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {Array.from({ length: 5 }, (_, i) => (
+                <TableRow key={i}>
+                  <TableCell sx={{ width: 48, pr: 0 }}>
+                    <Skeleton variant="circular" width={24} height={24} />
+                  </TableCell>
+                  <TableCell><Skeleton variant="text" width={130} /></TableCell>
+                  <TableCell><Skeleton variant="rounded" width={56} height={24} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={110} /></TableCell>
+                  <TableCell><Skeleton variant="text" width={200} /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       {isError && (

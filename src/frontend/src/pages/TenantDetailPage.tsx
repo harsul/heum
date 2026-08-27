@@ -7,7 +7,7 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
+import Skeleton from '@mui/material/Skeleton';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
@@ -40,9 +40,33 @@ export function TenantDetailPage() {
   return (
     <DashboardLayout>
 {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
+        <Card>
+          <CardContent sx={{ p: 4 }}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={3}
+              sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between', mb: 3 }}
+            >
+              <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+                <Skeleton variant="circular" width={56} height={56} />
+                <Box>
+                  <Skeleton variant="text" width={160} sx={{ fontSize: '1.5rem' }} />
+                  <Skeleton variant="text" width={100} sx={{ fontSize: '0.875rem' }} />
+                </Box>
+              </Stack>
+              <Skeleton variant="rounded" width={64} height={24} />
+            </Stack>
+            <Skeleton variant="rectangular" height={48} sx={{ mb: 3, borderRadius: 1 }} />
+            <Grid container spacing={3}>
+              {Array.from({ length: 4 }, (_, i) => (
+                <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Skeleton variant="text" width={80} sx={{ fontSize: '0.75rem' }} />
+                  <Skeleton variant="text" width={120} />
+                </Grid>
+              ))}
+            </Grid>
+          </CardContent>
+        </Card>
       )}
 
       {isError && <Alert severity="error">Failed to load this tenant. Please try again.</Alert>}
