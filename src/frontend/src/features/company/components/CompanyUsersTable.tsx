@@ -16,7 +16,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import { formatDate, tenantInitials } from '../../../utils/format';
@@ -40,8 +39,7 @@ export function CompanyUsersTable() {
     <Box>
       <Stack direction="row" sx={{ justifyContent: 'flex-end', mb: 2 }}>
         <Button
-          variant="outlined"
-          startIcon={<AddOutlinedIcon />}
+          variant="contained"
           onClick={() => {
             addUser.reset();
             setIsAddingUser(true);

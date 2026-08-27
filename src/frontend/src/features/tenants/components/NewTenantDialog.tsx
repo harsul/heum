@@ -74,7 +74,7 @@ export function NewTenantDialog({ open, saving, errorMessage, onClose, onCreate 
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={handleClose} disabled={saving}>
+        <Button onClick={handleClose} disabled={saving} color="inherit">
           Cancel
         </Button>
         <Button

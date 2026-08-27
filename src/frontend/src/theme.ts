@@ -140,6 +140,22 @@ const theme = createTheme({
         root: {
           fontWeight: 600,
         },
+        filled: {
+          backgroundColor: 'rgba(145, 158, 171, 0.12)',
+          color: '#637381',
+          '&.MuiChip-colorSuccess': {
+            backgroundColor: 'rgba(0, 171, 85, 0.12)',
+            color: '#007B40',
+          },
+          '&.MuiChip-colorWarning': {
+            backgroundColor: 'rgba(255, 171, 0, 0.12)',
+            color: '#B76E00',
+          },
+          '&.MuiChip-colorError': {
+            backgroundColor: 'rgba(255, 72, 66, 0.12)',
+            color: '#B71D18',
+          },
+        },
       },
     },
   },

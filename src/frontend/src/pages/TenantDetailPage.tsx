@@ -14,9 +14,6 @@ import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { DetailField } from '../components/DetailField';
 import { EditTenantDialog } from '../features/tenants/components/EditTenantDialog';
@@ -115,7 +112,7 @@ export function TenantDetailPage() {
             {activeTab === 'overview' && (
               <Box>
                 <Stack direction="row" sx={{ justifyContent: 'flex-end', mb: 2 }}>
-                  <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => setIsEditing(true)}>
+                  <Button variant="outlined" onClick={() => setIsEditing(true)}>
                     Edit
                   </Button>
                 </Stack>
@@ -161,7 +158,6 @@ export function TenantDetailPage() {
                   <Button
                     variant="outlined"
                     color={tenant.isActive ? 'error' : 'success'}
-                    startIcon={tenant.isActive ? <BlockOutlinedIcon /> : <CheckCircleOutlineIcon />}
                     disabled={setTenantActive.isPending}
                     onClick={() =>
                       setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
