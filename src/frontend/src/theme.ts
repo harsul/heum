@@ -115,6 +115,26 @@ const theme = createTheme({
         },
       },
     },
+    MuiMenuItem: {
+      defaultProps: {
+        dense: true,
+      },
+      styleOverrides: {
+        root: {
+          fontSize: '0.8125rem',
+        },
+      },
+    },
+    MuiButton: {
+      defaultProps: {
+        size: 'small',
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
     MuiChip: {
       styleOverrides: {
         root: {
