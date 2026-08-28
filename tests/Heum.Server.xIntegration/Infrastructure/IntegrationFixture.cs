@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Data.Domain;
@@ -9,8 +10,10 @@ using Heum.Infrastructure.Messaging;
 using Heum.Server.xIntegration.Infrastructure.Fakes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -111,6 +114,12 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
 
             services.RemoveAll<IEventPublisher>();
 
+            services.PostConfigure<RateLimiterOptions>(opts =>
+            {
+                opts.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
+                    RateLimitPartition.GetNoLimiter("test"));
+            });
+
             services.RemoveAll<IDistributedCache>();
             services.AddDistributedMemoryCache();
 
@@ -136,8 +145,8 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
         {
             db.Set<AuditTrail>().RemoveRange(db.Set<AuditTrail>());
             db.OutboxMessages.RemoveRange(db.OutboxMessages);
-            db.Invitations.RemoveRange(db.Invitations);
-            db.TenantSettings.RemoveRange(db.TenantSettings);
+            db.Invitations.RemoveRange(db.Invitations.IgnoreQueryFilters());
+            db.TenantSettings.RemoveRange(db.TenantSettings.IgnoreQueryFilters());
             db.Tenants.RemoveRange(db.Tenants);
             await db.SaveChangesAsync();
         }
