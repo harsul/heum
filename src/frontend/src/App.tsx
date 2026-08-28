@@ -5,6 +5,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { TenantsPage } from './pages/TenantsPage';
 import { TenantDetailPage } from './pages/TenantDetailPage';
 import { MyCompanyPage } from './pages/MyCompanyPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { setTokenCookie, clearTokenCookie } from './utils/cookie';
 import { setAccessToken } from './lib/apiClient';
@@ -57,6 +58,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
