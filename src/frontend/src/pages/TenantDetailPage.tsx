@@ -17,8 +17,8 @@ import Typography from '@mui/material/Typography';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { DetailField } from '../components/DetailField';
 import { EditTenantDialog } from '../features/tenants/components/EditTenantDialog';
-import { TenantHistoryTable } from '../features/tenants/components/TenantHistoryTable';
-import { TenantSettingsPanel } from '../features/tenants/components/TenantSettingsPanel';
+import { TenantHistoryTable } from '../features/tenants/components';
+import { TenantSettingsPanel } from '../features/tenants/components';
 import { TenantUsersTable } from '../features/tenants/components/TenantUsersTable';
 import { useTenant } from '../features/tenants/hooks/useTenant';
 import { useSetTenantActive, useUpdateTenant } from '../features/tenants/hooks/useTenantMutations';
@@ -93,8 +93,8 @@ export function TenantDetailPage() {
               <Chip
                 size="small"
                 label={tenant.isActive ? 'Active' : 'Inactive'}
-                color={tenant.isActive ? 'success' : 'default'}
-                variant={tenant.isActive ? 'filled' : 'outlined'}
+                color={tenant.isActive ? 'success' : 'warning'}
+                variant='filled' 
               />
             </Stack>
 
@@ -112,7 +112,7 @@ export function TenantDetailPage() {
             {activeTab === 'overview' && (
               <Box>
                 <Stack direction="row" sx={{ justifyContent: 'flex-end', mb: 2 }}>
-                  <Button variant="outlined" onClick={() => setIsEditing(true)}>
+                  <Button variant="contained" onClick={() => setIsEditing(true)}>
                     Edit
                   </Button>
                 </Stack>
@@ -163,7 +163,7 @@ export function TenantDetailPage() {
                       setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
                     }
                   >
-                    {tenant.isActive ? 'Deactivate tenant' : 'Reactivate tenant'}
+                    {tenant.isActive ? 'Deactivate' : 'Activate'}
                   </Button>
                 </Stack>
               </Box>

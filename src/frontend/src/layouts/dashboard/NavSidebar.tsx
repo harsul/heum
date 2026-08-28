@@ -10,7 +10,7 @@ import { useAuth } from 'react-oidc-context';
 import { getNavConfig } from './config-nav';
 import { isSystemAdmin, isTenantAdmin } from '../../auth/roles';
 
-export const NAV_WIDTH = 280;
+export const NAV_WIDTH = 268;
 
 interface NavSidebarProps {
   open: boolean;
@@ -89,7 +89,7 @@ export function NavSidebar({ open, onClose }: NavSidebarProps) {
         sx={{
           display: { xs: 'none', md: 'block' },
           '& .MuiDrawer-paper': {
-            width: NAV_WIDTH - 24,
+            width: NAV_WIDTH - 12,
             margin: '12px 0 12px 12px',
             height: 'calc(100vh - 24px)',
             borderRadius: '16px',

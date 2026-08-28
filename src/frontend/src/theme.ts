@@ -75,8 +75,8 @@ const theme = createTheme({
           backgroundImage: 'none',
           backgroundColor: 'rgba(255, 255, 255, 0.80)',
           backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(145, 158, 171, 0.16)',
-          boxShadow: 'none',
+          border: 'none',
+          boxShadow: SHADOW_SM,
           color: '#212B36',
         },
       },
@@ -179,6 +179,10 @@ const theme = createTheme({
           '&.MuiChip-colorError': {
             backgroundColor: 'rgba(255, 72, 66, 0.12)',
             color: '#B71D18',
+          },
+          '&.MuiChip-colorInfo': {
+            backgroundColor: 'rgba(24, 144, 255, 0.12)',
+            color: '#0958D9',
           },
         },
       },
