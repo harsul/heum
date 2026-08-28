@@ -17,20 +17,20 @@ public class Tenant : AggregateRoot
         // EF Core materialization.
     }
 
-    public static Tenant Register(string name, string slug, TimeProvider timeProvider) => new()
+    public static Tenant Register(string name, string slug, TimeProvider timeProvider)
     {
-        Id = Guid.NewGuid(),
-        Name = name,
-        Slug = slug,
-        CreatedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
-    };
+        var tenant = new Tenant
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Slug = slug,
+            CreatedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
+        };
 
-    /// <summary>
-    /// Raises <see cref="TenantCreatedEvent"/> once the tenant's first admin has been
-    /// successfully provisioned in Keycloak (called from <c>TenantService.ProvisionTenantAsync</c>).
-    /// </summary>
-    public void MarkProvisioned(string adminEmail, string keycloakUserId, TimeProvider timeProvider) =>
-        AddDomainEvent(new TenantCreatedEvent(Id, Slug, adminEmail, keycloakUserId, timeProvider.GetUtcNow()));
+        tenant.AddDomainEvent(new TenantCreatedEvent(tenant.Id, tenant.Slug, timeProvider.GetUtcNow()));
+
+        return tenant;
+    }
 
     public void Rename(string name, TimeProvider timeProvider)
     {

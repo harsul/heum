@@ -3,8 +3,6 @@ using Heum.Server.Features.Tenants.Endpoints;
 
 namespace Heum.Server.Features.Tenants.Services;
 
-public sealed record TenantProvisionResult(Tenant? Tenant, string? KeycloakUserId, bool EmailConflict);
-
 public sealed record TenantUserProvisionResult(string? KeycloakUserId, bool EmailConflict, bool InvalidRole = false);
 
 /// <summary>
@@ -14,14 +12,8 @@ public sealed record TenantUserProvisionResult(string? KeycloakUserId, bool Emai
 /// </summary>
 public interface ITenantService
 {
-    /// <summary>
-    /// Registers a new tenant (generating a unique slug from the company name) and provisions
-    /// its first (admin) user in Keycloak. Rolls back the tenant record if Keycloak provisioning
-    /// fails (e.g. the email is already in use), so registration can be safely retried.
-    /// </summary>
-    Task<TenantProvisionResult> ProvisionTenantAsync(
+    Task<Tenant> CreateTenantAsync(
         string companyName,
-        string adminEmail,
         CancellationToken cancellationToken = default);
 
     /// <summary>

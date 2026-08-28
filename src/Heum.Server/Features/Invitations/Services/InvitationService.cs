@@ -59,6 +59,7 @@ internal sealed class InvitationService(
         CancellationToken cancellationToken = default)
     {
         var invitation = await dbContext.Invitations
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(i => i.Token == token, cancellationToken);
 
         if (invitation is null || !invitation.Accept(timeProvider))

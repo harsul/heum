@@ -24,9 +24,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
             Tenant.Register("Beta", "beta", TimeProvider.System));
         await db.SaveChangesAsync();
 
-        // Seeding goes through AuditingInterceptor, so clear the resulting Insert AuditTrail rows
-        // so that tests which assert on AuditTrail counts start from a clean slate.
-        await db.Database.ExecuteSqlRawAsync("""TRUNCATE TABLE "AuditTrails" """);
+        await fixture.ClearAuditTrailsAsync();
     }
 
     ValueTask IAsyncDisposable.DisposeAsync() => ValueTask.CompletedTask;
@@ -94,27 +92,12 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.SystemAdmin);
 
         var response = await api.CreateTenantAsync(
-            new CreateTenantRequest { CompanyName = "New Corp", AdminEmail = "admin@newcorp.com" },
+            new CreateTenantRequest { CompanyName = "New Corp" },
             TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotEqual(Guid.Empty, response.Content!.Id);
         Assert.Equal("New Corp", response.Content.Name);
-    }
-
-    [Fact]
-    public async Task CreateTenant_Returns409_WhenKeycloakThrowsConflict()
-    {
-        fixture.FakeKeycloak.ExceptionToThrow =
-            new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
-
-        var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.SystemAdmin);
-
-        var response = await api.CreateTenantAsync(
-            new CreateTenantRequest { CompanyName = "Dup Corp", AdminEmail = "dup@corp.com" },
-            TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     [Fact]

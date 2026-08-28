@@ -25,9 +25,7 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
         db.Tenants.Add(_tenant);
         await db.SaveChangesAsync();
 
-        // Seeding goes through AuditingInterceptor, so clear the resulting Insert AuditTrail row
-        // so that tests which assert on AuditTrail counts start from a clean slate.
-        await db.Database.ExecuteSqlRawAsync("""TRUNCATE TABLE "AuditTrails" """);
+        await fixture.ClearAuditTrailsAsync();
     }
 
     ValueTask IAsyncDisposable.DisposeAsync() => ValueTask.CompletedTask;
