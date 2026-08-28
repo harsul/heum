@@ -52,7 +52,7 @@ export function EditTenantDialog({ tenant, open, saving, onClose, onSave }: Edit
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={onClose} disabled={saving}>
+        <Button onClick={onClose} disabled={saving} color="inherit">
           Cancel
         </Button>
         <Button

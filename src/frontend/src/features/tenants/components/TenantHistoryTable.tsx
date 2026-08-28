@@ -60,7 +60,7 @@ function HistoryRow({ entry }: { entry: TenantHistoryEntry }) {
         </TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDateTime(entry.timestampUtc)}</TableCell>
         <TableCell>
-          <Chip size="small" label={entry.action} color={ACTION_COLOR[entry.action]} variant="outlined" />
+          <Chip size="small" label={entry.action} color={ACTION_COLOR[entry.action]} variant="filled" />
         </TableCell>
         <TableCell>
           <Typography variant="body2" color="text.secondary">

@@ -12,7 +12,6 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import type { Tenant, TenantOrder } from '../types/tenant';
 import { applyTenantFilter, getComparator } from '../utils';
 import { getApiErrorMessage } from '../../../utils/apiError';
@@ -83,7 +82,6 @@ export function TenantsTable() {
         </Box>
         <Button
           variant="contained"
-          startIcon={<AddOutlinedIcon />}
           onClick={() => {
             createTenant.reset();
             setIsNewTenantOpen(true);

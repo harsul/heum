@@ -61,8 +61,8 @@ export function TenantTableRow({ tenant, onEdit, onToggleActive, toggleActiveDis
         <Chip
           size="small"
           label={tenant.isActive ? 'Active' : 'Inactive'}
-          color={tenant.isActive ? 'success' : 'default'}
-          variant={tenant.isActive ? 'filled' : 'outlined'}
+          color={tenant.isActive ? 'success' : 'warning'}
+          variant='filled'
         />
       </TableCell>
 

@@ -17,7 +17,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Box sx={{ flexGrow: 1, width: { md: `calc(100% - ${NAV_WIDTH}px)` } }}>
         <Header onOpenNav={() => setNavOpen(true)} />
 
-        <Box component="main" sx={{ py: 4, px: 1.5 }}>
+        <Box component="main" sx={{ pt: 1.5, pb: 4, px: 1.5 }}>
           {children}
         </Box>
       </Box>

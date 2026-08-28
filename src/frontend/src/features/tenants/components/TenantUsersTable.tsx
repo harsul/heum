@@ -13,7 +13,6 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import { formatDate, tenantInitials } from '../../../utils/format';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import { AddUserByEmailDialog } from '../../../components/AddUserByEmailDialog';
@@ -36,7 +35,6 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
       <Stack direction="row" sx={{ justifyContent: 'flex-end', mb: 2 }}>
         <Button
           variant="contained"
-          startIcon={<AddOutlinedIcon />}
           onClick={() => {
             addTenantUser.reset();
             setIsAddingUser(true);
@@ -134,16 +132,16 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
                       <Chip
                         size="small"
                         label={user.enabled ? 'Enabled' : 'Disabled'}
-                        color={user.enabled ? 'success' : 'default'}
-                        variant={user.enabled ? 'filled' : 'outlined'}
+                        color={user.enabled ? 'success' : 'warning'}
+                        variant='filled'
                       />
                     </TableCell>
                     <TableCell align="center">
                       <Chip
                         size="small"
-                        label={user.emailVerified ? 'Verified' : 'Unverified'}
+                        label={user.emailVerified ? 'Verified' : 'Not verified'}
                         color={user.emailVerified ? 'success' : 'warning'}
-                        variant="outlined"
+                        variant="filled"
                       />
                     </TableCell>
                     <TableCell>{formatDate(user.createdAtUtc)}</TableCell>

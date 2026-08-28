@@ -75,8 +75,8 @@ const theme = createTheme({
           backgroundImage: 'none',
           backgroundColor: 'rgba(255, 255, 255, 0.80)',
           backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(145, 158, 171, 0.16)',
-          boxShadow: 'none',
+          border: 'none',
+          boxShadow: SHADOW_SM,
           color: '#212B36',
         },
       },
@@ -115,10 +115,75 @@ const theme = createTheme({
         },
       },
     },
+    MuiMenuItem: {
+      defaultProps: {
+        dense: true,
+      },
+      styleOverrides: {
+        root: {
+          fontSize: '0.8125rem',
+        },
+      },
+    },
+    MuiTextField: {
+      defaultProps: {
+        size: 'small',
+      },
+    },
+    MuiOutlinedInput: {
+      defaultProps: {
+        size: 'small',
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiSelect: {
+      defaultProps: {
+        size: 'small',
+      },
+    },
+    MuiFormControl: {
+      defaultProps: {
+        size: 'small',
+      },
+    },
+    MuiButton: {
+      defaultProps: {
+        size: 'small',
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+        },
+      },
+    },
     MuiChip: {
       styleOverrides: {
         root: {
           fontWeight: 600,
+        },
+        filled: {
+          backgroundColor: 'rgba(145, 158, 171, 0.12)',
+          color: '#637381',
+          '&.MuiChip-colorSuccess': {
+            backgroundColor: 'rgba(0, 171, 85, 0.12)',
+            color: '#007B40',
+          },
+          '&.MuiChip-colorWarning': {
+            backgroundColor: 'rgba(255, 171, 0, 0.12)',
+            color: '#B76E00',
+          },
+          '&.MuiChip-colorError': {
+            backgroundColor: 'rgba(255, 72, 66, 0.12)',
+            color: '#B71D18',
+          },
+          '&.MuiChip-colorInfo': {
+            backgroundColor: 'rgba(24, 144, 255, 0.12)',
+            color: '#0958D9',
+          },
         },
       },
     },
