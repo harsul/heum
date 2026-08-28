@@ -1,6 +1,7 @@
 using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Data.Domain;
+using Heum.Data.Models;
 using Heum.Data.Multitenancy;
 using Heum.Data.SoftDelete;
 using Heum.Infrastructure.Keycloak.Services;
@@ -22,26 +23,39 @@ namespace Heum.Server.xIntegration.Infrastructure;
 
 public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
-        .Build();
+    private static bool UseTestcontainers =>
+        Environment.GetEnvironmentVariable("USE_TESTCONTAINERS") == "true"
+        || Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
+
+    private readonly PostgreSqlContainer? _postgres = UseTestcontainers
+        ? new PostgreSqlBuilder("postgres:17-alpine").Build()
+        : null;
+
+    private readonly string _inMemoryDbName = Guid.NewGuid().ToString();
 
     public FakeKeycloakService FakeKeycloak { get; } = new();
-    public FakeEventPublisher FakeEvents { get; } = new();
 
     async ValueTask IAsyncLifetime.InitializeAsync()
     {
-        await _postgres.StartAsync();
-        _ = Server; // Force WAF host to build eagerly
+        if (_postgres is not null)
+            await _postgres.StartAsync();
 
-        await using var scope = Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
-        await db.Database.MigrateAsync();
+        _ = Server;
+
+        if (_postgres is not null)
+        {
+            await using var scope = Services.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+            await db.Database.MigrateAsync();
+        }
     }
 
     public override async ValueTask DisposeAsync()
     {
         await base.DisposeAsync();
-        await _postgres.DisposeAsync();
+
+        if (_postgres is not null)
+            await _postgres.DisposeAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -54,7 +68,6 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
                     TestAuthHandler.SchemeName, _ => { });
 
-            // PostConfigure runs last — overrides the Keycloak scheme set by main app
             services.PostConfigure<AuthenticationOptions>(opts =>
             {
                 opts.DefaultScheme             = TestAuthHandler.SchemeName;
@@ -65,22 +78,38 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
 
             services.RemoveAll<DbContextOptions<HeumDbContext>>();
             services.RemoveAll<HeumDbContext>();
-            services.AddScoped(sp =>
-                new HeumDbContext(
-                    new DbContextOptionsBuilder<HeumDbContext>()
-                        .UseNpgsql(_postgres.GetConnectionString())
-                        .AddInterceptors(
-                            sp.GetRequiredService<SoftDeleteInterceptor>(),
-                            sp.GetRequiredService<AuditingInterceptor>(),
-                            sp.GetRequiredService<DomainEventDispatchingInterceptor>())
-                        .Options,
-                    sp.GetService<ITenantProvider>()));
+
+            if (_postgres is not null)
+            {
+                services.AddScoped(sp =>
+                    new HeumDbContext(
+                        new DbContextOptionsBuilder<HeumDbContext>()
+                            .UseNpgsql(_postgres.GetConnectionString())
+                            .AddInterceptors(
+                                sp.GetRequiredService<SoftDeleteInterceptor>(),
+                                sp.GetRequiredService<AuditingInterceptor>(),
+                                sp.GetRequiredService<DomainEventDispatchingInterceptor>())
+                            .Options,
+                        sp.GetService<ITenantProvider>()));
+            }
+            else
+            {
+                services.AddScoped(sp =>
+                    new HeumDbContext(
+                        new DbContextOptionsBuilder<HeumDbContext>()
+                            .UseInMemoryDatabase(_inMemoryDbName)
+                            .AddInterceptors(
+                                sp.GetRequiredService<SoftDeleteInterceptor>(),
+                                sp.GetRequiredService<AuditingInterceptor>(),
+                                sp.GetRequiredService<DomainEventDispatchingInterceptor>())
+                            .Options,
+                        sp.GetService<ITenantProvider>()));
+            }
 
             services.RemoveAll<IKeycloakService>();
             services.AddSingleton<IKeycloakService>(FakeKeycloak);
 
             services.RemoveAll<IEventPublisher>();
-            services.AddSingleton<IEventPublisher>(FakeEvents);
 
             services.RemoveAll<IDistributedCache>();
             services.AddDistributedMemoryCache();
@@ -91,19 +120,45 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
     }
 
     /// <summary>
-    /// Truncates all data tables and resets fake services between tests.
-    /// Call from each test class's <see cref="IAsyncLifetime.InitializeAsync"/> instead of
-    /// manually removing individual entity sets.
+    /// Clears all data and resets fake services between tests.
     /// </summary>
     public async Task ResetDatabaseAsync()
     {
         await using var scope = Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
-        await db.Database.ExecuteSqlRawAsync(
-            """TRUNCATE TABLE "Tenants", "AuditTrails", "OutboxMessages" RESTART IDENTITY CASCADE""");
 
-        FakeEvents.Reset();
+        if (_postgres is not null)
+        {
+            await db.Database.ExecuteSqlRawAsync(
+                """TRUNCATE TABLE "Tenants", "TenantSettings", "Invitations", "AuditTrails", "OutboxMessages" RESTART IDENTITY CASCADE""");
+        }
+        else
+        {
+            db.Set<AuditTrail>().RemoveRange(db.Set<AuditTrail>());
+            db.OutboxMessages.RemoveRange(db.OutboxMessages);
+            db.Invitations.RemoveRange(db.Invitations);
+            db.TenantSettings.RemoveRange(db.TenantSettings);
+            db.Tenants.RemoveRange(db.Tenants);
+            await db.SaveChangesAsync();
+        }
+
         FakeKeycloak.Reset();
+    }
+
+    public async Task ClearAuditTrailsAsync()
+    {
+        await using var scope = Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+
+        if (_postgres is not null)
+        {
+            await db.Database.ExecuteSqlRawAsync("""TRUNCATE TABLE "AuditTrails" """);
+        }
+        else
+        {
+            db.Set<AuditTrail>().RemoveRange(db.Set<AuditTrail>());
+            await db.SaveChangesAsync();
+        }
     }
 
     public T GetClient<T>(ClientScope scope)
