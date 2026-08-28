@@ -18,9 +18,8 @@ public sealed partial class TenantService(
 {
     private const int MaxSlugSuffixAttempts = 50;
 
-    public async Task<TenantProvisionResult> ProvisionTenantAsync(
+    public async Task<Tenant> CreateTenantAsync(
         string companyName,
-        string adminEmail,
         CancellationToken cancellationToken = default)
     {
         var slug = await GenerateUniqueSlugAsync(companyName, cancellationToken);
@@ -32,34 +31,7 @@ public sealed partial class TenantService(
         dbContext.TenantSettings.Add(settings);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        try
-        {
-            var (keycloakUserId, emailConflict) = await CreateOnboardingUserAsync(
-                tenant.Id, adminEmail, role: "Admin", cancellationToken);
-
-            if (emailConflict)
-            {
-                dbContext.TenantSettings.Remove(settings);
-                dbContext.Tenants.Remove(tenant);
-                await dbContext.SaveChangesAsync(cancellationToken);
-                return new TenantProvisionResult(Tenant: null, KeycloakUserId: null, EmailConflict: true);
-            }
-
-            // Raises TenantCreatedEvent on the aggregate; this SaveChanges also flushes the
-            // ambient UserOnboardingRequestedEvent queued by CreateOnboardingUserAsync above -
-            // both are dispatched together, after commit, by DomainEventDispatchingInterceptor.
-            tenant.MarkProvisioned(adminEmail, keycloakUserId!, timeProvider);
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            return new TenantProvisionResult(tenant, keycloakUserId, EmailConflict: false);
-        }
-        catch
-        {
-            dbContext.TenantSettings.Remove(settings);
-            dbContext.Tenants.Remove(tenant);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            throw;
-        }
+        return tenant;
     }
 
     public async Task<TenantUserProvisionResult> AddTenantUserAsync(
@@ -152,9 +124,8 @@ public sealed partial class TenantService(
     }
 
     /// <summary>
-    /// Creates the Keycloak user for a tenant (first admin or additional teammate - identical
-    /// either way) and publishes <see cref="UserOnboardingRequestedEvent"/> on success. Shared
-    /// by <see cref="ProvisionTenantAsync"/> and <see cref="AddTenantUserAsync"/>.
+    /// Creates the Keycloak user for a tenant and publishes <see cref="UserOnboardingRequestedEvent"/>
+    /// on success. Used by <see cref="AddTenantUserAsync"/>.
     /// </summary>
     private async Task<(string? KeycloakUserId, bool EmailConflict)> CreateOnboardingUserAsync(
         Guid tenantId,

@@ -48,7 +48,7 @@ public sealed class OutboxProcessorTests : IDisposable
     {
         var tenantId = Guid.NewGuid();
         await SeedOutboxMessageAsync(new TenantCreatedEvent(
-            tenantId, "acme", "admin@acme.com", "kc-1", DateTimeOffset.UtcNow));
+            tenantId, "acme", DateTimeOffset.UtcNow));
 
         await _processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
 
@@ -66,7 +66,7 @@ public sealed class OutboxProcessorTests : IDisposable
     public async Task ProcessPendingAsync_StopsRetrying_OnceMaxAttemptsIsReached()
     {
         await SeedOutboxMessageAsync(new TenantCreatedEvent(
-            Guid.NewGuid(), "acme", "admin@acme.com", "kc-1", DateTimeOffset.UtcNow));
+            Guid.NewGuid(), "acme", DateTimeOffset.UtcNow));
 
         _events.ExceptionToThrow = new InvalidOperationException("Service Bus is unreachable");
 
@@ -104,7 +104,7 @@ public sealed class OutboxProcessorTests : IDisposable
     public async Task ProcessPendingAsync_DoesNotReprocess_AlreadyProcessedMessages()
     {
         await SeedOutboxMessageAsync(new TenantCreatedEvent(
-            Guid.NewGuid(), "acme", "admin@acme.com", "kc-1", DateTimeOffset.UtcNow));
+            Guid.NewGuid(), "acme", DateTimeOffset.UtcNow));
 
         await _processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
         await _processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
@@ -117,9 +117,9 @@ public sealed class OutboxProcessorTests : IDisposable
     {
         _options.BatchSize = 1;
         await SeedOutboxMessageAsync(new TenantCreatedEvent(
-            Guid.NewGuid(), "acme", "admin@acme.com", "kc-1", DateTimeOffset.UtcNow));
+            Guid.NewGuid(), "acme", DateTimeOffset.UtcNow));
         await SeedOutboxMessageAsync(new TenantCreatedEvent(
-            Guid.NewGuid(), "beta", "admin@beta.com", "kc-2", DateTimeOffset.UtcNow));
+            Guid.NewGuid(), "beta", DateTimeOffset.UtcNow));
 
         await _processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
 
@@ -140,7 +140,7 @@ public sealed class OutboxProcessorTests : IDisposable
             NullLogger<OutboxProcessor>.Instance);
 
         await SeedOutboxMessageAsync(new TenantCreatedEvent(
-            Guid.NewGuid(), "acme", "admin@acme.com", "kc-1", DateTimeOffset.UtcNow));
+            Guid.NewGuid(), "acme", DateTimeOffset.UtcNow));
 
         await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
         Assert.Equal(1, await _db.OutboxMessages.CountAsync(TestContext.Current.CancellationToken));

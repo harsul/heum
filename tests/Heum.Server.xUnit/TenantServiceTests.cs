@@ -35,101 +35,60 @@ public sealed class TenantServiceTests : IDisposable
     [InlineData("  leading and trailing  ", "leading-and-trailing")]
     [InlineData("multiple---dashes", "multiple-dashes")]
     [InlineData("123 Numbers", "123-numbers")]
-    public async Task ProvisionTenantAsync_GeneratesExpectedSlug(string companyName, string expectedSlug)
+    public async Task CreateTenantAsync_GeneratesExpectedSlug(string companyName, string expectedSlug)
     {
-        var result = await _service.ProvisionTenantAsync(companyName, "admin@test.com", TestContext.Current.CancellationToken);
+        var tenant = await _service.CreateTenantAsync(companyName, TestContext.Current.CancellationToken);
 
-        Assert.False(result.EmailConflict);
-        Assert.Equal(expectedSlug, result.Tenant!.Slug);
+        Assert.Equal(expectedSlug, tenant.Slug);
     }
 
     [Fact]
-    public async Task ProvisionTenantAsync_GeneratesFallbackSlug_WhenNameIsAllSpecialChars()
+    public async Task CreateTenantAsync_GeneratesFallbackSlug_WhenNameIsAllSpecialChars()
     {
-        var result = await _service.ProvisionTenantAsync("!!!###", "admin@test.com", TestContext.Current.CancellationToken);
+        var tenant = await _service.CreateTenantAsync("!!!###", TestContext.Current.CancellationToken);
 
-        Assert.False(result.EmailConflict);
-        Assert.Equal("tenant", result.Tenant!.Slug);
+        Assert.Equal("tenant", tenant.Slug);
     }
 
     [Fact]
-    public async Task ProvisionTenantAsync_AppendsNumericSuffix_OnSlugCollision()
+    public async Task CreateTenantAsync_AppendsNumericSuffix_OnSlugCollision()
     {
-        await _service.ProvisionTenantAsync("Acme Corp", "first@acme.com", TestContext.Current.CancellationToken);
-        var result = await _service.ProvisionTenantAsync("Acme Corp", "second@acme.com", TestContext.Current.CancellationToken);
+        await _service.CreateTenantAsync("Acme Corp", TestContext.Current.CancellationToken);
+        var tenant = await _service.CreateTenantAsync("Acme Corp", TestContext.Current.CancellationToken);
 
-        Assert.False(result.EmailConflict);
-        Assert.Equal("acme-corp-2", result.Tenant!.Slug);
+        Assert.Equal("acme-corp-2", tenant.Slug);
     }
 
     [Fact]
-    public async Task ProvisionTenantAsync_HandlesVeryLongCompanyName()
+    public async Task CreateTenantAsync_HandlesVeryLongCompanyName()
     {
         var longName = new string('a', 200);
 
-        var result = await _service.ProvisionTenantAsync(longName, "admin@long.com", TestContext.Current.CancellationToken);
+        var tenant = await _service.CreateTenantAsync(longName, TestContext.Current.CancellationToken);
 
-        Assert.False(result.EmailConflict);
-        Assert.True(result.Tenant!.Slug.Length <= 100);
+        Assert.True(tenant.Slug.Length <= 100);
     }
 
-    // --- Provisioning happy path ---
+    // --- Creation happy path ---
 
     [Fact]
-    public async Task ProvisionTenantAsync_CreatesTenant()
+    public async Task CreateTenantAsync_CreatesTenant()
     {
-        var result = await _service.ProvisionTenantAsync("My Corp", "admin@mycorp.com", TestContext.Current.CancellationToken);
+        var tenant = await _service.CreateTenantAsync("My Corp", TestContext.Current.CancellationToken);
 
-        Assert.False(result.EmailConflict);
-        Assert.NotNull(result.Tenant);
-        Assert.NotEqual(Guid.Empty, result.Tenant.Id);
-        Assert.Equal("My Corp", result.Tenant.Name);
-        Assert.True(result.Tenant.IsActive);
+        Assert.NotNull(tenant);
+        Assert.NotEqual(Guid.Empty, tenant.Id);
+        Assert.Equal("My Corp", tenant.Name);
+        Assert.True(tenant.IsActive);
         Assert.Equal(1, await _db.Tenants.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
-    public async Task ProvisionTenantAsync_CallsKeycloak_WithAdminFlag()
+    public async Task CreateTenantAsync_DoesNotCallKeycloak()
     {
-        await _service.ProvisionTenantAsync("Corp", "admin@corp.com", TestContext.Current.CancellationToken);
+        await _service.CreateTenantAsync("Corp", TestContext.Current.CancellationToken);
 
-        Assert.Equal(1, _keycloak.CreateTenantUserCallCount);
-        Assert.Equal("Admin", _keycloak.LastRole);
-    }
-
-    [Fact]
-    public async Task ProvisionTenantAsync_EnqueuesUserOnboardingEvent()
-    {
-        var result = await _service.ProvisionTenantAsync("Corp", "admin@corp.com", TestContext.Current.CancellationToken);
-
-        var events = _events.EnqueuedEvents;
-        var onboarding = Assert.Single(events.OfType<UserOnboardingRequestedEvent>());
-        Assert.Equal(result.Tenant!.Id, onboarding.TenantId);
-        Assert.Equal("admin@corp.com", onboarding.Email);
-    }
-
-    // --- Email conflict rollback ---
-
-    [Fact]
-    public async Task ProvisionTenantAsync_ReturnsEmailConflict_AndRollsBack_WhenKeycloakThrowsConflict()
-    {
-        _keycloak.ExceptionToThrow = new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
-
-        var result = await _service.ProvisionTenantAsync("Dup Corp", "dup@corp.com", TestContext.Current.CancellationToken);
-
-        Assert.True(result.EmailConflict);
-        Assert.Null(result.Tenant);
-        Assert.Equal(0, await _db.Tenants.CountAsync(cancellationToken: TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
-    public async Task ProvisionTenantAsync_DoesNotEnqueueEvents_OnEmailConflict()
-    {
-        _keycloak.ExceptionToThrow = new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
-
-        await _service.ProvisionTenantAsync("Dup Corp", "dup@corp.com", TestContext.Current.CancellationToken);
-
-        Assert.Empty(_events.EnqueuedEvents);
+        Assert.Equal(0, _keycloak.CreateTenantUserCallCount);
     }
 
     // --- AddTenantUserAsync ---
@@ -137,10 +96,10 @@ public sealed class TenantServiceTests : IDisposable
     [Fact]
     public async Task AddTenantUserAsync_CallsKeycloak_WithoutAdminFlag()
     {
-        var provision = await _service.ProvisionTenantAsync("Corp", "admin@corp.com", TestContext.Current.CancellationToken);
+        var tenant = await _service.CreateTenantAsync("Corp", TestContext.Current.CancellationToken);
         _keycloak.Reset();
 
-        await _service.AddTenantUserAsync(provision.Tenant!.Id, "teammate@corp.com", role: null, TestContext.Current.CancellationToken);
+        await _service.AddTenantUserAsync(tenant.Id, "teammate@corp.com", role: null, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, _keycloak.CreateTenantUserCallCount);
         Assert.Null(_keycloak.LastRole);
@@ -149,10 +108,10 @@ public sealed class TenantServiceTests : IDisposable
     [Fact]
     public async Task AddTenantUserAsync_ReturnsKeycloakUserId_OnSuccess()
     {
-        var provision = await _service.ProvisionTenantAsync("Corp", "admin@corp.com", TestContext.Current.CancellationToken);
+        var tenant = await _service.CreateTenantAsync("Corp", TestContext.Current.CancellationToken);
         _keycloak.UserIdToReturn = "kc-new-user";
 
-        var result = await _service.AddTenantUserAsync(provision.Tenant!.Id, "mate@corp.com", role: null, TestContext.Current.CancellationToken);
+        var result = await _service.AddTenantUserAsync(tenant.Id, "mate@corp.com", role: null, TestContext.Current.CancellationToken);
 
         Assert.False(result.EmailConflict);
         Assert.Equal("kc-new-user", result.KeycloakUserId);
@@ -161,10 +120,10 @@ public sealed class TenantServiceTests : IDisposable
     [Fact]
     public async Task AddTenantUserAsync_ReturnsEmailConflict_WhenKeycloakThrowsConflict()
     {
-        var provision = await _service.ProvisionTenantAsync("Corp", "admin@corp.com", TestContext.Current.CancellationToken);
+        var tenant = await _service.CreateTenantAsync("Corp", TestContext.Current.CancellationToken);
         _keycloak.ExceptionToThrow = new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
 
-        var result = await _service.AddTenantUserAsync(provision.Tenant!.Id, "existing@corp.com", role: null, TestContext.Current.CancellationToken);
+        var result = await _service.AddTenantUserAsync(tenant.Id, "existing@corp.com", role: null, TestContext.Current.CancellationToken);
 
         Assert.True(result.EmailConflict);
         Assert.Null(result.KeycloakUserId);

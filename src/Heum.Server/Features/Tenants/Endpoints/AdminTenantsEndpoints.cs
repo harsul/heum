@@ -70,20 +70,15 @@ public static class AdminTenantsEndpoints
         return TypedResults.Ok<IReadOnlyList<TenantResponse>>(response);
     }
 
-    internal static async Task<Results<Created<TenantResponse>, Conflict<ProblemDetails>>> CreateTenantAsync(
+    internal static async Task<Created<TenantResponse>> CreateTenantAsync(
         CreateTenantRequest request,
         ITenantService tenantService,
         CancellationToken cancellationToken)
     {
-        var result = await tenantService.ProvisionTenantAsync(
+        var tenant = await tenantService.CreateTenantAsync(
             request.CompanyName,
-            request.AdminEmail,
             cancellationToken);
 
-        if (result.EmailConflict)
-            return TypedResults.Conflict(TenantProblems.EmailConflict(request.AdminEmail));
-
-        var tenant = result.Tenant!;
         return TypedResults.Created($"/api/admin/tenants/{tenant.Id}", TenantResponseMapper.ToResponse(tenant));
     }
 

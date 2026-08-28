@@ -15,11 +15,6 @@ public static class TenantsEndpoints
     {
         var tenants = group.MapGroup("/tenants");
 
-        tenants.MapPost("/register", RegisterTenantAsync)
-            .WithName("RegisterTenant")
-            .AllowAnonymous()
-            .RequireRateLimiting("registration");
-
         // Self-service endpoints for a tenant's own admin(s) to manage their tenant, scoped to
         // whichever tenant the caller's token says they belong to (never a path parameter) -
         // gated by the "TenantAdmin" policy (the "Admin" realm role) so plain tenant users
@@ -48,27 +43,6 @@ public static class TenantsEndpoints
             .WithName("GetMyTenantHistory");
 
         return group;
-    }
-
-    private static async Task<Results<Created<RegisterTenantResponse>, Conflict<ProblemDetails>>> RegisterTenantAsync(
-        CreateTenantRequest request,
-        ITenantService tenantService,
-        CancellationToken cancellationToken)
-    {
-        var result = await tenantService.ProvisionTenantAsync(
-            request.CompanyName,
-            request.AdminEmail,
-            cancellationToken);
-
-        if (result.EmailConflict)
-            return TypedResults.Conflict(TenantProblems.EmailConflict(request.AdminEmail));
-
-        return TypedResults.Created($"/api/tenants/{result.Tenant!.Id}", new RegisterTenantResponse
-        {
-            TenantId = result.Tenant.Id,
-            Slug = result.Tenant.Slug,
-            KeycloakUserId = result.KeycloakUserId!,
-        });
     }
 
     internal static async Task<Results<Ok<TenantResponse>, NotFound, BadRequest<ProblemDetails>>> GetMyTenantAsync(
