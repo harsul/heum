@@ -8,7 +8,6 @@ export interface UpdateTenantPayload {
 
 export interface CreateTenantPayload {
   companyName: string;
-  adminEmail: string;
 }
 
 export async function fetchTenants(): Promise<Tenant[]> {

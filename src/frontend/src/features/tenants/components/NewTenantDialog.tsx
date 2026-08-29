@@ -20,7 +20,6 @@ interface NewTenantDialogProps {
 
 const emptyForm: CreateTenantPayload = {
   companyName: '',
-  adminEmail: '',
 };
 
 export function NewTenantDialog({ open, saving, errorMessage, onClose, onCreate }: NewTenantDialogProps) {
@@ -32,9 +31,8 @@ export function NewTenantDialog({ open, saving, errorMessage, onClose, onCreate 
   };
 
   const isCompanyNameValid = form.companyName.trim().length >= 2;
-  const isAdminEmailValid = /\S+@\S+\.\S+/.test(form.adminEmail);
 
-  const isFormValid = isCompanyNameValid && isAdminEmailValid;
+  const isFormValid = isCompanyNameValid;
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
@@ -44,8 +42,8 @@ export function NewTenantDialog({ open, saving, errorMessage, onClose, onCreate 
           {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
           <Typography variant="body2" color="text.secondary">
-            We&apos;ll generate a slug automatically and email the admin a link to finish setting
-            up their account (name, password, and email verification).
+            A URL slug will be generated automatically. You can add users to the tenant after
+            creation.
           </Typography>
 
           <TextField
@@ -59,16 +57,6 @@ export function NewTenantDialog({ open, saving, errorMessage, onClose, onCreate 
                 : ' '
             }
             autoFocus
-            fullWidth
-          />
-
-          <TextField
-            label="Admin email"
-            type="email"
-            value={form.adminEmail}
-            onChange={(event) => setForm((prev) => ({ ...prev, adminEmail: event.target.value }))}
-            error={form.adminEmail.length > 0 && !isAdminEmailValid}
-            helperText={form.adminEmail.length > 0 && !isAdminEmailValid ? 'Enter a valid email address.' : ' '}
             fullWidth
           />
         </Stack>
