@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
 
         <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
         <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="10.9.0" />
@@ -17,6 +17,8 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.18.0" />
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.18.0" />
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.18.0" />
+        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+        <PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
     </ItemGroup>
 
 </Project>

@@ -4,8 +4,11 @@ using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Infrastructure.Messaging;
+using Heum.ServiceDefaults;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+builder.AddServiceDefaults();
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ICurrentUserService, SystemCurrentUserService>();

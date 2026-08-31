@@ -16,6 +16,7 @@ using Heum.Server.Services;
 using Heum.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
+using Serilog;
 using TenantService = Heum.Server.Features.Tenants.Services.TenantService;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -82,6 +83,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+app.UseSerilogRequestLogging();
 
 app.UseRateLimiter();
 

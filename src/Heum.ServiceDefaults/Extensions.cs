@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Sinks.OpenTelemetry;
 
 namespace Heum.ServiceDefaults;
 
@@ -20,6 +21,8 @@ public static class Extensions
 
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
+        builder.AddSerilogLogging();
+
         builder.ConfigureOpenTelemetry();
 
         builder.AddDefaultHealthChecks();
@@ -44,15 +47,38 @@ public static class Extensions
         return builder;
     }
 
+    public static TBuilder AddSerilogLogging<TBuilder>(this TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services.AddSerilog((services, loggerConfiguration) =>
+        {
+            loggerConfiguration
+                .ReadFrom.Configuration(builder.Configuration)
+                .ReadFrom.Services(services)
+                .Enrich.FromLogContext()
+                .Enrich.WithProperty("Application", builder.Environment.ApplicationName)
+                .WriteTo.Console();
+
+            var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+            if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+            {
+                loggerConfiguration.WriteTo.OpenTelemetry(options =>
+                {
+                    options.Endpoint = otlpEndpoint;
+                    options.Protocol = OtlpProtocol.Grpc;
+                    options.ResourceAttributes["service.name"] =
+                        builder.Configuration["OTEL_SERVICE_NAME"]
+                        ?? builder.Environment.ApplicationName;
+                });
+            }
+        });
+
+        return builder;
+    }
+
     public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
-        builder.Logging.AddOpenTelemetry(logging =>
-        {
-            logging.IncludeFormattedMessage = true;
-            logging.IncludeScopes = true;
-        });
-
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
             {
