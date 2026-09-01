@@ -1,11 +1,12 @@
-﻿import { useQuery } from '@tanstack/react-query';
-import { fetchTenants } from '../api/tenantsApi';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTenants, type FetchTenantsParams } from '../api/tenantsApi';
 
-export const tenantsQueryKey = ['tenants'] as const;
+export const tenantsQueryKey = (params: FetchTenantsParams) =>
+  ['tenants', params] as const;
 
-export function useTenants() {
+export function useTenants(params: FetchTenantsParams = {}) {
   return useQuery({
-    queryKey: tenantsQueryKey,
-    queryFn: fetchTenants,
+    queryKey: tenantsQueryKey(params),
+    queryFn: () => fetchTenants(params),
   });
 }

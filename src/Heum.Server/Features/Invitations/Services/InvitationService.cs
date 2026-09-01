@@ -46,13 +46,32 @@ internal sealed class InvitationService(
         return new InvitationResult(invitation, DuplicatePending: false);
     }
 
-    public async Task<IReadOnlyList<Invitation>> ListAsync(
+    public async Task<(IReadOnlyList<Invitation> Items, int TotalCount)> ListAsync(
         Guid tenantId,
-        CancellationToken cancellationToken = default) =>
-        await dbContext.Invitations
-            .Where(i => i.TenantId == tenantId)
-            .OrderByDescending(i => i.CreatedAtUtc)
+        string? search,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = dbContext.Invitations
+            .Where(i => i.TenantId == tenantId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(i => i.Email.Contains(search));
+
+        query = query.OrderByDescending(i => i.CreatedAtUtc);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
 
     public async Task<AcceptResult> AcceptAsync(
         string token,

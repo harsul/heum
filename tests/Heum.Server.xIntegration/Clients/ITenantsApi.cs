@@ -1,4 +1,5 @@
-﻿using Heum.Server.Features.Tenants.Models;
+using Heum.Server.Common;
+using Heum.Server.Features.Tenants.Models;
 using Refit;
 
 namespace Heum.Server.xIntegration.Clients;
@@ -29,7 +30,7 @@ public interface ITenantsApi
         CancellationToken cancellationToken = default);
 
     [Get("/api/tenants/me/history")]
-    Task<IApiResponse<TenantHistoryResponse>> GetMyTenantHistoryAsync(
+    Task<IApiResponse<PagedResponse<TenantHistoryEntryResponse>>> GetMyTenantHistoryAsync(
         int? page = null,
         int? pageSize = null,
         CancellationToken cancellationToken = default);

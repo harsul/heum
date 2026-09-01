@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -13,8 +13,8 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import type { Tenant, TenantOrder } from '../types/tenant';
-import { applyTenantFilter, getComparator } from '../utils';
 import { getApiErrorMessage } from '../../../utils/apiError';
+import { useDebounce } from '../../../hooks/useDebounce';
 import { useTenants } from '../hooks/useTenants';
 import { useCreateTenant } from '../hooks/useCreateTenant';
 import { useSetTenantActive, useUpdateTenant } from '../hooks/useTenantMutations';
@@ -34,7 +34,6 @@ const headCells: HeadCell[] = [
 ];
 
 export function TenantsTable() {
-  const { data: tenants = [], isLoading, isError } = useTenants();
   const updateTenant = useUpdateTenant();
   const setTenantActive = useSetTenantActive();
   const createTenant = useCreateTenant();
@@ -42,33 +41,32 @@ export function TenantsTable() {
   const [order, setOrder] = useState<TenantOrder>('asc');
   const [orderBy, setOrderBy] = useState<'name' | 'slug' | 'createdAtUtc' | 'isActive'>('name');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [filterName, setFilterName] = useState('');
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [searchInput, setSearchInput] = useState('');
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [isNewTenantOpen, setIsNewTenantOpen] = useState(false);
+
+  const search = useDebounce(searchInput, 300);
+
+  const { data, isLoading, isError } = useTenants({
+    page: page + 1,
+    pageSize: rowsPerPage,
+    search: search || undefined,
+    sortBy: orderBy,
+    sortDir: order,
+  });
+
+  const tenants = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
 
   const handleRequestSort = (property: string) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property as typeof orderBy);
+    setPage(0);
   };
 
-  const filteredTenants = useMemo(
-    () =>
-      applyTenantFilter({
-        tenants,
-        comparator: getComparator(order, orderBy),
-        query: filterName,
-      }),
-    [tenants, order, orderBy, filterName],
-  );
-
-  const paginatedTenants = filteredTenants.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage,
-  );
-
-  const isNotFound = !isLoading && !isError && filteredTenants.length === 0;
+  const isNotFound = !isLoading && !isError && tenants.length === 0;
 
   return (
     <Card>
@@ -92,9 +90,9 @@ export function TenantsTable() {
       </Stack>
 
       <TenantTableToolbar
-        filterName={filterName}
+        filterName={searchInput}
         onFilterName={(value) => {
-          setFilterName(value);
+          setSearchInput(value);
           setPage(0);
         }}
       />
@@ -132,7 +130,7 @@ export function TenantsTable() {
               ))}
 
             {!isLoading &&
-              paginatedTenants.map((tenant) => (
+              tenants.map((tenant) => (
                 <TenantTableRow
                   key={tenant.id}
                   tenant={tenant}
@@ -149,9 +147,11 @@ export function TenantsTable() {
                 <TableCell colSpan={headCells.length} align="center" sx={{ py: 6 }}>
                   <Box>
                     <Typography variant="subtitle1">No tenants found</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      No results found for &quot;{filterName}&quot;. Try a different search.
-                    </Typography>
+                    {searchInput && (
+                      <Typography variant="body2" color="text.secondary">
+                        No results found for &quot;{searchInput}&quot;. Try a different search.
+                      </Typography>
+                    )}
                   </Box>
                 </TableCell>
               </TableRow>
@@ -162,7 +162,7 @@ export function TenantsTable() {
 
       <TablePagination
         component="div"
-        count={filteredTenants.length}
+        count={totalCount}
         page={page}
         onPageChange={(_, newPage) => setPage(newPage)}
         rowsPerPage={rowsPerPage}
@@ -170,7 +170,7 @@ export function TenantsTable() {
           setRowsPerPage(parseInt(event.target.value, 10));
           setPage(0);
         }}
-        rowsPerPageOptions={[5, 10, 25]}
+        rowsPerPageOptions={[10, 25, 50]}
       />
 
       <EditTenantDialog

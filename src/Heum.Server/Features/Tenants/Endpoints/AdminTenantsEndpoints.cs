@@ -1,5 +1,6 @@
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
+using Heum.Server.Common;
 using Heum.Server.Features.Settings.Models;
 using Heum.Server.Features.Settings.Services;
 using Heum.Server.Features.Tenants.Models;
@@ -60,14 +61,23 @@ public static class AdminTenantsEndpoints
         return group;
     }
 
-    internal static async Task<Ok<IReadOnlyList<TenantResponse>>> ListTenantsAsync(
+    internal static async Task<Ok<PagedResponse<TenantResponse>>> ListTenantsAsync(
         ITenantService tenantService,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? search = null,
+        string? sortBy = "name",
+        string? sortDir = "asc",
+        int page = 1,
+        int pageSize = 25)
     {
-        var tenants = await tenantService.ListTenantsAsync(cancellationToken);
-        var response = tenants.Select(TenantResponseMapper.ToResponse).ToList();
-
-        return TypedResults.Ok<IReadOnlyList<TenantResponse>>(response);
+        var (items, totalCount) = await tenantService.ListTenantsAsync(search, sortBy, sortDir, page, pageSize, cancellationToken);
+        return TypedResults.Ok(new PagedResponse<TenantResponse>
+        {
+            Items = items.Select(TenantResponseMapper.ToResponse).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+        });
     }
 
     internal static async Task<Created<TenantResponse>> CreateTenantAsync(
@@ -110,7 +120,7 @@ public static class AdminTenantsEndpoints
         return TypedResults.Ok<IReadOnlyList<TenantUserResponse>>(response);
     }
 
-    internal static async Task<Results<Ok<TenantHistoryResponse>, NotFound>> GetTenantHistoryAsync(
+    internal static async Task<Results<Ok<PagedResponse<TenantHistoryEntryResponse>>, NotFound>> GetTenantHistoryAsync(
         Guid id,
         ITenantService tenantService,
         CancellationToken cancellationToken,
@@ -123,7 +133,7 @@ public static class AdminTenantsEndpoints
 
         var (items, totalCount) = await tenantService.GetTenantHistoryAsync(id, page, pageSize, cancellationToken);
 
-        return TypedResults.Ok(new TenantHistoryResponse
+        return TypedResults.Ok(new PagedResponse<TenantHistoryEntryResponse>
         {
             Items = items.Select(TenantResponseMapper.ToResponse).ToList(),
             Page = page,

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Keycloak.Services;
+using Heum.Server.Common;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.Features.Tenants.Services;
 using Heum.Server.Services;
@@ -134,7 +135,7 @@ public static class TenantsEndpoints
         return succeeded ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 
-    internal static async Task<Results<Ok<TenantHistoryResponse>, BadRequest<ProblemDetails>>> GetMyTenantHistoryAsync(
+    internal static async Task<Results<Ok<PagedResponse<TenantHistoryEntryResponse>>, BadRequest<ProblemDetails>>> GetMyTenantHistoryAsync(
         ITenantContext tenantContext,
         ITenantService tenantService,
         CancellationToken cancellationToken,
@@ -146,7 +147,7 @@ public static class TenantsEndpoints
 
         var (items, totalCount) = await tenantService.GetTenantHistoryAsync(tenantContext.TenantId, page, pageSize, cancellationToken);
 
-        return TypedResults.Ok(new TenantHistoryResponse
+        return TypedResults.Ok(new PagedResponse<TenantHistoryEntryResponse>
         {
             Items = items.Select(TenantResponseMapper.ToResponse).ToList(),
             Page = page,
