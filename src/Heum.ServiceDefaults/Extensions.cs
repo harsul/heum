@@ -6,8 +6,8 @@ using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Sinks.OpenTelemetry;
 
 namespace Heum.ServiceDefaults;
 
@@ -58,20 +58,7 @@ public static class Extensions
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("Application", builder.Environment.ApplicationName)
                 .WriteTo.Console();
-
-            var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
-            if (!string.IsNullOrWhiteSpace(otlpEndpoint))
-            {
-                loggerConfiguration.WriteTo.OpenTelemetry(options =>
-                {
-                    options.Endpoint = otlpEndpoint;
-                    options.Protocol = OtlpProtocol.Grpc;
-                    options.ResourceAttributes["service.name"] =
-                        builder.Configuration["OTEL_SERVICE_NAME"]
-                        ?? builder.Environment.ApplicationName;
-                });
-            }
-        });
+        }, writeToProviders: true);
 
         return builder;
     }
@@ -79,6 +66,12 @@ public static class Extensions
     public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
+        builder.Logging.AddOpenTelemetry(logging =>
+        {
+            logging.IncludeFormattedMessage = true;
+            logging.IncludeScopes = true;
+        });
+
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
             {
