@@ -1,3 +1,4 @@
+using Heum.Server.Common;
 using Heum.Server.Features.Invitations.Models;
 using Refit;
 
@@ -11,7 +12,10 @@ public interface IInvitationsApi
         CancellationToken cancellationToken = default);
 
     [Get("/api/invitations")]
-    Task<IApiResponse<List<InvitationResponse>>> ListInvitationsAsync(
+    Task<IApiResponse<PagedResponse<InvitationResponse>>> ListInvitationsAsync(
+        string? search = null,
+        int page = 1,
+        int pageSize = 25,
         CancellationToken cancellationToken = default);
 
     [Post("/api/invitations/{id}/revoke")]
