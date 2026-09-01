@@ -1,4 +1,14 @@
-﻿/**
+/**
+ * Generic server-side page envelope returned by all paginated endpoints.
+ */
+export interface Page<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+/**
  * Mirrors `Heum.Server.Features.Admin.Tenants.Models.TenantResponse` returned by
  * `GET /api/admin/tenants`.
  */
@@ -42,15 +52,8 @@ export interface TenantHistoryEntry {
   timestampUtc: string;
 }
 
-/**
- * Mirrors `Heum.Server.Features.Tenants.Models.TenantHistoryResponse`.
- */
-export interface TenantHistoryPage {
-  items: TenantHistoryEntry[];
-  page: number;
-  pageSize: number;
-  totalCount: number;
-}
+/** @deprecated Use `Page<TenantHistoryEntry>` directly. Kept for backwards compat. */
+export type TenantHistoryPage = Page<TenantHistoryEntry>;
 
 /**
  * Mirrors `Heum.Server.Features.Settings.Models.TenantSettingsResponse` returned by

@@ -13,6 +13,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
+import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -26,6 +27,8 @@ import { useAddMyTenantUser } from '../hooks/useAddMyTenantUser';
 import { useMyTenantRoles } from '../hooks/useMyTenantRoles';
 import { useSetMyTenantUserEnabled } from '../hooks/useSetMyTenantUserEnabled';
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
+
 export function CompanyUsersTable() {
   const auth = useAuth();
   const currentUserId = auth.user?.profile.sub;
@@ -34,6 +37,10 @@ export function CompanyUsersTable() {
   const { data: roles, isLoading: rolesLoading } = useMyTenantRoles();
   const setUserEnabled = useSetMyTenantUserEnabled();
   const [isAddingUser, setIsAddingUser] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const paginatedUsers = users.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Box>
@@ -104,96 +111,110 @@ export function CompanyUsersTable() {
       )}
 
       {!isLoading && !isError && users.length > 0 && (
-        <TableContainer sx={{ overflow: 'unset' }}>
-          <Table sx={{ minWidth: 640 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell>User</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell align="center">Status</TableCell>
-                <TableCell align="center">Email verified</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((user) => {
-                const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username;
-                const isSelf = user.id === currentUserId;
+        <>
+          <TableContainer sx={{ overflow: 'unset' }}>
+            <Table sx={{ minWidth: 640 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>User</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell align="center">Status</TableCell>
+                  <TableCell align="center">Email verified</TableCell>
+                  <TableCell>Created</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedUsers.map((user) => {
+                  const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username;
+                  const isSelf = user.id === currentUserId;
 
-                return (
-                  <TableRow key={user.id}>
-                    <TableCell component="th" scope="row">
-                      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main', fontSize: 13 }}>
-                          {tenantInitials(displayName)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle2" noWrap>
-                            {displayName}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {user.username}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {user.email ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        size="small"
-                        label={user.enabled ? 'Enabled' : 'Disabled'}
-                        color={user.enabled ? 'success' : 'default'}
-                        variant={user.enabled ? 'filled' : 'outlined'}
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        size="small"
-                        label={user.emailVerified ? 'Verified' : 'Unverified'}
-                        color={user.emailVerified ? 'success' : 'warning'}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell>{formatDate(user.createdAtUtc)}</TableCell>
-                    <TableCell align="right">
-                      <Tooltip
-                        title={
-                          isSelf
-                            ? "You can't disable your own account"
-                            : user.enabled
-                              ? 'Disable user'
-                              : 'Enable user'
-                        }
-                      >
-                        <span>
-                          <IconButton
-                            size="small"
-                            disabled={isSelf || setUserEnabled.isPending}
-                            color={user.enabled ? 'error' : 'success'}
-                            onClick={() =>
-                              setUserEnabled.mutate({ userId: user.id, enabled: !user.enabled })
-                            }
-                          >
-                            {user.enabled ? (
-                              <BlockOutlinedIcon fontSize="small" />
-                            ) : (
-                              <CheckCircleOutlineIcon fontSize="small" />
-                            )}
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell component="th" scope="row">
+                        <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main', fontSize: 13 }}>
+                            {tenantInitials(displayName)}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle2" noWrap>
+                              {displayName}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {user.username}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {user.email ?? '—'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          size="small"
+                          label={user.enabled ? 'Enabled' : 'Disabled'}
+                          color={user.enabled ? 'success' : 'default'}
+                          variant={user.enabled ? 'filled' : 'outlined'}
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          size="small"
+                          label={user.emailVerified ? 'Verified' : 'Unverified'}
+                          color={user.emailVerified ? 'success' : 'warning'}
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>{formatDate(user.createdAtUtc)}</TableCell>
+                      <TableCell align="right">
+                        <Tooltip
+                          title={
+                            isSelf
+                              ? "You can't disable your own account"
+                              : user.enabled
+                                ? 'Disable user'
+                                : 'Enable user'
+                          }
+                        >
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={isSelf || setUserEnabled.isPending}
+                              color={user.enabled ? 'error' : 'success'}
+                              onClick={() =>
+                                setUserEnabled.mutate({ userId: user.id, enabled: !user.enabled })
+                              }
+                            >
+                              {user.enabled ? (
+                                <BlockOutlinedIcon fontSize="small" />
+                              ) : (
+                                <CheckCircleOutlineIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            component="div"
+            count={users.length}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(event) => {
+              setRowsPerPage(parseInt(event.target.value, 10));
+              setPage(0);
+            }}
+            rowsPerPageOptions={PAGE_SIZE_OPTIONS}
+          />
+        </>
       )}
 
       <AddUserByEmailDialog

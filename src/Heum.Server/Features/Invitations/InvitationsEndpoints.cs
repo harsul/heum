@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Heum.Data.Models;
+using Heum.Server.Common;
 using Heum.Server.Features.Invitations.Models;
 using Heum.Server.Features.Invitations.Services;
 using Heum.Server.Features.Tenants;
@@ -55,17 +56,25 @@ public static class InvitationsEndpoints
             ToResponse(result.Invitation));
     }
 
-    internal static async Task<Results<Ok<IReadOnlyList<InvitationResponse>>, BadRequest<ProblemDetails>>> ListInvitationsAsync(
+    internal static async Task<Results<Ok<PagedResponse<InvitationResponse>>, BadRequest<ProblemDetails>>> ListInvitationsAsync(
         ITenantContext tenantContext,
         IInvitationService invitationService,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? search = null,
+        int page = 1,
+        int pageSize = 25)
     {
         if (!tenantContext.HasTenant)
             return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        var invitations = await invitationService.ListAsync(tenantContext.TenantId, cancellationToken);
-        return TypedResults.Ok<IReadOnlyList<InvitationResponse>>(
-            invitations.Select(ToResponse).ToList());
+        var (items, totalCount) = await invitationService.ListAsync(tenantContext.TenantId, search, page, pageSize, cancellationToken);
+        return TypedResults.Ok(new PagedResponse<InvitationResponse>
+        {
+            Items = items.Select(ToResponse).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+        });
     }
 
     internal static async Task<Results<Ok, BadRequest<ProblemDetails>, Conflict<ProblemDetails>>> AcceptInvitationAsync(

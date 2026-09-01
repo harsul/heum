@@ -1,5 +1,5 @@
-﻿import { apiClient } from '../../../lib/apiClient';
-import type { Tenant, TenantHistoryPage, TenantSettings, TenantUser } from '../types/tenant';
+import { apiClient } from '../../../lib/apiClient';
+import type { Page, Tenant, TenantHistoryPage, TenantSettings, TenantUser } from '../types/tenant';
 
 export interface UpdateTenantPayload {
   name: string;
@@ -10,8 +10,16 @@ export interface CreateTenantPayload {
   companyName: string;
 }
 
-export async function fetchTenants(): Promise<Tenant[]> {
-  const { data } = await apiClient.get<Tenant[]>('/admin/tenants');
+export interface FetchTenantsParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string;
+  sortDir?: string;
+}
+
+export async function fetchTenants(params: FetchTenantsParams = {}): Promise<Page<Tenant>> {
+  const { data } = await apiClient.get<Page<Tenant>>('/admin/tenants', { params });
   return data;
 }
 

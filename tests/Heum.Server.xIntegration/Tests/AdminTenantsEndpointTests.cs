@@ -34,10 +34,10 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     {
         var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.SystemAdmin);
 
-        var response = await api.ListTenantsAsync(TestContext.Current.CancellationToken);
+        var response = await api.ListTenantsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(2, response.Content!.Count);
+        Assert.Equal(2, response.Content!.TotalCount);
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
     {
         var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.Anonymous);
 
-        var response = await api.ListTenantsAsync(TestContext.Current.CancellationToken);
+        var response = await api.ListTenantsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
@@ -56,7 +56,7 @@ public class AdminTenantsEndpointTests(IntegrationFixture fixture) : IAsyncLifet
         // TenantAdmin has "Admin" role but /api/admin/tenants requires "SystemAdmin"
         var api = fixture.GetClient<IAdminTenantsApi>(ClientScope.TenantAdmin(Guid.NewGuid()));
 
-        var response = await api.ListTenantsAsync(TestContext.Current.CancellationToken);
+        var response = await api.ListTenantsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }

@@ -1,3 +1,4 @@
+using Heum.Server.Common;
 using Heum.Server.Features.Tenants.Models;
 using Refit;
 
@@ -6,7 +7,12 @@ namespace Heum.Server.xIntegration.Clients;
 public interface IAdminTenantsApi
 {
     [Get("/api/admin/tenants/")]
-    Task<IApiResponse<List<TenantResponse>>> ListTenantsAsync(
+    Task<IApiResponse<PagedResponse<TenantResponse>>> ListTenantsAsync(
+        string? search = null,
+        string? sortBy = null,
+        string? sortDir = null,
+        int page = 1,
+        int pageSize = 25,
         CancellationToken cancellationToken = default);
 
     [Post("/api/admin/tenants/")]
@@ -25,7 +31,7 @@ public interface IAdminTenantsApi
         CancellationToken cancellationToken = default);
 
     [Get("/api/admin/tenants/{id}/history")]
-    Task<IApiResponse<TenantHistoryResponse>> GetTenantHistoryAsync(
+    Task<IApiResponse<PagedResponse<TenantHistoryEntryResponse>>> GetTenantHistoryAsync(
         Guid id,
         int? page = null,
         int? pageSize = null,

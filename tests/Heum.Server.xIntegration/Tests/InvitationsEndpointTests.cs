@@ -99,10 +99,10 @@ public class InvitationsEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
             new CreateInvitationRequest { Email = "list2@invite.com" },
             TestContext.Current.CancellationToken);
 
-        var response = await api.ListInvitationsAsync(TestContext.Current.CancellationToken);
+        var response = await api.ListInvitationsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(2, response.Content!.Count);
+        Assert.Equal(2, response.Content!.TotalCount);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class InvitationsEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     {
         var api = fixture.GetClient<IInvitationsApi>(ClientScope.Anonymous);
 
-        var response = await api.ListInvitationsAsync(TestContext.Current.CancellationToken);
+        var response = await api.ListInvitationsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }

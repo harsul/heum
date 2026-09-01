@@ -31,7 +31,13 @@ public interface ITenantService
         string? role,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<Tenant>> ListTenantsAsync(CancellationToken cancellationToken = default);
+    Task<(IReadOnlyList<Tenant> Items, int TotalCount)> ListTenantsAsync(
+        string? search,
+        string? sortBy,
+        string? sortDir,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
 
     Task<Tenant?> GetTenantAsync(Guid id, CancellationToken cancellationToken = default);
 

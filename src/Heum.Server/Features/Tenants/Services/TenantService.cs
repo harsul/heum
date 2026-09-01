@@ -59,10 +59,42 @@ public sealed partial class TenantService(
         return new TenantUserProvisionResult(keycloakUserId, emailConflict);
     }
 
-    public async Task<IReadOnlyList<Tenant>> ListTenantsAsync(CancellationToken cancellationToken = default) =>
-        await dbContext.Tenants
-            .OrderBy(t => t.Name)
+    public async Task<(IReadOnlyList<Tenant> Items, int TotalCount)> ListTenantsAsync(
+        string? search,
+        string? sortBy,
+        string? sortDir,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        IQueryable<Tenant> query = dbContext.Tenants;
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(t => t.Name.Contains(search) || t.Slug.Contains(search));
+
+        query = (sortBy?.ToLowerInvariant(), sortDir?.ToLowerInvariant() == "desc") switch
+        {
+            ("slug", false) => query.OrderBy(t => t.Slug),
+            ("slug", true) => query.OrderByDescending(t => t.Slug),
+            ("createdatutc", false) => query.OrderBy(t => t.CreatedAtUtc),
+            ("createdatutc", true) => query.OrderByDescending(t => t.CreatedAtUtc),
+            ("isactive", false) => query.OrderBy(t => t.IsActive),
+            ("isactive", true) => query.OrderByDescending(t => t.IsActive),
+            (_, true) => query.OrderByDescending(t => t.Name),
+            _ => query.OrderBy(t => t.Name),
+        };
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
 
     public async Task<Tenant?> GetTenantAsync(Guid id, CancellationToken cancellationToken = default) =>
         await dbContext.Tenants.FindAsync([id], cancellationToken);

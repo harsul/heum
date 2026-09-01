@@ -11,6 +11,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
+import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { formatDate, tenantInitials } from '../../../utils/format';
@@ -24,11 +25,17 @@ interface TenantUsersTableProps {
   tenantId: string;
 }
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
+
 export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
   const { data: users = [], isLoading, isError } = useTenantUsers(tenantId);
   const addTenantUser = useAddTenantUser(tenantId);
   const { data: roles, isLoading: rolesLoading } = useAdminAssignableRoles();
   const [isAddingUser, setIsAddingUser] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const paginatedUsers = users.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Box>
@@ -91,66 +98,80 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
       )}
 
       {!isLoading && !isError && users.length > 0 && (
-        <TableContainer sx={{ overflow: 'unset' }}>
-          <Table sx={{ minWidth: 640 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell>User</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell align="center">Status</TableCell>
-                <TableCell align="center">Email verified</TableCell>
-                <TableCell>Created</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((user) => {
-                const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username;
+        <>
+          <TableContainer sx={{ overflow: 'unset' }}>
+            <Table sx={{ minWidth: 640 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>User</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell align="center">Status</TableCell>
+                  <TableCell align="center">Email verified</TableCell>
+                  <TableCell>Created</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedUsers.map((user) => {
+                  const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username;
 
-                return (
-                  <TableRow key={user.id}>
-                    <TableCell component="th" scope="row">
-                      <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main', fontSize: 13 }}>
-                          {tenantInitials(displayName)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle2" noWrap>
-                            {displayName}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {user.username}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {user.email ?? '—'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        size="small"
-                        label={user.enabled ? 'Enabled' : 'Disabled'}
-                        color={user.enabled ? 'success' : 'warning'}
-                        variant='filled'
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        size="small"
-                        label={user.emailVerified ? 'Verified' : 'Not verified'}
-                        color={user.emailVerified ? 'success' : 'warning'}
-                        variant="filled"
-                      />
-                    </TableCell>
-                    <TableCell>{formatDate(user.createdAtUtc)}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell component="th" scope="row">
+                        <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main', fontSize: 13 }}>
+                            {tenantInitials(displayName)}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle2" noWrap>
+                              {displayName}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {user.username}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {user.email ?? '—'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          size="small"
+                          label={user.enabled ? 'Enabled' : 'Disabled'}
+                          color={user.enabled ? 'success' : 'warning'}
+                          variant='filled'
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          size="small"
+                          label={user.emailVerified ? 'Verified' : 'Not verified'}
+                          color={user.emailVerified ? 'success' : 'warning'}
+                          variant="filled"
+                        />
+                      </TableCell>
+                      <TableCell>{formatDate(user.createdAtUtc)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            component="div"
+            count={users.length}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(event) => {
+              setRowsPerPage(parseInt(event.target.value, 10));
+              setPage(0);
+            }}
+            rowsPerPageOptions={PAGE_SIZE_OPTIONS}
+          />
+        </>
       )}
 
       <AddUserByEmailDialog
