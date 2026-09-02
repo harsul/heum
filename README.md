@@ -2,6 +2,12 @@
 
 Heum is a multi-tenant SaaS platform with a .NET backend and a React frontend. Tenants are isolated at the data layer; users authenticate via Keycloak with role-based access control (system admins vs. tenant admins).
 
+## Architecture
+
+![Service dependency graph](docs/architecture.png)
+
+The diagram shows the full set of services orchestrated by .NET Aspire locally: the API **server** at the centre, backed by **heumdb** (Postgres), **cache** (Redis), and **keycloak**; async messaging flows through the **messaging** Service Bus emulator via **user-events** and **tenant-events** topics/subscriptions; the **useronboarding** Azure Function consumes those events and sends mail via **mailpit**; **background-services** drives the outbox; and the React **webfrontend** is served alongside everything else.
+
 ## Tech Stack
 
 ### Backend
