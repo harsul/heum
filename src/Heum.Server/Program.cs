@@ -7,8 +7,12 @@ using Heum.Infrastructure.Messaging;
 using Heum.Server.Extensions;
 using Heum.Server.Features.Invitations;
 using Heum.Server.Features.Invitations.Services;
+using Heum.Server.Features.Plans.Endpoints;
+using Heum.Server.Features.Plans.Services;
 using Heum.Server.Features.Settings;
 using Heum.Server.Features.Settings.Services;
+using Heum.Server.Features.Subscriptions.Endpoints;
+using Heum.Server.Features.Subscriptions.Services;
 using Heum.Server.Features.Tenants;
 using Heum.Server.Features.Tenants.Endpoints;
 using Heum.Server.Features.Tenants.Services;
@@ -65,6 +69,9 @@ builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
+builder.Services.AddScoped<IEntitlementService, EntitlementService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<IPlanAdminService, PlanAdminService>();
 builder.Services.AddScoped<TenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
 builder.Services.AddScoped<Heum.Data.Multitenancy.ITenantProvider>(sp => sp.GetRequiredService<TenantContext>());
@@ -107,9 +114,13 @@ var api = app.MapVersionedApiGroup();
 api.MapTenantsEndpoints();
 api.MapSettingsEndpoints();
 api.MapInvitationsEndpoints();
+api.MapTenantEntitlementsEndpoints();
 
 var admin = api.MapGroup("/admin").RequireAuthorization("SystemAdmin");
 admin.MapAdminTenantsEndpoints();
+admin.MapAdminPlansEndpoints();
+admin.MapAdminEntitlementsEndpoints();
+admin.MapAdminSubscriptionsEndpoints();
 
 app.MapDefaultEndpoints();
 

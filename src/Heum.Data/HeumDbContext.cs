@@ -15,6 +15,11 @@ public class HeumDbContext(DbContextOptions<HeumDbContext> options, ITenantProvi
     public DbSet<Invitation> Invitations => Set<Invitation>();
     public DbSet<AuditTrail> AuditTrails => Set<AuditTrail>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<Plan> Plans => Set<Plan>();
+    public DbSet<Entitlement> Entitlements => Set<Entitlement>();
+    public DbSet<PlanEntitlement> PlanEntitlements => Set<PlanEntitlement>();
+    public DbSet<TenantSubscription> TenantSubscriptions => Set<TenantSubscription>();
+    public DbSet<TenantEntitlementOverride> TenantEntitlementOverrides => Set<TenantEntitlementOverride>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

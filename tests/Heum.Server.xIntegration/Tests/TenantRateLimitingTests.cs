@@ -4,6 +4,7 @@ using Heum.Data;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
+using Heum.Server.Features.Plans.Services;
 using Heum.Server.Middleware;
 using Heum.Server.Configuration;
 using Heum.Server.xIntegration.Clients;
@@ -160,6 +161,9 @@ public sealed class TenantRateLimitingTests : IAsyncLifetime
 
                 services.RemoveAll<ITenantRateLimiter>();
                 services.AddSingleton<ITenantRateLimiter>(FakeTenantRateLimiter);
+
+                services.RemoveAll<IEntitlementService>();
+                services.AddSingleton<IEntitlementService, NoOpEntitlementService>();
 
                 // Limit of 2 so tests can trigger throttling cheaply.
                 services.PostConfigure<TenantRateLimitOptions>(opts =>

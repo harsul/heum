@@ -5,6 +5,7 @@ using Heum.Data;
 using Heum.Data.Domain;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
+using Heum.Server.Features.Subscriptions.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heum.Server.Features.Tenants.Services;
@@ -14,6 +15,7 @@ public sealed partial class TenantService(
     HeumDbContext dbContext,
     IKeycloakService keycloakService,
     IDomainEventCollector domainEventCollector,
+    ISubscriptionService subscriptionService,
     TimeProvider timeProvider) : ITenantService
 {
     private const int MaxSlugSuffixAttempts = 50;
@@ -30,6 +32,10 @@ public sealed partial class TenantService(
         dbContext.Tenants.Add(tenant);
         dbContext.TenantSettings.Add(settings);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Assign the default Free plan. Done after SaveChanges so the tenant row exists first.
+        await subscriptionService.AssignPlanAsync(
+            tenant.Id, WellKnownIds.FreePlanId, notes: null, changedByUserId: null, cancellationToken);
 
         return tenant;
     }

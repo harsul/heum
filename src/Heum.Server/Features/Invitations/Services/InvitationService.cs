@@ -4,6 +4,7 @@ using Heum.Data;
 using Heum.Data.Domain;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
+using Heum.Server.Features.Plans.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heum.Server.Features.Invitations.Services;
@@ -12,6 +13,7 @@ internal sealed class InvitationService(
     HeumDbContext dbContext,
     IKeycloakService keycloakService,
     IDomainEventCollector domainEventCollector,
+    IEntitlementService entitlementService,
     TimeProvider timeProvider) : IInvitationService
 {
     private static readonly TimeSpan InvitationValidity = TimeSpan.FromDays(7);
@@ -31,6 +33,11 @@ internal sealed class InvitationService(
 
         if (hasPending)
             return new InvitationResult(null, DuplicatePending: true);
+
+        var maxUsers = await entitlementService.GetIntAsync(tenantId, "max_users", fallback: int.MaxValue, cancellationToken);
+        var currentUsers = await keycloakService.ListTenantUsersAsync(tenantId, cancellationToken);
+        if (currentUsers.Count >= maxUsers)
+            return new InvitationResult(null, DuplicatePending: false, EntitlementExceeded: true);
 
         var invitation = Invitation.Create(tenantId, email, invitedByUserId, InvitationValidity, timeProvider);
         dbContext.Invitations.Add(invitation);
