@@ -7,6 +7,7 @@ using Heum.Data.Multitenancy;
 using Heum.Data.SoftDelete;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
+using Heum.Server.Features.Plans.Services;
 using Heum.Server.Middleware;
 using Heum.Server.xIntegration.Infrastructure.Fakes;
 using Microsoft.AspNetCore.Authentication;
@@ -119,6 +120,9 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
             services.RemoveAll<ITenantRateLimiter>();
             services.AddSingleton<ITenantRateLimiter>(FakeTenantRateLimiter);
 
+            services.RemoveAll<IEntitlementService>();
+            services.AddSingleton<IEntitlementService, NoOpEntitlementService>();
+
             services.PostConfigure<RateLimiterOptions>(opts =>
             {
                 opts.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
@@ -152,6 +156,8 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
             db.OutboxMessages.RemoveRange(db.OutboxMessages);
             db.Invitations.RemoveRange(db.Invitations.IgnoreQueryFilters());
             db.TenantSettings.RemoveRange(db.TenantSettings.IgnoreQueryFilters());
+            db.TenantSubscriptions.RemoveRange(db.TenantSubscriptions.IgnoreQueryFilters());
+            db.TenantEntitlementOverrides.RemoveRange(db.TenantEntitlementOverrides.IgnoreQueryFilters());
             db.Tenants.RemoveRange(db.Tenants);
             await db.SaveChangesAsync();
         }

@@ -12,7 +12,6 @@ internal static class RateLimitingExtensions
 
     internal static IServiceCollection AddHeumRateLimiting(this IServiceCollection services)
     {
-        services.AddTransient<TenantRateLimitingMiddleware>();
         services.AddSingleton<ITenantRateLimiter, RedisTenantRateLimiter>();
         services.AddRateLimiter(options =>
         {

@@ -21,7 +21,7 @@ public sealed class TenantServiceTests : IDisposable
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
         _db = new HeumDbContext(options);
-        _service = new TenantService(_db, _keycloak, _events, TimeProvider.System);
+        _service = new TenantService(_db, _keycloak, _events, new FakeSubscriptionService(), TimeProvider.System);
     }
 
     public void Dispose() => _db.Dispose();

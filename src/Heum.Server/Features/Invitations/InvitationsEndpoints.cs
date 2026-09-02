@@ -35,7 +35,7 @@ public static class InvitationsEndpoints
         return group;
     }
 
-    internal static async Task<Results<Created<InvitationResponse>, BadRequest<ProblemDetails>, Conflict<ProblemDetails>>> CreateInvitationAsync(
+    internal static async Task<Results<Created<InvitationResponse>, BadRequest<ProblemDetails>, Conflict<ProblemDetails>, ForbidHttpResult>> CreateInvitationAsync(
         ITenantContext tenantContext,
         CreateInvitationRequest request,
         IInvitationService invitationService,
@@ -47,6 +47,9 @@ public static class InvitationsEndpoints
 
         var invitedBy = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown";
         var result = await invitationService.CreateAsync(tenantContext.TenantId, request.Email, invitedBy, cancellationToken);
+
+        if (result.EntitlementExceeded)
+            return TypedResults.Forbid();
 
         if (result.DuplicatePending)
             return TypedResults.Conflict(InvitationProblems.DuplicatePending(request.Email));

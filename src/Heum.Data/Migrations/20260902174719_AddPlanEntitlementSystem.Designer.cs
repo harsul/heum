@@ -3,6 +3,7 @@ using System;
 using Heum.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Heum.Data.Migrations
 {
     [DbContext(typeof(HeumDbContext))]
-    partial class HeumDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260902174719_AddPlanEntitlementSystem")]
+    partial class AddPlanEntitlementSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -229,10 +232,18 @@ namespace Heum.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
 
                     b.ToTable("Plans");
 
@@ -242,7 +253,8 @@ namespace Heum.Data.Migrations
                             Id = new Guid("00000000-0000-0000-0000-000000000001"),
                             CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
-                            Name = "Free"
+                            Name = "Free",
+                            Slug = "free"
                         });
                 });
 

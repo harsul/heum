@@ -2,7 +2,7 @@ using Heum.Data.Models;
 
 namespace Heum.Server.Features.Invitations.Services;
 
-public sealed record InvitationResult(Invitation? Invitation, bool DuplicatePending);
+public sealed record InvitationResult(Invitation? Invitation, bool DuplicatePending, bool EntitlementExceeded = false);
 public sealed record AcceptResult(bool Accepted, bool EmailConflict);
 
 public interface IInvitationService

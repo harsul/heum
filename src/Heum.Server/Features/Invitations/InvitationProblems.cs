@@ -17,4 +17,11 @@ internal static class InvitationProblems
         Detail = "The invitation token is invalid, expired, or has already been used.",
         Status = StatusCodes.Status400BadRequest,
     };
+
+    public static ProblemDetails UserLimitReached() => new()
+    {
+        Title = "User limit reached",
+        Detail = "Your plan's maximum user limit has been reached. Upgrade your plan to invite more users.",
+        Status = StatusCodes.Status403Forbidden,
+    };
 }
