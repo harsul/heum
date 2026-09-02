@@ -1,16 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { confirmLogoUrl, fetchLogoUploadUrl, removeTenantLogo, uploadToBlob } from '../api/logoApi';
+import { removeTenantLogo, uploadLogo } from '../api/logoApi';
 import { myTenantQueryKey } from './useMyTenant';
 
 export function useUploadLogo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (file: File) => {
-      const { uploadUrl, blobUrl } = await fetchLogoUploadUrl(file.type);
-      await uploadToBlob(uploadUrl, file);
-      return confirmLogoUrl(blobUrl);
-    },
+    mutationFn: (file: File) => uploadLogo(file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: myTenantQueryKey });
     },

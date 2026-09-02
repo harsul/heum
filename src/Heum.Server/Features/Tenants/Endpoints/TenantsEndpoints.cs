@@ -43,11 +43,9 @@ public static class TenantsEndpoints
         myTenant.MapGet("/history", GetMyTenantHistoryAsync)
             .WithName("GetMyTenantHistory");
 
-        myTenant.MapGet("/logo/upload-url", GetLogoUploadUrlAsync)
-            .WithName("GetLogoUploadUrl");
-
-        myTenant.MapPut("/logo", ConfirmLogoAsync)
-            .WithName("ConfirmLogo");
+        myTenant.MapPost("/logo", UploadLogoAsync)
+            .WithName("UploadLogo")
+            .DisableAntiforgery();
 
         myTenant.MapDelete("/logo", DeleteLogoAsync)
             .WithName("DeleteLogo");
@@ -165,38 +163,26 @@ public static class TenantsEndpoints
         });
     }
 
-    internal static async Task<Results<Ok<LogoUploadUrlResponse>, BadRequest<ProblemDetails>>> GetLogoUploadUrlAsync(
+    internal static async Task<Results<Ok<TenantResponse>, NotFound, BadRequest<ProblemDetails>>> UploadLogoAsync(
         ITenantContext tenantContext,
+        IFormFile file,
         IBlobStorageService blobStorageService,
-        string contentType,
-        CancellationToken cancellationToken)
-    {
-        if (!tenantContext.HasTenant)
-            return TypedResults.BadRequest(TenantProblems.NoTenant());
-
-        if (contentType is not ("image/jpeg" or "image/png"))
-            return TypedResults.BadRequest(TenantProblems.InvalidContentType(contentType));
-
-        var (uploadUrl, blobUrl) = await blobStorageService.GenerateLogoUploadUrlAsync(
-            tenantContext.TenantId, contentType, cancellationToken);
-
-        return TypedResults.Ok(new LogoUploadUrlResponse(uploadUrl.ToString(), blobUrl.ToString()));
-    }
-
-    internal static async Task<Results<Ok<TenantResponse>, NotFound, BadRequest<ProblemDetails>>> ConfirmLogoAsync(
-        ITenantContext tenantContext,
-        ConfirmLogoRequest request,
         ITenantService tenantService,
-        IBlobStorageService blobStorageService,
         CancellationToken cancellationToken)
     {
         if (!tenantContext.HasTenant)
             return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        if (!request.LogoUrl.Contains("/tenant-logos/", StringComparison.OrdinalIgnoreCase))
-            return TypedResults.BadRequest(TenantProblems.InvalidLogoUrl());
+        if (file.ContentType is not ("image/jpeg" or "image/png"))
+            return TypedResults.BadRequest(TenantProblems.InvalidContentType(file.ContentType));
 
-        var tenant = await tenantService.SetLogoAsync(tenantContext.TenantId, request.LogoUrl, cancellationToken);
+        if (file.Length > 2 * 1024 * 1024)
+            return TypedResults.BadRequest(TenantProblems.FileTooLarge());
+
+        await using var stream = file.OpenReadStream();
+        var blobUrl = await blobStorageService.UploadLogoAsync(tenantContext.TenantId, stream, file.ContentType, cancellationToken);
+
+        var tenant = await tenantService.SetLogoAsync(tenantContext.TenantId, blobUrl.ToString(), cancellationToken);
         return tenant is null ? TypedResults.NotFound() : TypedResults.Ok(TenantResponseMapper.ToResponse(tenant));
     }
 

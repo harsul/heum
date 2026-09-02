@@ -2,8 +2,9 @@ namespace Heum.Server.Features.Tenants.Services;
 
 public interface IBlobStorageService
 {
-    Task<(Uri UploadUrl, Uri BlobUrl)> GenerateLogoUploadUrlAsync(
+    Task<Uri> UploadLogoAsync(
         Guid tenantId,
+        Stream content,
         string contentType,
         CancellationToken cancellationToken = default);
 

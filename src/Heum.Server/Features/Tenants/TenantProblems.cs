@@ -39,10 +39,10 @@ internal static class TenantProblems
         Status = StatusCodes.Status400BadRequest,
     };
 
-    public static ProblemDetails InvalidLogoUrl() => new()
+    public static ProblemDetails FileTooLarge() => new()
     {
-        Title = "Invalid logo URL",
-        Detail = "The provided logo URL does not point to a valid tenant logo.",
+        Title = "File too large",
+        Detail = "The uploaded file exceeds the 2 MB limit.",
         Status = StatusCodes.Status400BadRequest,
     };
 }
