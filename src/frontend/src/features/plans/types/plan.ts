@@ -30,13 +30,10 @@ export interface TenantSubscription {
   planName: string;
   reason: string;
   notes: string | null;
+  changedByUserId: string | null;
   effectiveAtUtc: string;
+  createdAtUtc: string;
 }
 
-export interface TenantEntitlementOverride {
-  tenantId: string;
-  entitlementId: string;
-  entitlementKey: string;
-  value: string;
-  reason: string | null;
-}
+/** Resolved entitlements: plan defaults merged with tenant overrides. Key → value (always a string). */
+export type ResolvedEntitlements = Record<string, string>;

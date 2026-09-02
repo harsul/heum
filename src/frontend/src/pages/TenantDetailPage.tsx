@@ -28,7 +28,7 @@ import { TenantSettingsPanel } from '../features/tenants/components';
 import { TenantUsersTable } from '../features/tenants/components/TenantUsersTable';
 import { AssignPlanDialog } from '../features/plans/components/AssignPlanDialog';
 import { TenantOverridesTable } from '../features/plans/components/TenantOverridesTable';
-import { useTenantSubscription, useTenantOverrides } from '../features/plans/hooks/useTenantSubscription';
+import { useCurrentSubscription, useSubscriptionHistory, useResolvedEntitlements } from '../features/plans/hooks/useTenantSubscription';
 import { useAssignPlan } from '../features/plans/hooks/useSubscriptionMutations';
 import { useTenant } from '../features/tenants/hooks/useTenant';
 import { useSetTenantActive, useUpdateTenant } from '../features/tenants/hooks/useTenantMutations';
@@ -47,12 +47,10 @@ export function TenantDetailPage() {
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
   const [isAssigningPlan, setIsAssigningPlan] = useState(false);
 
-  const { data: subscriptionData, isLoading: subLoading } = useTenantSubscription(
-    activeTab === 'subscription' ? id : undefined,
-  );
-  const { data: overrides = [], isLoading: overridesLoading } = useTenantOverrides(
-    activeTab === 'subscription' ? id : undefined,
-  );
+  const activeOnSub = activeTab === 'subscription' ? id : undefined;
+  const { data: currentSub, isLoading: subLoading } = useCurrentSubscription(activeOnSub);
+  const { data: subHistory = [], isLoading: historyLoading } = useSubscriptionHistory(activeOnSub);
+  const { data: entitlements = {}, isLoading: entitlementsLoading } = useResolvedEntitlements(activeOnSub);
   const assignPlan = useAssignPlan(id ?? '');
 
   return (
@@ -174,8 +172,8 @@ export function TenantDetailPage() {
                       <Skeleton variant="text" width={120} />
                     ) : (
                       <Typography variant="body2" color="text.secondary">
-                        {subscriptionData?.current
-                          ? `${subscriptionData.current.planName} — assigned ${formatDateTime(subscriptionData.current.effectiveAtUtc)}`
+                        {currentSub
+                          ? `${currentSub.planName} — assigned ${formatDateTime(currentSub.effectiveAtUtc)}`
                           : 'No plan assigned.'}
                       </Typography>
                     )}
@@ -190,7 +188,7 @@ export function TenantDetailPage() {
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                   Subscription history
                 </Typography>
-                {subLoading ? (
+                {historyLoading ? (
                   <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1, mb: 3 }} />
                 ) : (
                   <TableContainer sx={{ mb: 3 }}>
@@ -204,7 +202,7 @@ export function TenantDetailPage() {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {(subscriptionData?.history ?? []).map((s) => (
+                        {subHistory.map((s) => (
                           <TableRow key={s.id}>
                             <TableCell>{s.planName}</TableCell>
                             <TableCell>{s.reason}</TableCell>
@@ -212,7 +210,7 @@ export function TenantDetailPage() {
                             <TableCell>{formatDateTime(s.effectiveAtUtc)}</TableCell>
                           </TableRow>
                         ))}
-                        {(subscriptionData?.history ?? []).length === 0 && (
+                        {subHistory.length === 0 && (
                           <TableRow>
                             <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
                               <Typography variant="body2" color="text.secondary">
@@ -233,8 +231,8 @@ export function TenantDetailPage() {
                 </Typography>
                 <TenantOverridesTable
                   tenantId={tenant.id}
-                  overrides={overrides}
-                  isLoading={overridesLoading}
+                  entitlements={entitlements}
+                  isLoading={entitlementsLoading}
                 />
               </Box>
             )}
@@ -290,7 +288,7 @@ export function TenantDetailPage() {
       <AssignPlanDialog
         open={isAssigningPlan}
         saving={assignPlan.isPending}
-        currentPlanId={subscriptionData?.current?.planId}
+        currentPlanId={currentSub?.planId}
         errorMessage={getApiErrorMessage(assignPlan.error, 'Failed to assign plan.')}
         onClose={() => setIsAssigningPlan(false)}
         onAssign={(payload) => {

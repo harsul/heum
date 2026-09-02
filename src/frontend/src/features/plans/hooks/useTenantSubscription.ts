@@ -1,24 +1,39 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchTenantOverrides, fetchTenantSubscription } from '../api/plansApi';
+import {
+  fetchCurrentSubscription,
+  fetchResolvedEntitlements,
+  fetchSubscriptionHistory,
+} from '../api/plansApi';
 
 export const tenantSubscriptionQueryKey = (tenantId: string) =>
   ['tenantSubscription', tenantId] as const;
 
-export const tenantOverridesQueryKey = (tenantId: string) =>
-  ['tenantOverrides', tenantId] as const;
+export const tenantSubscriptionHistoryQueryKey = (tenantId: string) =>
+  ['tenantSubscriptionHistory', tenantId] as const;
 
-export function useTenantSubscription(tenantId: string | undefined) {
+export const tenantEntitlementsQueryKey = (tenantId: string) =>
+  ['tenantEntitlements', tenantId] as const;
+
+export function useCurrentSubscription(tenantId: string | undefined) {
   return useQuery({
     queryKey: tenantSubscriptionQueryKey(tenantId!),
-    queryFn: () => fetchTenantSubscription(tenantId!),
+    queryFn: () => fetchCurrentSubscription(tenantId!),
     enabled: !!tenantId,
   });
 }
 
-export function useTenantOverrides(tenantId: string | undefined) {
+export function useSubscriptionHistory(tenantId: string | undefined) {
   return useQuery({
-    queryKey: tenantOverridesQueryKey(tenantId!),
-    queryFn: () => fetchTenantOverrides(tenantId!),
+    queryKey: tenantSubscriptionHistoryQueryKey(tenantId!),
+    queryFn: () => fetchSubscriptionHistory(tenantId!),
+    enabled: !!tenantId,
+  });
+}
+
+export function useResolvedEntitlements(tenantId: string | undefined) {
+  return useQuery({
+    queryKey: tenantEntitlementsQueryKey(tenantId!),
+    queryFn: () => fetchResolvedEntitlements(tenantId!),
     enabled: !!tenantId,
   });
 }

@@ -3,13 +3,13 @@ import type {
   Entitlement,
   EntitlementType,
   Plan,
-  TenantEntitlementOverride,
+  ResolvedEntitlements,
   TenantSubscription,
 } from '../types/plan';
 
 export async function fetchPlans(): Promise<Plan[]> {
-  const { data } = await apiClient.get<{ items: Plan[] }>('/admin/plans');
-  return data.items;
+  const { data } = await apiClient.get<Plan[]>('/admin/plans');
+  return data;
 }
 
 export async function fetchPlan(id: string): Promise<Plan> {
@@ -32,8 +32,8 @@ export async function upsertPlanEntitlement(planId: string, key: string, value: 
 }
 
 export async function fetchEntitlements(): Promise<Entitlement[]> {
-  const { data } = await apiClient.get<{ items: Entitlement[] }>('/admin/entitlements');
-  return data.items;
+  const { data } = await apiClient.get<Entitlement[]>('/admin/entitlements');
+  return data;
 }
 
 export async function createEntitlement(payload: {
@@ -45,10 +45,20 @@ export async function createEntitlement(payload: {
   return data;
 }
 
-export async function fetchTenantSubscription(
-  tenantId: string,
-): Promise<{ current: TenantSubscription | null; history: TenantSubscription[] }> {
-  const { data } = await apiClient.get(`/admin/subscriptions/tenants/${tenantId}`);
+// Subscription endpoints are nested under /admin/{tenantId}/subscription
+
+export async function fetchCurrentSubscription(tenantId: string): Promise<TenantSubscription | null> {
+  try {
+    const { data } = await apiClient.get<TenantSubscription>(`/admin/${tenantId}/subscription`);
+    return data;
+  } catch (err: unknown) {
+    if ((err as { response?: { status?: number } })?.response?.status === 404) return null;
+    throw err;
+  }
+}
+
+export async function fetchSubscriptionHistory(tenantId: string): Promise<TenantSubscription[]> {
+  const { data } = await apiClient.get<TenantSubscription[]>(`/admin/${tenantId}/subscription/history`);
   return data;
 }
 
@@ -57,31 +67,27 @@ export async function assignPlan(
   payload: { planId: string; notes?: string },
 ): Promise<TenantSubscription> {
   const { data } = await apiClient.post<TenantSubscription>(
-    `/admin/subscriptions/tenants/${tenantId}/plan`,
+    `/admin/${tenantId}/subscription`,
     payload,
   );
   return data;
 }
 
-export async function fetchTenantOverrides(tenantId: string): Promise<TenantEntitlementOverride[]> {
-  const { data } = await apiClient.get<{ items: TenantEntitlementOverride[] }>(
-    `/admin/subscriptions/tenants/${tenantId}/overrides`,
-  );
-  return data.items;
+// Entitlement overrides — GET returns resolved entitlements (plan defaults merged with overrides)
+
+export async function fetchResolvedEntitlements(tenantId: string): Promise<ResolvedEntitlements> {
+  const { data } = await apiClient.get<ResolvedEntitlements>(`/admin/${tenantId}/entitlements`);
+  return data;
 }
 
 export async function upsertTenantOverride(
   tenantId: string,
   key: string,
   payload: { value: string; reason?: string },
-): Promise<TenantEntitlementOverride> {
-  const { data } = await apiClient.put<TenantEntitlementOverride>(
-    `/admin/subscriptions/tenants/${tenantId}/overrides/${key}`,
-    payload,
-  );
-  return data;
+): Promise<void> {
+  await apiClient.put(`/admin/${tenantId}/entitlements/${key}`, payload);
 }
 
 export async function removeTenantOverride(tenantId: string, key: string): Promise<void> {
-  await apiClient.delete(`/admin/subscriptions/tenants/${tenantId}/overrides/${key}`);
+  await apiClient.delete(`/admin/${tenantId}/entitlements/${key}`);
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -17,37 +16,35 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import type { TenantEntitlementOverride } from '../types/plan';
-import { useRemoveOverride, useUpsertOverride } from '../hooks/useSubscriptionMutations';
+import type { ResolvedEntitlements } from '../types/plan';
+import { useUpsertOverride } from '../hooks/useSubscriptionMutations';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import { enqueueSnackbar } from 'notistack';
 
 interface TenantOverridesTableProps {
   tenantId: string;
-  overrides: TenantEntitlementOverride[];
+  entitlements: ResolvedEntitlements;
   isLoading: boolean;
 }
 
-export function TenantOverridesTable({ tenantId, overrides, isLoading }: TenantOverridesTableProps) {
+export function TenantOverridesTable({ tenantId, entitlements, isLoading }: TenantOverridesTableProps) {
   const upsert = useUpsertOverride(tenantId);
-  const remove = useRemoveOverride(tenantId);
 
-  const [editing, setEditing] = useState<TenantEntitlementOverride | null>(null);
+  const [editing, setEditing] = useState<{ key: string; value: string } | null>(null);
   const [editValue, setEditValue] = useState('');
   const [editReason, setEditReason] = useState('');
 
-  const openEdit = (override: TenantEntitlementOverride) => {
-    setEditing(override);
-    setEditValue(override.value);
-    setEditReason(override.reason ?? '');
+  const openEdit = (key: string, value: string) => {
+    setEditing({ key, value });
+    setEditValue(value);
+    setEditReason('');
   };
 
   const handleSave = () => {
     if (!editing) return;
     upsert.mutate(
-      { key: editing.entitlementKey, value: editValue, reason: editReason.trim() || undefined },
+      { key: editing.key, value: editValue, reason: editReason.trim() || undefined },
       {
         onSuccess: () => {
           setEditing(null);
@@ -58,27 +55,22 @@ export function TenantOverridesTable({ tenantId, overrides, isLoading }: TenantO
     );
   };
 
-  const handleDelete = (key: string) => {
-    remove.mutate(key, {
-      onSuccess: () => enqueueSnackbar('Override removed.', { variant: 'success' }),
-      onError: () => enqueueSnackbar('Failed to remove override.', { variant: 'error' }),
-    });
-  };
-
   if (isLoading) {
     return (
       <Stack spacing={1}>
-        {Array.from({ length: 2 }, (_, i) => (
+        {Array.from({ length: 3 }, (_, i) => (
           <Skeleton key={i} variant="rectangular" height={44} sx={{ borderRadius: 1 }} />
         ))}
       </Stack>
     );
   }
 
-  if (overrides.length === 0) {
+  const entries = Object.entries(entitlements);
+
+  if (entries.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
-        No overrides for this tenant.
+        No entitlements configured for this tenant.
       </Typography>
     );
   }
@@ -91,34 +83,22 @@ export function TenantOverridesTable({ tenantId, overrides, isLoading }: TenantO
             <TableRow>
               <TableCell>Key</TableCell>
               <TableCell>Value</TableCell>
-              <TableCell>Reason</TableCell>
               <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
-            {overrides.map((o) => (
-              <TableRow key={o.entitlementKey}>
+            {entries.map(([key, value]) => (
+              <TableRow key={key}>
                 <TableCell>
                   <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {o.entitlementKey}
+                    {key}
                   </Typography>
                 </TableCell>
-                <TableCell>{o.value}</TableCell>
-                <TableCell>{o.reason ?? '—'}</TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={0.5}>
-                    <IconButton size="small" onClick={() => openEdit(o)}>
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      disabled={remove.isPending}
-                      onClick={() => handleDelete(o.entitlementKey)}
-                    >
-                      <DeleteOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Stack>
+                <TableCell>{value}</TableCell>
+                <TableCell align="right">
+                  <IconButton size="small" onClick={() => openEdit(key, value)}>
+                    <EditOutlinedIcon fontSize="small" />
+                  </IconButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -127,7 +107,7 @@ export function TenantOverridesTable({ tenantId, overrides, isLoading }: TenantO
       </TableContainer>
 
       <Dialog open={!!editing} onClose={() => setEditing(null)} fullWidth maxWidth="xs">
-        <DialogTitle>Edit override — {editing?.entitlementKey}</DialogTitle>
+        <DialogTitle>Override — {editing?.key}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             {upsert.error && (
@@ -165,8 +145,4 @@ export function TenantOverridesTable({ tenantId, overrides, isLoading }: TenantO
       </Dialog>
     </>
   );
-}
-
-export function TenantSubscriptionPanel({ tenantId }: { tenantId: string }) {
-  return <Box>{tenantId}</Box>;
 }
