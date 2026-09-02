@@ -22,7 +22,6 @@ internal sealed class SubscriptionService(
         var reason = (previous, planId) switch
         {
             (null, _) => SubscriptionChangeReason.Initial,
-            var (p, newId) when p!.PlanId == newId => SubscriptionChangeReason.AdminOverride,
             _ => SubscriptionChangeReason.AdminOverride,
         };
 
@@ -36,6 +35,7 @@ internal sealed class SubscriptionService(
         await entitlementService.UpdatePlanMembershipAsync(tenantId, planId, previousPlanId, ct);
         await entitlementService.InvalidateTenantAsync(tenantId, ct);
 
+        await db.Entry(subscription).Reference(s => s.Plan).LoadAsync(ct);
         return subscription;
     }
 
