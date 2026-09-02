@@ -12,6 +12,12 @@ import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
@@ -20,11 +26,17 @@ import { EditTenantDialog } from '../features/tenants/components/EditTenantDialo
 import { TenantHistoryTable } from '../features/tenants/components';
 import { TenantSettingsPanel } from '../features/tenants/components';
 import { TenantUsersTable } from '../features/tenants/components/TenantUsersTable';
+import { AssignPlanDialog } from '../features/plans/components/AssignPlanDialog';
+import { TenantOverridesTable } from '../features/plans/components/TenantOverridesTable';
+import { useTenantSubscription, useTenantOverrides } from '../features/plans/hooks/useTenantSubscription';
+import { useAssignPlan } from '../features/plans/hooks/useSubscriptionMutations';
 import { useTenant } from '../features/tenants/hooks/useTenant';
 import { useSetTenantActive, useUpdateTenant } from '../features/tenants/hooks/useTenantMutations';
-import { formatDate, tenantInitials } from '../utils/format';
+import { formatDate, formatDateTime, tenantInitials } from '../utils/format';
+import { getApiErrorMessage } from '../utils/apiError';
+import { enqueueSnackbar } from 'notistack';
 
-type TabValue = 'overview' | 'users' | 'history' | 'settings';
+type TabValue = 'overview' | 'users' | 'history' | 'settings' | 'subscription';
 
 export function TenantDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +45,15 @@ export function TenantDetailPage() {
   const setTenantActive = useSetTenantActive();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
+  const [isAssigningPlan, setIsAssigningPlan] = useState(false);
+
+  const { data: subscriptionData, isLoading: subLoading } = useTenantSubscription(
+    activeTab === 'subscription' ? id : undefined,
+  );
+  const { data: overrides = [], isLoading: overridesLoading } = useTenantOverrides(
+    activeTab === 'subscription' ? id : undefined,
+  );
+  const assignPlan = useAssignPlan(id ?? '');
 
   return (
     <DashboardLayout>
@@ -110,6 +131,7 @@ export function TenantDetailPage() {
               <Tab label="Users" value="users" />
               <Tab label="History" value="history" />
               <Tab label="Settings" value="settings" />
+              <Tab label="Subscription" value="subscription" />
             </Tabs>
 
             {activeTab === 'overview' && (
@@ -140,6 +162,82 @@ export function TenantDetailPage() {
             {activeTab === 'users' && <TenantUsersTable tenantId={tenant.id} />}
 
             {activeTab === 'history' && <TenantHistoryTable tenantId={tenant.id} />}
+
+            {activeTab === 'subscription' && (
+              <Box>
+                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      Current plan
+                    </Typography>
+                    {subLoading ? (
+                      <Skeleton variant="text" width={120} />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        {subscriptionData?.current
+                          ? `${subscriptionData.current.planName} — assigned ${formatDateTime(subscriptionData.current.effectiveAtUtc)}`
+                          : 'No plan assigned.'}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Button variant="contained" onClick={() => setIsAssigningPlan(true)}>
+                    Change plan
+                  </Button>
+                </Stack>
+
+                <Divider sx={{ mb: 3 }} />
+
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                  Subscription history
+                </Typography>
+                {subLoading ? (
+                  <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1, mb: 3 }} />
+                ) : (
+                  <TableContainer sx={{ mb: 3 }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Plan</TableCell>
+                          <TableCell>Reason</TableCell>
+                          <TableCell>Notes</TableCell>
+                          <TableCell>Effective</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {(subscriptionData?.history ?? []).map((s) => (
+                          <TableRow key={s.id}>
+                            <TableCell>{s.planName}</TableCell>
+                            <TableCell>{s.reason}</TableCell>
+                            <TableCell>{s.notes ?? '—'}</TableCell>
+                            <TableCell>{formatDateTime(s.effectiveAtUtc)}</TableCell>
+                          </TableRow>
+                        ))}
+                        {(subscriptionData?.history ?? []).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                No subscription history.
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+
+                <Divider sx={{ mb: 3 }} />
+
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                  Entitlement overrides
+                </Typography>
+                <TenantOverridesTable
+                  tenantId={tenant.id}
+                  overrides={overrides}
+                  isLoading={overridesLoading}
+                />
+              </Box>
+            )}
 
             {activeTab === 'settings' && (
               <Box>
@@ -186,6 +284,22 @@ export function TenantDetailPage() {
             { id: tenant.id, payload: values },
             { onSuccess: () => setIsEditing(false) },
           );
+        }}
+      />
+
+      <AssignPlanDialog
+        open={isAssigningPlan}
+        saving={assignPlan.isPending}
+        currentPlanId={subscriptionData?.current?.planId}
+        errorMessage={getApiErrorMessage(assignPlan.error, 'Failed to assign plan.')}
+        onClose={() => setIsAssigningPlan(false)}
+        onAssign={(payload) => {
+          assignPlan.mutate(payload, {
+            onSuccess: () => {
+              setIsAssigningPlan(false);
+              enqueueSnackbar('Plan assigned.', { variant: 'success' });
+            },
+          });
         }}
       />
     </DashboardLayout>

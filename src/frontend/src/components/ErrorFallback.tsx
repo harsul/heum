@@ -3,7 +3,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
 interface ErrorFallbackProps {
-  error: Error;
+  error: unknown;
   resetErrorBoundary: () => void;
 }
 
@@ -27,7 +27,7 @@ export function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps)
         Something went wrong
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 480, mb: 3 }}>
-        {error.message || 'An unexpected error occurred. Please try again.'}
+        {error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.'}
       </Typography>
       <Button variant="contained" onClick={resetErrorBoundary}>
         Try again

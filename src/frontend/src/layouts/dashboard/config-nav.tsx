@@ -1,6 +1,8 @@
 ﻿import DashboardIcon from '@mui/icons-material/DashboardOutlined';
 import PeopleAltIcon from '@mui/icons-material/PeopleAltOutlined';
 import BusinessIcon from '@mui/icons-material/BusinessOutlined';
+import LayersIcon from '@mui/icons-material/LayersOutlined';
+import TuneIcon from '@mui/icons-material/TuneOutlined';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCartOutlined';
 import BarChartIcon from '@mui/icons-material/BarChartOutlined';
 import SettingsIcon from '@mui/icons-material/SettingsOutlined';
@@ -22,7 +24,13 @@ export interface NavItemConfig {
 export function getNavConfig(isSystemAdmin: boolean, isTenantAdmin: boolean): NavItemConfig[] {
   return [
     { title: 'Dashboard', path: '/', icon: DashboardIcon },
-    ...(isSystemAdmin ? [{ title: 'Tenants', path: '/tenants', icon: PeopleAltIcon }] : []),
+    ...(isSystemAdmin
+      ? [
+          { title: 'Tenants', path: '/tenants', icon: PeopleAltIcon },
+          { title: 'Plans', path: '/admin/plans', icon: LayersIcon },
+          { title: 'Entitlements', path: '/admin/entitlements', icon: TuneIcon },
+        ]
+      : []),
     ...(isTenantAdmin ? [{ title: 'My Company', path: '/company', icon: BusinessIcon }] : []),
     { title: 'Orders', path: '/orders', icon: ShoppingCartIcon, disabled: true },
     { title: 'Analytics', path: '/analytics', icon: BarChartIcon, disabled: true },
