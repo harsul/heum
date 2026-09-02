@@ -213,6 +213,17 @@ public sealed partial class TenantService(
         return string.IsNullOrEmpty(slug) ? "tenant" : slug;
     }
 
+    public async Task<Tenant?> SetLogoAsync(Guid tenantId, string? logoUrl, CancellationToken cancellationToken = default)
+    {
+        var tenant = await dbContext.Tenants.FindAsync([tenantId], cancellationToken);
+        if (tenant is null)
+            return null;
+
+        tenant.SetLogo(logoUrl, timeProvider);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return tenant;
+    }
+
     [GeneratedRegex("[^a-z0-9]+")]
     private static partial Regex NonAlphanumericRunRegex();
 }

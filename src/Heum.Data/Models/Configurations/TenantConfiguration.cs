@@ -24,6 +24,9 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.Property(t => t.IsActive)
             .HasDefaultValue(true);
 
+        builder.Property(t => t.LogoUrl)
+            .HasMaxLength(2048);
+
         builder.Property(t => t.CreatedAtUtc)
             .HasColumnType("timestamp with time zone");
 

@@ -77,8 +77,11 @@ export function TenantDetailPage() {
               sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between', mb: 3 }}
             >
               <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                <Avatar sx={{ width: 56, height: 56, bgcolor: 'primary.main', fontSize: 20 }}>
-                  {tenantInitials(tenant.name)}
+                <Avatar
+                  src={tenant.logoUrl ?? undefined}
+                  sx={{ width: 56, height: 56, bgcolor: 'primary.main', fontSize: 20 }}
+                >
+                  {!tenant.logoUrl && tenantInitials(tenant.name)}
                 </Avatar>
                 <Box>
                   <Typography variant="h5" sx={{ fontWeight: 700 }}>

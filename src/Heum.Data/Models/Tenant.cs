@@ -9,6 +9,7 @@ public class Tenant : AggregateRoot
     public string Name { get; private set; } = string.Empty;
     public string Slug { get; private set; } = string.Empty;
     public bool IsActive { get; private set; } = true;
+    public string? LogoUrl { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
 
@@ -41,6 +42,12 @@ public class Tenant : AggregateRoot
     public void SetActive(bool isActive, TimeProvider timeProvider)
     {
         IsActive = isActive;
+        UpdatedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
+    }
+
+    public void SetLogo(string? logoUrl, TimeProvider timeProvider)
+    {
+        LogoUrl = logoUrl;
         UpdatedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
     }
 }

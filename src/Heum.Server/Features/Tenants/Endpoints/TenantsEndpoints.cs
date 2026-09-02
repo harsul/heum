@@ -43,6 +43,13 @@ public static class TenantsEndpoints
         myTenant.MapGet("/history", GetMyTenantHistoryAsync)
             .WithName("GetMyTenantHistory");
 
+        myTenant.MapPost("/logo", UploadLogoAsync)
+            .WithName("UploadLogo")
+            .DisableAntiforgery();
+
+        myTenant.MapDelete("/logo", DeleteLogoAsync)
+            .WithName("DeleteLogo");
+
         return group;
     }
 
@@ -154,6 +161,43 @@ public static class TenantsEndpoints
             PageSize = pageSize,
             TotalCount = totalCount,
         });
+    }
+
+    internal static async Task<Results<Ok<TenantResponse>, NotFound, BadRequest<ProblemDetails>>> UploadLogoAsync(
+        ITenantContext tenantContext,
+        IFormFile file,
+        IBlobStorageService blobStorageService,
+        ITenantService tenantService,
+        CancellationToken cancellationToken)
+    {
+        if (!tenantContext.HasTenant)
+            return TypedResults.BadRequest(TenantProblems.NoTenant());
+
+        if (file.ContentType is not ("image/jpeg" or "image/png"))
+            return TypedResults.BadRequest(TenantProblems.InvalidContentType(file.ContentType));
+
+        if (file.Length > 2 * 1024 * 1024)
+            return TypedResults.BadRequest(TenantProblems.FileTooLarge());
+
+        await using var stream = file.OpenReadStream();
+        var blobUrl = await blobStorageService.UploadLogoAsync(tenantContext.TenantId, stream, file.ContentType, cancellationToken);
+
+        var tenant = await tenantService.SetLogoAsync(tenantContext.TenantId, blobUrl.ToString(), cancellationToken);
+        return tenant is null ? TypedResults.NotFound() : TypedResults.Ok(TenantResponseMapper.ToResponse(tenant));
+    }
+
+    internal static async Task<Results<NoContent, NotFound, BadRequest<ProblemDetails>>> DeleteLogoAsync(
+        ITenantContext tenantContext,
+        ITenantService tenantService,
+        IBlobStorageService blobStorageService,
+        CancellationToken cancellationToken)
+    {
+        if (!tenantContext.HasTenant)
+            return TypedResults.BadRequest(TenantProblems.NoTenant());
+
+        await blobStorageService.DeleteLogoAsync(tenantContext.TenantId, cancellationToken);
+        var tenant = await tenantService.SetLogoAsync(tenantContext.TenantId, null, cancellationToken);
+        return tenant is null ? TypedResults.NotFound() : TypedResults.NoContent();
     }
 
     private static string? GetKeycloakUserId(ClaimsPrincipal user) =>

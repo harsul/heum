@@ -31,4 +31,18 @@ internal static class TenantProblems
         Detail = $"'{role}' is not an assignable role. Use GET /api/tenants/me/roles to retrieve valid options.",
         Status = StatusCodes.Status400BadRequest,
     };
+
+    public static ProblemDetails InvalidContentType(string contentType) => new()
+    {
+        Title = "Unsupported content type",
+        Detail = $"'{contentType}' is not allowed. Only image/jpeg and image/png are accepted.",
+        Status = StatusCodes.Status400BadRequest,
+    };
+
+    public static ProblemDetails FileTooLarge() => new()
+    {
+        Title = "File too large",
+        Detail = "The uploaded file exceeds the 2 MB limit.",
+        Status = StatusCodes.Status400BadRequest,
+    };
 }

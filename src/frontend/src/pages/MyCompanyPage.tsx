@@ -9,10 +9,12 @@ import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
+import Divider from '@mui/material/Divider';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { DetailField } from '../components/DetailField';
 import { CompanySettingsPanel } from '../features/company/components/CompanySettingsPanel';
 import { CompanyUsersTable } from '../features/company/components/CompanyUsersTable';
+import { TenantLogoPanel } from '../features/company/components/TenantLogoPanel';
 import { useMyTenant } from '../features/company/hooks/useMyTenant';
 import { formatDate, tenantInitials } from '../utils/format';
 import Box from "@mui/material/Box";
@@ -67,8 +69,11 @@ export function MyCompanyPage() {
               sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between', mb: 3 }}
             >
               <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }}>
-                <Avatar sx={{ width: 56, height: 56, bgcolor: 'primary.main', fontSize: 20 }}>
-                  {tenantInitials(tenant.name)}
+                <Avatar
+                  src={tenant.logoUrl ?? undefined}
+                  sx={{ width: 56, height: 56, bgcolor: 'primary.main', fontSize: 20 }}
+                >
+                  {!tenant.logoUrl && tenantInitials(tenant.name)}
                 </Avatar>
                 <Box>
                   <Typography variant="h5" sx={{ fontWeight: 700 }}>
@@ -117,7 +122,13 @@ export function MyCompanyPage() {
 
             {activeTab === 'users' && <CompanyUsersTable />}
 
-            {activeTab === 'settings' && <CompanySettingsPanel />}
+            {activeTab === 'settings' && (
+              <>
+                <TenantLogoPanel tenant={tenant} />
+                <Divider sx={{ my: 3 }} />
+                <CompanySettingsPanel />
+              </>
+            )}
           </CardContent>
         </Card>
       )}
