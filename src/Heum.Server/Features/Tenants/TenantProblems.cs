@@ -31,4 +31,18 @@ internal static class TenantProblems
         Detail = $"'{role}' is not an assignable role. Use GET /api/tenants/me/roles to retrieve valid options.",
         Status = StatusCodes.Status400BadRequest,
     };
+
+    public static ProblemDetails InvalidContentType(string contentType) => new()
+    {
+        Title = "Unsupported content type",
+        Detail = $"'{contentType}' is not allowed. Only image/jpeg and image/png are accepted.",
+        Status = StatusCodes.Status400BadRequest,
+    };
+
+    public static ProblemDetails InvalidLogoUrl() => new()
+    {
+        Title = "Invalid logo URL",
+        Detail = "The provided logo URL does not point to a valid tenant logo.",
+        Status = StatusCodes.Status400BadRequest,
+    };
 }

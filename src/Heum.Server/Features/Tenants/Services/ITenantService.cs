@@ -61,4 +61,6 @@ public interface ITenantService
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<Tenant?> SetLogoAsync(Guid tenantId, string? logoUrl, CancellationToken cancellationToken = default);
 }

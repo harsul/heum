@@ -17,6 +17,8 @@ using Heum.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
 using TenantService = Heum.Server.Features.Tenants.Services.TenantService;
+using BlobStorageService = Heum.Server.Features.Tenants.Services.BlobStorageService;
+using IBlobStorageService = Heum.Server.Features.Tenants.Services.IBlobStorageService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +31,7 @@ builder.AddRedisClientBuilder("cache")
     .WithOutputCache();
 
 builder.AddAzureServiceBusClient("messaging");
+builder.AddAzureBlobServiceClient("blobs");
 builder.AddEventPublishing(topics => topics
     .MapTopic<TenantCreatedEvent>("tenant-events")
     .MapTopic<UserOnboardingRequestedEvent>("user-events")
@@ -59,6 +62,7 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
 builder.Services.AddScoped<TenantContext>();

@@ -19,6 +19,7 @@ internal static class TenantResponseMapper
         Name = tenant.Name,
         Slug = tenant.Slug,
         IsActive = tenant.IsActive,
+        LogoUrl = tenant.LogoUrl,
         CreatedAtUtc = tenant.CreatedAtUtc,
         UpdatedAtUtc = tenant.UpdatedAtUtc,
     };

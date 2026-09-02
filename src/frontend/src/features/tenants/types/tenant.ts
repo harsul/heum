@@ -17,6 +17,7 @@ export interface Tenant {
   name: string;
   slug: string;
   isActive: boolean;
+  logoUrl: string | null;
   createdAtUtc: string;
   updatedAtUtc: string | null;
 }

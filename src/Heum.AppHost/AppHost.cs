@@ -21,6 +21,9 @@ var keycloak = builder.AddKeycloak("keycloak", 8080)
     .WithEnvironment("KC_SMTP_HOST", smtpEndpoint.Property(EndpointProperty.Host))
     .WithEnvironment("KC_SMTP_PORT", smtpEndpoint.Property(EndpointProperty.Port));
 
+var storage = builder.AddAzureStorage("storage").RunAsEmulator();
+var blobs = storage.AddBlobs("blobs");
+
 var messaging = builder.AddAzureServiceBus("messaging")
     .RunAsEmulator();
 
@@ -48,11 +51,13 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithReference(mailpit)
     .WithReference(keycloak)
     .WithReference(messaging)
+    .WithReference(blobs)
     .WaitFor(cache)
     .WaitFor(database)
     .WaitFor(keycloak)
     .WaitFor(mailpit)
     .WaitFor(messaging)
+    .WaitFor(blobs)
     .WaitForCompletion(migrations)
     .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)
     .WithExternalHttpEndpoints();
