@@ -1,13 +1,19 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using Heum.Server.Middleware;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace Heum.Server.Extensions;
 
 internal static class RateLimitingExtensions
 {
+    internal static IApplicationBuilder UseHeumTenantRateLimiting(this IApplicationBuilder app)
+        => app.UseMiddleware<TenantRateLimitingMiddleware>();
+
     internal static IServiceCollection AddHeumRateLimiting(this IServiceCollection services)
     {
+        services.AddTransient<TenantRateLimitingMiddleware>();
+        services.AddSingleton<ITenantRateLimiter, RedisTenantRateLimiter>();
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

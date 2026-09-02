@@ -7,6 +7,7 @@ using Heum.Data.Multitenancy;
 using Heum.Data.SoftDelete;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
+using Heum.Server.Middleware;
 using Heum.Server.xIntegration.Infrastructure.Fakes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
@@ -37,6 +38,7 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
     private readonly string _inMemoryDbName = Guid.NewGuid().ToString();
 
     public FakeKeycloakService FakeKeycloak { get; } = new();
+    public InMemoryTenantRateLimiter FakeTenantRateLimiter { get; } = new();
 
     async ValueTask IAsyncLifetime.InitializeAsync()
     {
@@ -114,6 +116,9 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
 
             services.RemoveAll<IEventPublisher>();
 
+            services.RemoveAll<ITenantRateLimiter>();
+            services.AddSingleton<ITenantRateLimiter>(FakeTenantRateLimiter);
+
             services.PostConfigure<RateLimiterOptions>(opts =>
             {
                 opts.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
@@ -152,6 +157,7 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
         }
 
         FakeKeycloak.Reset();
+        FakeTenantRateLimiter.Reset();
     }
 
     public async Task ClearAuditTrailsAsync()

@@ -79,6 +79,8 @@ builder.Services.AddValidation();
 
 builder.Services.AddHeumApiVersioning();
 builder.Services.AddHeumRateLimiting();
+builder.Services.Configure<Heum.Server.Configuration.TenantRateLimitOptions>(
+    builder.Configuration.GetSection("RateLimiting:Tenant"));
 
 var app = builder.Build();
 
@@ -87,10 +89,10 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
-app.UseRateLimiter();
-
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseHeumTenantRateLimiting();
+app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {
