@@ -8,8 +8,12 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import Skeleton from '@mui/material/Skeleton';
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Table from '@mui/material/Table';
@@ -17,6 +21,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
+import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
@@ -30,6 +35,7 @@ import { AssignPlanDialog } from '../features/plans/components/AssignPlanDialog'
 import { TenantOverridesTable } from '../features/plans/components/TenantOverridesTable';
 import { useCurrentSubscription, useSubscriptionHistory, useResolvedEntitlements } from '../features/plans/hooks/useTenantSubscription';
 import { useAssignPlan } from '../features/plans/hooks/useSubscriptionMutations';
+import { usePlan, useEntitlements } from '../features/plans/hooks/usePlans';
 import { useTenant } from '../features/tenants/hooks/useTenant';
 import { useSetTenantActive, useUpdateTenant } from '../features/tenants/hooks/useTenantMutations';
 import { formatDate, formatDateTime, tenantInitials } from '../utils/format';
@@ -46,11 +52,15 @@ export function TenantDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
   const [isAssigningPlan, setIsAssigningPlan] = useState(false);
+  const [historyPage, setHistoryPage] = useState(0);
+  const [historyRowsPerPage, setHistoryRowsPerPage] = useState(5);
 
   const activeOnSub = activeTab === 'subscription' ? id : undefined;
   const { data: currentSub, isLoading: subLoading } = useCurrentSubscription(activeOnSub);
   const { data: subHistory = [], isLoading: historyLoading } = useSubscriptionHistory(activeOnSub);
   const { data: entitlements = {}, isLoading: entitlementsLoading } = useResolvedEntitlements(activeOnSub);
+  const { data: planDetails } = usePlan(activeOnSub && currentSub?.planId ? currentSub.planId : undefined);
+  const { data: catalogEntitlements = [] } = useEntitlements();
   const assignPlan = useAssignPlan(id ?? '');
 
   return (
@@ -133,7 +143,7 @@ export function TenantDetailPage() {
             </Tabs>
 
             {activeTab === 'overview' && (
-              <Box>
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
                 <Stack direction="row" sx={{ justifyContent: 'flex-end', mb: 2 }}>
                   <Button variant="contained" onClick={() => setIsEditing(true)}>
                     Edit
@@ -154,118 +164,178 @@ export function TenantDetailPage() {
                     <DetailField label="Last updated" value={formatDate(tenant.updatedAtUtc)} />
                   </Grid>
                 </Grid>
-              </Box>
+              </Paper>
             )}
 
-            {activeTab === 'users' && <TenantUsersTable tenantId={tenant.id} />}
+            {activeTab === 'users' && (
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                <TenantUsersTable tenantId={tenant.id} />
+              </Paper>
+            )}
 
-            {activeTab === 'history' && <TenantHistoryTable tenantId={tenant.id} />}
+            {activeTab === 'history' && (
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                <TenantHistoryTable tenantId={tenant.id} />
+              </Paper>
+            )}
 
             {activeTab === 'subscription' && (
               <Box>
-                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      Current plan
-                    </Typography>
-                    {subLoading ? (
-                      <Skeleton variant="text" width={120} />
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        {currentSub
-                          ? `${currentSub.planName} — assigned ${formatDateTime(currentSub.effectiveAtUtc)}`
-                          : 'No plan assigned.'}
+                {/* Current plan */}
+                <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2 }}>
+                  <Stack
+                    direction="row"
+                    sx={{ alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}
+                  >
+                    <Box>
+                      <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1, display: 'block' }}>
+                        Current plan
                       </Typography>
-                    )}
-                  </Box>
-                  <Button variant="contained" onClick={() => setIsAssigningPlan(true)}>
-                    Change plan
-                  </Button>
-                </Stack>
+                      {subLoading ? (
+                        <>
+                          <Skeleton variant="text" width={160} height={40} />
+                          <Skeleton variant="text" width={200} sx={{ fontSize: '0.875rem' }} />
+                        </>
+                      ) : currentSub ? (
+                        <>
+                          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mt: 0.5 }}>
+                            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                              {currentSub.planName}
+                            </Typography>
+                            <Chip label="Active" color="success" size="small" />
+                          </Stack>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                            Assigned {formatDateTime(currentSub.effectiveAtUtc)}
+                            {currentSub.notes && ` · ${currentSub.notes}`}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography variant="body1" sx={{ mt: 0.5 }} color="text.secondary">
+                          No plan assigned
+                        </Typography>
+                      )}
+                    </Box>
+                    <Button variant="contained" onClick={() => setIsAssigningPlan(true)}>
+                      Change plan
+                    </Button>
+                  </Stack>
+                </Paper>
 
-                <Divider sx={{ mb: 3 }} />
-
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                  Subscription history
-                </Typography>
-                {historyLoading ? (
-                  <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1, mb: 3 }} />
-                ) : (
-                  <TableContainer sx={{ mb: 3 }}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Plan</TableCell>
-                          <TableCell>Reason</TableCell>
-                          <TableCell>Notes</TableCell>
-                          <TableCell>Effective</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {subHistory.map((s) => (
-                          <TableRow key={s.id}>
-                            <TableCell>{s.planName}</TableCell>
-                            <TableCell>{s.reason}</TableCell>
-                            <TableCell>{s.notes ?? '—'}</TableCell>
-                            <TableCell>{formatDateTime(s.effectiveAtUtc)}</TableCell>
-                          </TableRow>
-                        ))}
-                        {subHistory.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
-                              <Typography variant="body2" color="text.secondary">
-                                No subscription history.
-                              </Typography>
-                            </TableCell>
-                          </TableRow>
+                {/* Subscription history */}
+                <Accordion variant="outlined"  sx={{ borderRadius: 2, '&:before': { display: 'none' }, mb: 1 }}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Subscription history
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ pt: 0 }}>
+                    {historyLoading ? (
+                      <Skeleton variant="rectangular" height={80} sx={{ borderRadius: 1 }} />
+                    ) : (
+                      <>
+                        <TableContainer>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>Plan</TableCell>
+                                <TableCell>Reason</TableCell>
+                                <TableCell>Notes</TableCell>
+                                <TableCell>Effective</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {subHistory
+                                .slice(historyPage * historyRowsPerPage, (historyPage + 1) * historyRowsPerPage)
+                                .map((s) => (
+                                  <TableRow key={s.id} hover>
+                                    <TableCell sx={{ fontWeight: 500 }}>{s.planName}</TableCell>
+                                    <TableCell>{s.reason}</TableCell>
+                                    <TableCell>{s.notes ?? '—'}</TableCell>
+                                    <TableCell>{formatDateTime(s.effectiveAtUtc)}</TableCell>
+                                  </TableRow>
+                                ))}
+                              {subHistory.length === 0 && (
+                                <TableRow>
+                                  <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                                    <Typography variant="body2" color="text.secondary">
+                                      No subscription history.
+                                    </Typography>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                        {subHistory.length > 0 && (
+                          <TablePagination
+                            component="div"
+                            count={subHistory.length}
+                            page={historyPage}
+                            onPageChange={(_, p) => setHistoryPage(p)}
+                            rowsPerPage={historyRowsPerPage}
+                            onRowsPerPageChange={(e) => {
+                              setHistoryRowsPerPage(+e.target.value);
+                              setHistoryPage(0);
+                            }}
+                            rowsPerPageOptions={[5, 10, 25]}
+                          />
                         )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
+                      </>
+                    )}
+                  </AccordionDetails>
+                </Accordion>
 
-                <Divider sx={{ mb: 3 }} />
-
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-                  Entitlement overrides
-                </Typography>
-                <TenantOverridesTable
-                  tenantId={tenant.id}
-                  entitlements={entitlements}
-                  isLoading={entitlementsLoading}
-                />
+                {/* Entitlement overrides */}
+                <Accordion variant="outlined"  sx={{ borderRadius: 2, '&:before': { display: 'none' } }}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Entitlement overrides
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ pt: 0 }}>
+                    <TenantOverridesTable
+                      tenantId={tenant.id}
+                      entitlements={entitlements}
+                      planEntitlements={planDetails?.entitlements ?? []}
+                      catalogEntitlements={catalogEntitlements}
+                      isLoading={entitlementsLoading}
+                    />
+                  </AccordionDetails>
+                </Accordion>
               </Box>
             )}
 
             {activeTab === 'settings' && (
-              <Box>
-                <TenantSettingsPanel tenantId={tenant.id} />
+              <Stack spacing={2}>
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                  <TenantSettingsPanel tenantId={tenant.id} />
+                </Paper>
 
-                <Divider sx={{ my: 3 }} />
-
-                <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      Tenant status
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {tenant.isActive
-                        ? 'This tenant is active. Deactivating it will prevent its users from accessing the platform.'
-                        : 'This tenant is inactive. Reactivate it to restore access for its users.'}
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    color={tenant.isActive ? 'error' : 'success'}
-                    disabled={setTenantActive.isPending}
-                    onClick={() =>
-                      setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
-                    }
-                  >
-                    {tenant.isActive ? 'Deactivate' : 'Activate'}
-                  </Button>
-                </Stack>
-              </Box>
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                  <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                    <Box>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        Tenant status
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {tenant.isActive
+                          ? 'This tenant is active. Deactivating it will prevent its users from accessing the platform.'
+                          : 'This tenant is inactive. Reactivate it to restore access for its users.'}
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      color={tenant.isActive ? 'error' : 'success'}
+                      disabled={setTenantActive.isPending}
+                      onClick={() =>
+                        setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
+                      }
+                    >
+                      {tenant.isActive ? 'Deactivate' : 'Activate'}
+                    </Button>
+                  </Stack>
+                </Paper>
+              </Stack>
             )}
           </CardContent>
         </Card>
