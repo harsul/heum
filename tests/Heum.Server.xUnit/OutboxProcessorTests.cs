@@ -6,6 +6,7 @@ using Heum.Data.Domain;
 using Heum.Infrastructure.Messaging;
 using Heum.Server.xUnit.Fakes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -30,6 +31,9 @@ public sealed class OutboxProcessorTests : IDisposable
     {
         var dbOptions = new DbContextOptionsBuilder<HeumDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            // The processor holds a transaction across the batch; the in-memory provider
+            // doesn't support them and throws unless told to ignore them.
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         _db = new HeumDbContext(dbOptions);
         _processor = new OutboxProcessor(
@@ -65,6 +69,9 @@ public sealed class OutboxProcessorTests : IDisposable
     [Fact]
     public async Task ProcessPendingAsync_StopsRetrying_OnceMaxAttemptsIsReached()
     {
+        var fakeTime = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var processor = CreateProcessor(fakeTime, _options);
+
         await SeedOutboxMessageAsync(new TenantCreatedEvent(
             Guid.NewGuid(), "acme", DateTimeOffset.UtcNow));
 
@@ -72,18 +79,21 @@ public sealed class OutboxProcessorTests : IDisposable
 
         for (var attempt = 1; attempt <= DefaultMaxAttempts; attempt++)
         {
-            await _processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
+            await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
 
             var message = await _db.OutboxMessages.SingleAsync(TestContext.Current.CancellationToken);
             Assert.Equal(attempt, message.Attempts);
             Assert.Null(message.ProcessedAtUtc);
             Assert.Contains("Service Bus is unreachable", message.LastError);
+
+            // Skip past the backoff window so the next cycle is allowed to retry.
+            fakeTime.Advance(_options.MaxRetryDelay);
         }
 
         // One more cycle: the row now has Attempts == MaxAttempts, so it's excluded from the
         // query entirely - Attempts must stay exactly at the cap even though publishing would
         // still fail if it were retried.
-        await _processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
+        await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
 
         var finalMessage = await _db.OutboxMessages.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(DefaultMaxAttempts, finalMessage.Attempts);
@@ -92,13 +102,80 @@ public sealed class OutboxProcessorTests : IDisposable
         // Even if the downstream issue is later fixed, a message that's exhausted its attempts
         // is left alone rather than silently retried forever.
         _events.ExceptionToThrow = null;
-        await _processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
+        fakeTime.Advance(_options.MaxRetryDelay);
+        await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
 
         var afterFixMessage = await _db.OutboxMessages.SingleAsync(TestContext.Current.CancellationToken);
         Assert.Equal(DefaultMaxAttempts, afterFixMessage.Attempts);
         Assert.Null(afterFixMessage.ProcessedAtUtc);
         Assert.Empty(_events.PublishedEvents);
     }
+
+    [Fact]
+    public async Task ProcessPendingAsync_DefersRetry_WithExponentialBackoff()
+    {
+        var fakeTime = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var options = new OutboxProcessorOptions
+        {
+            MaxAttempts = DefaultMaxAttempts,
+            InitialRetryDelay = TimeSpan.FromSeconds(10),
+            MaxRetryDelay = TimeSpan.FromMinutes(10),
+        };
+        var processor = CreateProcessor(fakeTime, options);
+
+        await SeedOutboxMessageAsync(new TenantCreatedEvent(
+            Guid.NewGuid(), "acme", DateTimeOffset.UtcNow));
+        _events.ExceptionToThrow = new InvalidOperationException("boom");
+
+        // Attempt 1 fails → next attempt scheduled 10s out.
+        await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
+        var message = await _db.OutboxMessages.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(1, message.Attempts);
+        Assert.Equal(fakeTime.GetUtcNow().UtcDateTime.AddSeconds(10), message.NextAttemptAtUtc);
+
+        // Polling again before the backoff has elapsed must not touch the row.
+        fakeTime.Advance(TimeSpan.FromSeconds(5));
+        await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
+        message = await _db.OutboxMessages.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(1, message.Attempts);
+
+        // Once eligible, attempt 2 fails → delay doubles to 20s.
+        fakeTime.Advance(TimeSpan.FromSeconds(5));
+        await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
+        message = await _db.OutboxMessages.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(2, message.Attempts);
+        Assert.Equal(fakeTime.GetUtcNow().UtcDateTime.AddSeconds(20), message.NextAttemptAtUtc);
+
+        // Recovery: a successful publish clears the schedule and marks the row processed.
+        _events.ExceptionToThrow = null;
+        fakeTime.Advance(TimeSpan.FromSeconds(20));
+        await processor.ProcessPendingAsync(TestContext.Current.CancellationToken);
+        message = await _db.OutboxMessages.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.NotNull(message.ProcessedAtUtc);
+        Assert.Null(message.NextAttemptAtUtc);
+        Assert.Single(_events.PublishedEvents);
+    }
+
+    [Theory]
+    [InlineData(1, 10)]
+    [InlineData(2, 20)]
+    [InlineData(3, 40)]
+    [InlineData(4, 80)]
+    [InlineData(10, 600)]   // capped at MaxRetryDelay (10 min)
+    [InlineData(40, 600)]   // exponent clamp keeps the shift from overflowing
+    public void ComputeBackoff_DoublesUntilCapped(int attempts, int expectedSeconds)
+    {
+        var options = new OutboxProcessorOptions
+        {
+            InitialRetryDelay = TimeSpan.FromSeconds(10),
+            MaxRetryDelay = TimeSpan.FromMinutes(10),
+        };
+
+        Assert.Equal(TimeSpan.FromSeconds(expectedSeconds), OutboxProcessor.ComputeBackoff(attempts, options));
+    }
+
+    private OutboxProcessor CreateProcessor(TimeProvider timeProvider, OutboxProcessorOptions options) =>
+        new(_db, _events, _registry, Options.Create(options), timeProvider, NullLogger<OutboxProcessor>.Instance);
 
     [Fact]
     public async Task ProcessPendingAsync_DoesNotReprocess_AlreadyProcessedMessages()

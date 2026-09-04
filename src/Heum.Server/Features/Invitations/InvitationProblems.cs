@@ -18,6 +18,13 @@ internal static class InvitationProblems
         Status = StatusCodes.Status400BadRequest,
     };
 
+    public static ProblemDetails EmailAlreadyRegistered() => new()
+    {
+        Title = "Email already registered",
+        Detail = "An account with the invited email address already exists. Sign in instead.",
+        Status = StatusCodes.Status409Conflict,
+    };
+
     public static ProblemDetails UserLimitReached() => new()
     {
         Title = "User limit reached",

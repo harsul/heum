@@ -4,6 +4,7 @@ using Heum.Data;
 using Heum.Server.Services;
 using Heum.Server.xUnit.Fakes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using TenantService = Heum.Server.Features.Tenants.Services.TenantService;
 
 namespace Heum.Server.xUnit;
@@ -13,15 +14,29 @@ public sealed class TenantServiceTests : IDisposable
     private readonly HeumDbContext _db;
     private readonly FakeKeycloakService _keycloak = new();
     private readonly FakeDomainEventCollector _events = new();
+    private readonly FakeTenantStatusService _tenantStatus = new();
     private readonly TenantService _service;
 
     public TenantServiceTests()
     {
         var options = new DbContextOptionsBuilder<HeumDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            // TenantService wraps tenant creation in a transaction; the in-memory provider
+            // doesn't support them and throws unless told to ignore them.
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         _db = new HeumDbContext(options);
-        _service = new TenantService(_db, _keycloak, _events, new FakeSubscriptionService(), TimeProvider.System);
+        _service = new TenantService(_db, _keycloak, _events, new FakeSubscriptionService(), _tenantStatus, TimeProvider.System);
+    }
+
+    [Fact]
+    public async Task SetTenantActiveAsync_InvalidatesCachedStatus()
+    {
+        var tenant = await _service.CreateTenantAsync("Acme Corp", TestContext.Current.CancellationToken);
+
+        await _service.SetTenantActiveAsync(tenant.Id, isActive: false, TestContext.Current.CancellationToken);
+
+        Assert.Contains(tenant.Id, _tenantStatus.Invalidated);
     }
 
     public void Dispose() => _db.Dispose();

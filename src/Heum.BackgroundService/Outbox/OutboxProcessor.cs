@@ -26,9 +26,34 @@ internal sealed class OutboxProcessor(
 
     public async Task ProcessPendingAsync(CancellationToken cancellationToken = default)
     {
-        var opts = options.Value;
+        // The whole fetch → publish → mark cycle runs inside ONE database transaction. That is
+        // what makes "FOR UPDATE SKIP LOCKED" meaningful: the row locks taken by the SELECT are
+        // held until Commit, so a second processor instance polling concurrently skips these rows
+        // instead of publishing them a second time. Without the transaction the locks were
+        // released as soon as the SELECT returned, which allowed duplicate publishes.
+        //
+        // Aspire enables a retrying execution strategy on the DbContext, and EF refuses
+        // user-initiated transactions under a retrying strategy unless they are wrapped in
+        // ExecuteAsync - so we go through the strategy explicitly.
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var pending = await FetchPendingAsync(opts.MaxAttempts, opts.BatchSize, cancellationToken);
+            await ProcessBatchAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        });
+
+        await CleanupProcessedAsync(cancellationToken);
+    }
+
+    private async Task ProcessBatchAsync(CancellationToken cancellationToken)
+    {
+        var opts = options.Value;
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+
+        var pending = await FetchPendingAsync(opts.MaxAttempts, opts.BatchSize, now, cancellationToken);
 
         foreach (var message in pending)
         {
@@ -45,6 +70,7 @@ internal sealed class OutboxProcessor(
                 await (Task)publishMethod.Invoke(eventPublisher, [domainEvent, cancellationToken, message.Id.ToString()])!;
 
                 message.ProcessedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
+                message.NextAttemptAtUtc = null;
             }
             catch (Exception ex)
             {
@@ -57,6 +83,7 @@ internal sealed class OutboxProcessor(
 
                 if (message.Attempts >= opts.MaxAttempts)
                 {
+                    message.NextAttemptAtUtc = null;
                     logger.LogCritical(
                         actual,
                         "Outbox message {OutboxMessageId} ({EventType}) permanently abandoned after {MaxAttempts} attempts. Last error: {LastError}",
@@ -64,26 +91,37 @@ internal sealed class OutboxProcessor(
                 }
                 else
                 {
+                    var delay = ComputeBackoff(message.Attempts, opts);
+                    message.NextAttemptAtUtc = timeProvider.GetUtcNow().UtcDateTime + delay;
                     logger.LogError(
                         actual,
-                        "Failed to publish outbox message {OutboxMessageId} ({EventType}), attempt {Attempts}/{MaxAttempts}.",
-                        message.Id, message.EventType, message.Attempts, opts.MaxAttempts);
+                        "Failed to publish outbox message {OutboxMessageId} ({EventType}), attempt {Attempts}/{MaxAttempts}. Next attempt in {Delay}.",
+                        message.Id, message.EventType, message.Attempts, opts.MaxAttempts, delay);
                 }
             }
 
-            // Save after each message so one failure doesn't roll back the rest of the batch.
+            // Flush per message so a failure recorded on one row is not lost if a later row throws
+            // outside the try block; all flushes still commit together with the enclosing transaction.
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-
-        await CleanupProcessedAsync(cancellationToken);
     }
 
-    private Task<List<OutboxMessage>> FetchPendingAsync(int maxAttempts, int batchSize, CancellationToken cancellationToken)
+    /// <summary>Exponential backoff: initial × 2^(attempts-1), capped at the configured maximum.</summary>
+    internal static TimeSpan ComputeBackoff(int attempts, OutboxProcessorOptions opts)
+    {
+        var exponent = Math.Clamp(attempts - 1, 0, 30);
+        var ticks = opts.InitialRetryDelay.Ticks * (1L << exponent);
+        return ticks <= 0 || ticks > opts.MaxRetryDelay.Ticks ? opts.MaxRetryDelay : TimeSpan.FromTicks(ticks);
+    }
+
+    private Task<List<OutboxMessage>> FetchPendingAsync(int maxAttempts, int batchSize, DateTime now, CancellationToken cancellationToken)
     {
         if (IsInMemoryProvider())
         {
             return dbContext.OutboxMessages
-                .Where(m => m.ProcessedAtUtc == null && m.Attempts < maxAttempts)
+                .Where(m => m.ProcessedAtUtc == null
+                            && m.Attempts < maxAttempts
+                            && (m.NextAttemptAtUtc == null || m.NextAttemptAtUtc <= now))
                 .OrderBy(m => m.OccurredAtUtc)
                 .Take(batchSize)
                 .ToListAsync(cancellationToken);
@@ -92,7 +130,9 @@ internal sealed class OutboxProcessor(
         return dbContext.OutboxMessages
             .FromSqlInterpolated($"""
                 SELECT * FROM "OutboxMessages"
-                WHERE "ProcessedAtUtc" IS NULL AND "Attempts" < {maxAttempts}
+                WHERE "ProcessedAtUtc" IS NULL
+                  AND "Attempts" < {maxAttempts}
+                  AND ("NextAttemptAtUtc" IS NULL OR "NextAttemptAtUtc" <= {now})
                 ORDER BY "OccurredAtUtc"
                 LIMIT {batchSize}
                 FOR UPDATE SKIP LOCKED

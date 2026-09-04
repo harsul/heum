@@ -14,4 +14,8 @@
         <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.11" />
     </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\Heum.Contracts\Heum.Contracts.csproj" />
+    </ItemGroup>
+
 </Project>

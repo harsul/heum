@@ -16,6 +16,7 @@ public sealed partial class TenantService(
     IKeycloakService keycloakService,
     IDomainEventCollector domainEventCollector,
     ISubscriptionService subscriptionService,
+    ITenantStatusService tenantStatusService,
     TimeProvider timeProvider) : ITenantService
 {
     private const int MaxSlugSuffixAttempts = 50;
@@ -29,13 +30,28 @@ public sealed partial class TenantService(
         var tenant = Tenant.Register(companyName, slug, timeProvider);
         var settings = TenantSettings.CreateDefault(tenant.Id, timeProvider);
 
-        dbContext.Tenants.Add(tenant);
-        dbContext.TenantSettings.Add(settings);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        // Tenant, its settings and its initial subscription are three SaveChanges calls (the
+        // subscription service owns its own persistence) - wrap them in one transaction so a
+        // failure in the plan assignment can't leave a tenant behind with no subscription.
+        // EF's retrying execution strategy requires user transactions to go through ExecuteAsync.
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        // Assign the default Free plan. Done after SaveChanges so the tenant row exists first.
-        await subscriptionService.AssignPlanAsync(
-            tenant.Id, WellKnownIds.FreePlanId, notes: null, changedByUserId: null, cancellationToken);
+            dbContext.Tenants.Add(tenant);
+            dbContext.TenantSettings.Add(settings);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            var assigned = await subscriptionService.AssignPlanAsync(
+                tenant.Id, WellKnownIds.FreePlanId, notes: null, changedByUserId: null, cancellationToken);
+
+            if (assigned.Subscription is null)
+                throw new InvalidOperationException(
+                    $"Could not assign the default plan to tenant '{tenant.Id}': {assigned.Failure}.");
+
+            await transaction.CommitAsync(cancellationToken);
+        });
 
         return tenant;
     }
@@ -115,10 +131,14 @@ public sealed partial class TenantService(
         if (tenant is null)
             return null;
 
+        var activeChanged = tenant.IsActive != isActive;
         tenant.Rename(name, timeProvider);
         tenant.SetActive(isActive, timeProvider);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (activeChanged)
+            await tenantStatusService.InvalidateAsync(id, cancellationToken);
 
         return tenant;
     }
@@ -135,6 +155,9 @@ public sealed partial class TenantService(
         tenant.SetActive(isActive, timeProvider);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // Drop the cached "is active" flag so the change is enforced on the very next request.
+        await tenantStatusService.InvalidateAsync(id, cancellationToken);
 
         return tenant;
     }

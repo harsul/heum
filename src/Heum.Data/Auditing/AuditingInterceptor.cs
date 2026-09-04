@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Heum.Application;
+using Heum.Data.Domain;
 using Heum.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -35,8 +36,10 @@ public class AuditingInterceptor(ICurrentUserService currentUserService, TimePro
         if (context is null)
             return;
 
+        // Outbox rows are plumbing, not business state: auditing them would double every write
+        // and record each poller "mark processed" update as a user action.
         var entries = context.ChangeTracker.Entries()
-            .Where(e => e.Entity is not AuditTrail
+            .Where(e => e.Entity is not AuditTrail and not OutboxMessage
                 && e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
             .ToList();
 
@@ -97,8 +100,15 @@ public class AuditingInterceptor(ICurrentUserService currentUserService, TimePro
 
     private static string SerializeProperties(IEnumerable<PropertyEntry> properties, Func<PropertyEntry, object?> valueSelector)
     {
-        var values = properties.ToDictionary(p => p.Metadata.Name, valueSelector);
+        var values = properties.ToDictionary(
+            p => p.Metadata.Name,
+            p => IsRedacted(p) ? RedactedPlaceholder : valueSelector(p));
 
         return JsonSerializer.Serialize(values);
     }
+
+    private const string RedactedPlaceholder = "***";
+
+    private static bool IsRedacted(PropertyEntry property) =>
+        property.Metadata.PropertyInfo?.IsDefined(typeof(AuditRedactedAttribute), inherit: true) == true;
 }

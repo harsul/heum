@@ -40,7 +40,10 @@ internal static class RateLimitingExtensions
 
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
-                var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                // Keycloak emits "sub", not the WS-* NameIdentifier claim, so fall back to it —
+                // otherwise every authenticated caller silently lands in the per-IP bucket.
+                var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                    ?? context.User.FindFirst("sub")?.Value;
                 if (userId is not null)
                 {
                     return RateLimitPartition.GetFixedWindowLimiter(userId, _ => new FixedWindowRateLimiterOptions

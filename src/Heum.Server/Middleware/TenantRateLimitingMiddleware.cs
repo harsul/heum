@@ -7,7 +7,8 @@ namespace Heum.Server.Middleware;
 internal sealed class TenantRateLimitingMiddleware(
     RequestDelegate next,
     ITenantRateLimiter rateLimiter,
-    IOptions<TenantRateLimitOptions> options)
+    IOptions<TenantRateLimitOptions> options,
+    TimeProvider timeProvider)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -20,7 +21,8 @@ internal sealed class TenantRateLimitingMiddleware(
         }
 
         var opts = options.Value;
-        var windowBucket = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / opts.WindowSeconds;
+        var nowSeconds = timeProvider.GetUtcNow().ToUnixTimeSeconds();
+        var windowBucket = nowSeconds / opts.WindowSeconds;
         var key = $"rl:tenant:{tenantId}:{windowBucket}";
 
         var count = await rateLimiter.IncrementAsync(key, opts.WindowSeconds, context.RequestAborted);
@@ -32,7 +34,7 @@ internal sealed class TenantRateLimitingMiddleware(
             return;
         }
 
-        var retryAfter = opts.WindowSeconds - (int)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() % opts.WindowSeconds);
+        var retryAfter = opts.WindowSeconds - (int)(nowSeconds % opts.WindowSeconds);
 
         context.Response.OnStarting(() =>
         {
