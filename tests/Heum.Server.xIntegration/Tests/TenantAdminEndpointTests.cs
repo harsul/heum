@@ -76,13 +76,42 @@ public class TenantAdminEndpointTests(IntegrationFixture fixture) : IAsyncLifeti
     }
 
     [Fact]
-    public async Task GetMyTenant_Returns404_WhenTenantNotInDatabase()
+    public async Task GetMyTenant_Returns403_WhenTenantNotInDatabase()
     {
+        // A token for a tenant that doesn't exist is treated like a deactivated tenant: the
+        // TenantStatusMiddleware rejects it before any endpoint runs.
         var api = fixture.GetClient<ITenantsApi>(ClientScope.TenantAdmin(Guid.NewGuid()));
 
         var response = await api.GetMyTenantAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task TenantEndpoints_Return403_AfterTenantIsDeactivated_And200AfterReactivation()
+    {
+        var tenantApi = fixture.GetClient<ITenantsApi>(ClientScope.TenantAdmin(_tenant.Id));
+        var adminApi = fixture.GetClient<IAdminTenantsApi>(ClientScope.SystemAdmin);
+
+        // Warm the status cache with an "active" entry first.
+        var before = await tenantApi.GetMyTenantAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, before.StatusCode);
+
+        var deactivate = await adminApi.DeactivateTenantAsync(_tenant.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, deactivate.StatusCode);
+
+        // Deactivation must take effect immediately, i.e. the cached entry was invalidated.
+        var whileInactive = await tenantApi.GetMyTenantAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Forbidden, whileInactive.StatusCode);
+
+        var usersWhileInactive = await tenantApi.GetMyTenantUsersAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Forbidden, usersWhileInactive.StatusCode);
+
+        var reactivate = await adminApi.ReactivateTenantAsync(_tenant.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, reactivate.StatusCode);
+
+        var after = await tenantApi.GetMyTenantAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
     }
 
     [Fact]

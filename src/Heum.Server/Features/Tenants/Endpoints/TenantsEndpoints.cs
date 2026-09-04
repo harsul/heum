@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using Heum.Data;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Server.Common;
+using Heum.Server.Features.Plans.Services;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.Features.Tenants.Services;
 using Heum.Server.Services;
@@ -163,15 +165,20 @@ public static class TenantsEndpoints
         });
     }
 
-    internal static async Task<Results<Ok<TenantResponse>, NotFound, BadRequest<ProblemDetails>>> UploadLogoAsync(
+    internal static async Task<Results<Ok<TenantResponse>, NotFound, BadRequest<ProblemDetails>, ProblemHttpResult>> UploadLogoAsync(
         ITenantContext tenantContext,
         IFormFile file,
         IBlobStorageService blobStorageService,
         ITenantService tenantService,
+        IEntitlementService entitlementService,
+        ILogger<ITenantService> logger,
         CancellationToken cancellationToken)
     {
         if (!tenantContext.HasTenant)
             return TypedResults.BadRequest(TenantProblems.NoTenant());
+
+        if (!await entitlementService.GetBoolAsync(tenantContext.TenantId, EntitlementKeys.CanUploadLogo, fallback: false, cancellationToken))
+            return TypedResults.Problem(TenantProblems.LogoUploadNotAllowed());
 
         if (file.ContentType is not ("image/jpeg" or "image/png"))
             return TypedResults.BadRequest(TenantProblems.InvalidContentType(file.ContentType));
@@ -179,25 +186,66 @@ public static class TenantsEndpoints
         if (file.Length > 2 * 1024 * 1024)
             return TypedResults.BadRequest(TenantProblems.FileTooLarge());
 
+        var tenant = await tenantService.GetTenantAsync(tenantContext.TenantId, cancellationToken);
+        if (tenant is null)
+            return TypedResults.NotFound();
+
+        var previousLogoUrl = tenant.LogoUrl;
+
         await using var stream = file.OpenReadStream();
         var blobUrl = await blobStorageService.UploadLogoAsync(tenantContext.TenantId, stream, file.ContentType, cancellationToken);
 
-        var tenant = await tenantService.SetLogoAsync(tenantContext.TenantId, blobUrl.ToString(), cancellationToken);
-        return tenant is null ? TypedResults.NotFound() : TypedResults.Ok(TenantResponseMapper.ToResponse(tenant));
+        tenant = await tenantService.SetLogoAsync(tenantContext.TenantId, blobUrl.ToString(), cancellationToken);
+        if (tenant is null)
+            return TypedResults.NotFound();
+
+        await TryDeleteBlobAsync(blobStorageService, previousLogoUrl, logger, cancellationToken);
+
+        return TypedResults.Ok(TenantResponseMapper.ToResponse(tenant));
     }
 
     internal static async Task<Results<NoContent, NotFound, BadRequest<ProblemDetails>>> DeleteLogoAsync(
         ITenantContext tenantContext,
         ITenantService tenantService,
         IBlobStorageService blobStorageService,
+        ILogger<ITenantService> logger,
         CancellationToken cancellationToken)
     {
         if (!tenantContext.HasTenant)
             return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        await blobStorageService.DeleteLogoAsync(tenantContext.TenantId, cancellationToken);
-        var tenant = await tenantService.SetLogoAsync(tenantContext.TenantId, null, cancellationToken);
-        return tenant is null ? TypedResults.NotFound() : TypedResults.NoContent();
+        var tenant = await tenantService.GetTenantAsync(tenantContext.TenantId, cancellationToken);
+        if (tenant is null)
+            return TypedResults.NotFound();
+
+        var previousLogoUrl = tenant.LogoUrl;
+        await tenantService.SetLogoAsync(tenantContext.TenantId, null, cancellationToken);
+        await TryDeleteBlobAsync(blobStorageService, previousLogoUrl, logger, cancellationToken);
+
+        return TypedResults.NoContent();
+    }
+
+    /// <summary>
+    /// Blob cleanup is best-effort: the DB is the source of truth for which logo is current, so a
+    /// failed delete only leaves an orphaned blob behind rather than a broken tenant.
+    /// </summary>
+    private static async Task TryDeleteBlobAsync(
+        IBlobStorageService blobStorageService,
+        string? logoUrl,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(logoUrl) || !Uri.TryCreate(logoUrl, UriKind.Absolute, out var uri))
+            return;
+
+        try
+        {
+            await blobStorageService.DeleteLogoAsync(uri, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Failed to delete previous tenant logo blob {LogoUrl}", logoUrl);
+        }
     }
 
     private static string? GetKeycloakUserId(ClaimsPrincipal user) =>
@@ -213,5 +261,4 @@ public static class TenantsEndpoints
         var claim = user.FindFirst(KeycloakClaimTypes.TenantId)?.Value;
         return Guid.TryParse(claim, out tenantId);
     }
-
 }

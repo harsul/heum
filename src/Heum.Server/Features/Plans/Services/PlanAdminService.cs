@@ -19,8 +19,13 @@ internal sealed class PlanAdminService(
         await db.Plans.Include(p => p.Entitlements).ThenInclude(pe => pe.Entitlement)
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
-    public async Task<Plan> CreatePlanAsync(string name, CancellationToken ct = default)
+    public async Task<Plan?> CreatePlanAsync(string name, CancellationToken ct = default)
     {
+        // Backed by a unique index on Plans.Name; this pre-check turns the common case into a
+        // clean 409 instead of a DbUpdateException surfacing as 500.
+        if (await db.Plans.AnyAsync(p => p.Name == name, ct))
+            return null;
+
         var plan = Plan.Create(name, timeProvider);
         db.Plans.Add(plan);
         await db.SaveChangesAsync(ct);
@@ -71,8 +76,11 @@ internal sealed class PlanAdminService(
     public async Task<IReadOnlyList<Entitlement>> ListEntitlementsAsync(CancellationToken ct = default) =>
         await db.Entitlements.OrderBy(e => e.Key).ToListAsync(ct);
 
-    public async Task<Entitlement> CreateEntitlementAsync(string key, EntitlementType type, string? description, CancellationToken ct = default)
+    public async Task<Entitlement?> CreateEntitlementAsync(string key, EntitlementType type, string? description, CancellationToken ct = default)
     {
+        if (await db.Entitlements.AnyAsync(e => e.Key == key, ct))
+            return null;
+
         var entitlement = Entitlement.Create(key, type, description);
         db.Entitlements.Add(entitlement);
         await db.SaveChangesAsync(ct);

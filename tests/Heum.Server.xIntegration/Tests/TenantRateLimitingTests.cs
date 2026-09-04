@@ -151,6 +151,7 @@ public sealed class TenantRateLimitingTests : IAsyncLifetime
                     new HeumDbContext(
                         new DbContextOptionsBuilder<HeumDbContext>()
                             .UseInMemoryDatabase(_dbName)
+                            .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning))
                             .Options,
                         sp.GetService<Heum.Data.Multitenancy.ITenantProvider>()));
 
@@ -164,6 +165,10 @@ public sealed class TenantRateLimitingTests : IAsyncLifetime
 
                 services.RemoveAll<IEntitlementService>();
                 services.AddSingleton<IEntitlementService, NoOpEntitlementService>();
+
+                // TenantStatusMiddleware caches "is tenant active" in the distributed cache.
+                services.RemoveAll<IDistributedCache>();
+                services.AddDistributedMemoryCache();
 
                 // Limit of 2 so tests can trigger throttling cheaply.
                 services.PostConfigure<TenantRateLimitOptions>(opts =>

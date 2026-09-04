@@ -9,8 +9,8 @@ export const oidcConfig: AuthProviderProps = {
   post_logout_redirect_uri: window.location.origin,
   scope: 'openid profile email',
   onSigninCallback: () => {
-    // Token is written to the cookie by App.tsx's useEffect (the single source of truth).
-    // The cookie is read server-side by the ASP.NET backend, not by frontend JS.
+    // App.tsx's useEffect hands the access token to the axios client; nothing is persisted here.
+    // Strip the OIDC response params from the URL after the redirect completes.
     window.history.replaceState({}, document.title, window.location.pathname);
   },
 };

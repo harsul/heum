@@ -78,6 +78,10 @@ Keycloak packs realm roles into a `realm_access` claim; `KeycloakClaimsHelper.Ad
 
 Entities that raise domain events extend `AggregateRoot` (`Heum.Data.Domain`). State changes are encapsulated in named methods (e.g., `Tenant.Register()`, `Tenant.Rename()`) that call `AddDomainEvent(...)`. `DomainEventDispatchingInterceptor` intercepts `SaveChanges` and writes events to the `OutboxMessages` table. `HeumDbContext` automatically applies global query filters for multitenancy (`ITenantEntity.TenantId`) and soft-delete (`ISoftDeletable.IsDeleted`).
 
+Every `IDomainEvent` must be mapped to a Service Bus topic in `EventTopicMap.MapDomainEvents()` (`Heum.Infrastructure.Messaging`); both `Heum.Server` and `Heum.BackgroundService` use that single map. `EventTopicMapTests` fails the build if a new event in `Heum.Contracts` is left unmapped.
+
+Tenant-scoped requests (any token with a `tenant_id` claim) pass through `TenantStatusMiddleware`, which returns 403 for deactivated or unknown tenants. The active flag is cached in the distributed cache and invalidated by `TenantService` on (de)activation.
+
 ### Frontend
 
 React SPA in `src/frontend/`. Key structure:
