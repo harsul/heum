@@ -1,6 +1,6 @@
 import { apiClient } from '../../../lib/apiClient';
 import type { Tenant, TenantUser } from '../../tenants/types/tenant';
-import type { MyPlanResponse } from '../../plans/types/plan';
+import type { MyPlanResponse, TenantSubscription } from '../../plans/types/plan';
 
 export interface AddMyTenantUserPayload {
   email: string;
@@ -37,5 +37,10 @@ export async function fetchMyTenantRoles(): Promise<string[]> {
 
 export async function fetchMyPlan(): Promise<MyPlanResponse> {
   const { data } = await apiClient.get<MyPlanResponse>('/plan');
+  return data;
+}
+
+export async function fetchMySubscriptionHistory(): Promise<TenantSubscription[]> {
+  const { data } = await apiClient.get<TenantSubscription[]>('/plan/history');
   return data;
 }

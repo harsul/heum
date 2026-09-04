@@ -19,7 +19,7 @@ import { CompanyUsersTable } from '../features/company/components/CompanyUsersTa
 import { TenantLogoPanel } from '../features/company/components/TenantLogoPanel';
 import { SubscriptionTabContent } from '../features/plans/components/SubscriptionTabContent';
 import { useMyTenant } from '../features/company/hooks/useMyTenant';
-import { useMyPlan } from '../features/company/hooks/useMyPlan';
+import { useMyPlan, useMySubscriptionHistory } from '../features/company/hooks/useMyPlan';
 import { formatDate, tenantInitials } from '../utils/format';
 
 type TabValue = 'overview' | 'users' | 'settings' | 'subscription';
@@ -29,6 +29,7 @@ export function MyCompanyPage() {
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
 
   const { data: myPlan, isLoading: planLoading } = useMyPlan();
+  const { data: myPlanHistory = [], isLoading: historyLoading } = useMySubscriptionHistory();
 
   return (
     <DashboardLayout>
@@ -148,6 +149,8 @@ export function MyCompanyPage() {
               <SubscriptionTabContent
                 currentPlan={myPlan ?? null}
                 isLoading={planLoading}
+                subHistory={myPlanHistory}
+                historyLoading={historyLoading}
               />
             )}
           </CardContent>
