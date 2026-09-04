@@ -3,9 +3,6 @@ import PeopleAltIcon from '@mui/icons-material/PeopleAltOutlined';
 import BusinessIcon from '@mui/icons-material/BusinessOutlined';
 import LayersIcon from '@mui/icons-material/LayersOutlined';
 import TuneIcon from '@mui/icons-material/TuneOutlined';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCartOutlined';
-import BarChartIcon from '@mui/icons-material/BarChartOutlined';
-import SettingsIcon from '@mui/icons-material/SettingsOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
 
 export interface NavItemConfig {
@@ -31,9 +28,6 @@ export function getNavConfig(isSystemAdmin: boolean, isTenantAdmin: boolean): Na
           { title: 'Entitlements', path: '/admin/entitlements', icon: TuneIcon },
         ]
       : []),
-    ...(isTenantAdmin ? [{ title: 'My Company', path: '/company', icon: BusinessIcon }] : []),
-    { title: 'Orders', path: '/orders', icon: ShoppingCartIcon, disabled: true },
-    { title: 'Analytics', path: '/analytics', icon: BarChartIcon, disabled: true },
-    { title: 'Settings', path: '/settings', icon: SettingsIcon, disabled: true },
+    ...(isTenantAdmin ? [{ title: 'My Company', path: '/company', icon: BusinessIcon }] : [])
   ];
 }
