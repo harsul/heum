@@ -1,4 +1,6 @@
+using Heum.Data.Models;
 using Heum.Server.Features.Plans.Services;
+using Heum.Server.Features.Subscriptions.Models;
 using Heum.Server.Features.Subscriptions.Services;
 using Heum.Server.Features.Tenants;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -12,6 +14,10 @@ public static class TenantEntitlementsEndpoints
     {
         group.MapGet("/plan", GetMyPlanAsync)
             .WithName("GetMyPlan")
+            .RequireAuthorization("TenantAdmin");
+
+        group.MapGet("/plan/history", GetMySubscriptionHistoryAsync)
+            .WithName("GetMySubscriptionHistory")
             .RequireAuthorization("TenantAdmin");
 
         return group;
@@ -36,6 +42,31 @@ public static class TenantEntitlementsEndpoints
             Entitlements = entitlements.ToDictionary(),
         });
     }
+
+    static async Task<Results<Ok<List<SubscriptionResponse>>, BadRequest<ProblemDetails>>> GetMySubscriptionHistoryAsync(
+        ITenantContext tenantContext,
+        ISubscriptionService subscriptionService,
+        CancellationToken ct)
+    {
+        if (!tenantContext.HasTenant)
+            return TypedResults.BadRequest(TenantProblems.NoTenant());
+
+        var history = await subscriptionService.GetSubscriptionHistoryAsync(tenantContext.TenantId, ct);
+        return TypedResults.Ok(history.Select(ToResponse).ToList());
+    }
+
+    static SubscriptionResponse ToResponse(TenantSubscription s) => new()
+    {
+        Id = s.Id,
+        TenantId = s.TenantId,
+        PlanId = s.PlanId,
+        PlanName = s.Plan.Name,
+        Reason = s.Reason.ToString(),
+        Notes = s.Notes,
+        ChangedByUserId = s.ChangedByUserId,
+        EffectiveAtUtc = s.EffectiveAtUtc,
+        CreatedAtUtc = s.CreatedAtUtc,
+    };
 }
 
 public sealed class MyPlanResponse

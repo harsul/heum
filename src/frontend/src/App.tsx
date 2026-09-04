@@ -5,6 +5,9 @@ import { DashboardPage } from './pages/DashboardPage';
 import { TenantsPage } from './pages/TenantsPage';
 import { TenantDetailPage } from './pages/TenantDetailPage';
 import { MyCompanyPage } from './pages/MyCompanyPage';
+import { PlansPage } from './pages/PlansPage';
+import { PlanDetailPage } from './pages/PlanDetailPage';
+import { EntitlementsPage } from './pages/EntitlementsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { setTokenCookie, clearTokenCookie } from './utils/cookie';
@@ -55,6 +58,30 @@ function App() {
         element={
           <ProtectedRoute requireRole={TENANT_ADMIN_ROLE}>
             <MyCompanyPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/plans"
+        element={
+          <ProtectedRoute requireRole={SYSTEM_ADMIN_ROLE}>
+            <PlansPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/plans/:id"
+        element={
+          <ProtectedRoute requireRole={SYSTEM_ADMIN_ROLE}>
+            <PlanDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/entitlements"
+        element={
+          <ProtectedRoute requireRole={SYSTEM_ADMIN_ROLE}>
+            <EntitlementsPage />
           </ProtectedRoute>
         }
       />
