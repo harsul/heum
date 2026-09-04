@@ -37,3 +37,9 @@ export interface TenantSubscription {
 
 /** Resolved entitlements: plan defaults merged with tenant overrides. Key → value (always a string). */
 export type ResolvedEntitlements = Record<string, string>;
+
+export interface MyPlanResponse {
+  planId: string | null;
+  planName: string | null;
+  entitlements: Record<string, string>;
+}

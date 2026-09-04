@@ -4,27 +4,31 @@ import Avatar from '@mui/material/Avatar';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import Skeleton from '@mui/material/Skeleton';
 import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
+import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
-import Divider from '@mui/material/Divider';
+import Box from '@mui/material/Box';
+import { Typography } from '@mui/material';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { DetailField } from '../components/DetailField';
 import { CompanySettingsPanel } from '../features/company/components/CompanySettingsPanel';
 import { CompanyUsersTable } from '../features/company/components/CompanyUsersTable';
 import { TenantLogoPanel } from '../features/company/components/TenantLogoPanel';
+import { SubscriptionTabContent } from '../features/plans/components/SubscriptionTabContent';
 import { useMyTenant } from '../features/company/hooks/useMyTenant';
+import { useMyPlan } from '../features/company/hooks/useMyPlan';
 import { formatDate, tenantInitials } from '../utils/format';
-import Box from "@mui/material/Box";
-import { Typography } from "@mui/material";
 
-type TabValue = 'overview' | 'users' | 'settings';
+type TabValue = 'overview' | 'users' | 'settings' | 'subscription';
 
 export function MyCompanyPage() {
   const { data: tenant, isLoading, isError } = useMyTenant();
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
+
+  const { data: myPlan, isLoading: planLoading } = useMyPlan();
 
   return (
     <DashboardLayout>
@@ -101,33 +105,50 @@ export function MyCompanyPage() {
               <Tab label="Overview" value="overview" />
               <Tab label="Users" value="users" />
               <Tab label="Settings" value="settings" />
+              <Tab label="Subscription" value="subscription" />
             </Tabs>
 
             {activeTab === 'overview' && (
-              <Grid container spacing={3}>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <DetailField label="Company ID" value={tenant.id} />
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                <Grid container spacing={3}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <DetailField label="Company ID" value={tenant.id} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <DetailField label="Name" value={tenant.name} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <DetailField label="Created" value={formatDate(tenant.createdAtUtc)} />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <DetailField label="Last updated" value={formatDate(tenant.updatedAtUtc)} />
+                  </Grid>
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <DetailField label="Name" value={tenant.name} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <DetailField label="Created" value={formatDate(tenant.createdAtUtc)} />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <DetailField label="Last updated" value={formatDate(tenant.updatedAtUtc)} />
-                </Grid>
-              </Grid>
+              </Paper>
             )}
 
-            {activeTab === 'users' && <CompanyUsersTable />}
+            {activeTab === 'users' && (
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                <CompanyUsersTable />
+              </Paper>
+            )}
 
             {activeTab === 'settings' && (
-              <>
-                <TenantLogoPanel tenant={tenant} />
-                <Divider sx={{ my: 3 }} />
-                <CompanySettingsPanel />
-              </>
+              <Stack spacing={2}>
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                  <TenantLogoPanel tenant={tenant} />
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                  <CompanySettingsPanel />
+                </Paper>
+              </Stack>
+            )}
+
+            {activeTab === 'subscription' && (
+              <SubscriptionTabContent
+                currentPlan={myPlan ?? null}
+                isLoading={planLoading}
+              />
             )}
           </CardContent>
         </Card>
