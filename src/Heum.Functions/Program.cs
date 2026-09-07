@@ -1,4 +1,4 @@
-﻿using Heum.Functions;
+using Heum.Functions;
 using Heum.Functions.Handlers;
 using Heum.Infrastructure.Keycloak;
 using Heum.ServiceDefaults;

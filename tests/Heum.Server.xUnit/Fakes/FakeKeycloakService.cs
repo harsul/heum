@@ -1,4 +1,4 @@
-﻿using Heum.Infrastructure.Keycloak.Models;
+using Heum.Infrastructure.Keycloak.Models;
 using Heum.Infrastructure.Keycloak.Services;
 
 namespace Heum.Server.xUnit.Fakes;

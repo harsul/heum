@@ -1,4 +1,4 @@
-﻿namespace Heum.Infrastructure.Messaging;
+namespace Heum.Infrastructure.Messaging;
 
 /// <summary>
 /// Publishes domain/integration events without callers needing to know which transport

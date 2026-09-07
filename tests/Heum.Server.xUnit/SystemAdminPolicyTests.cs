@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Heum.Infrastructure.Keycloak;
 
 namespace Heum.Server.xUnit;

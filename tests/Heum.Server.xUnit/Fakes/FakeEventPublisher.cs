@@ -1,4 +1,4 @@
-﻿using Heum.Infrastructure.Messaging;
+using Heum.Infrastructure.Messaging;
 
 namespace Heum.Server.xUnit.Fakes;
 

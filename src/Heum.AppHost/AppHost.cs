@@ -25,7 +25,19 @@ var storage = builder.AddAzureStorage("storage").RunAsEmulator();
 var blobs = storage.AddBlobs("blobs");
 
 var messaging = builder.AddAzureServiceBus("messaging")
-    .RunAsEmulator();
+    .RunAsEmulator()
+    .ConfigureInfrastructure(infra =>
+    {
+        // Enable duplicate detection on all topics so the outbox MessageId actually deduplicates
+        // redeliveries after a broker restart or pod crash between publish and ack.
+        // Applies to provisioned Azure environments only; the local Service Bus emulator
+        // does not honor this setting.
+        foreach (var topic in infra.GetProvisionableResources().OfType<Azure.Provisioning.ServiceBus.ServiceBusTopic>())
+        {
+            topic.RequiresDuplicateDetection = true;
+            topic.DuplicateDetectionHistoryTimeWindow = TimeSpan.FromMinutes(10);
+        }
+    });
 
 var tenantEventsTopic = messaging.AddServiceBusTopic("tenant-events");
 tenantEventsTopic.AddServiceBusSubscription("db-seeding-sub");

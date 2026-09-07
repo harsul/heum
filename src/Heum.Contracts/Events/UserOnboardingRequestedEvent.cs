@@ -1,4 +1,4 @@
-﻿namespace Heum.Contracts.Events;
+namespace Heum.Contracts.Events;
 
 /// <summary>
 /// Raised whenever a new Keycloak user (a tenant's first admin, or an additional tenant user)

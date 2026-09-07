@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Heum.Server.xUnit" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Azure.Messaging.ServiceBus" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />

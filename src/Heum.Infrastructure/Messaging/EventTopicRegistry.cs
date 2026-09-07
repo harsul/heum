@@ -1,4 +1,4 @@
-﻿namespace Heum.Infrastructure.Messaging;
+namespace Heum.Infrastructure.Messaging;
 
 /// <summary>
 /// Single registry mapping event CLR types to Service Bus topics, and short type names back

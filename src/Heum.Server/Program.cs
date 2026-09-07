@@ -23,9 +23,9 @@ using Heum.Server.Services;
 using Heum.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Scalar.AspNetCore;
-using TenantService = Heum.Server.Features.Tenants.Services.TenantService;
 using BlobStorageService = Heum.Server.Features.Tenants.Services.BlobStorageService;
 using IBlobStorageService = Heum.Server.Features.Tenants.Services.IBlobStorageService;
+using TenantService = Heum.Server.Features.Tenants.Services.TenantService;
 
 var builder = WebApplication.CreateBuilder(args);
 
