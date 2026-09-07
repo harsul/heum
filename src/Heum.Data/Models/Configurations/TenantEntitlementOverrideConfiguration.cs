@@ -24,5 +24,10 @@ public class TenantEntitlementOverrideConfiguration : IEntityTypeConfiguration<T
             .WithMany()
             .HasForeignKey(o => o.EntitlementId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(o => o.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

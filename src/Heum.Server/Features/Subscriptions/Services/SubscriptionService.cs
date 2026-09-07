@@ -13,9 +13,20 @@ internal sealed class SubscriptionService(
     IDomainEventCollector domainEventCollector,
     TimeProvider timeProvider) : ISubscriptionService
 {
-    public async Task<TenantSubscription> AssignPlanAsync(
+    public async Task<AssignPlanResult> AssignPlanAsync(
         Guid tenantId, Guid planId, string? notes, string? changedByUserId, CancellationToken ct = default)
     {
+        // Tenant is not ITenantEntity, so this lookup is not affected by the global filter and is
+        // valid from an admin (no tenant claim) context.
+        if (!await db.Tenants.AnyAsync(t => t.Id == tenantId, ct))
+            return AssignPlanResult.Failed(AssignPlanFailure.TenantNotFound);
+
+        var plan = await db.Plans.FindAsync([planId], ct);
+        if (plan is null)
+            return AssignPlanResult.Failed(AssignPlanFailure.PlanNotFound);
+        if (!plan.IsActive)
+            return AssignPlanResult.Failed(AssignPlanFailure.PlanInactive);
+
         var previous = await GetCurrentSubscriptionAsync(tenantId, ct);
         var previousPlanId = previous?.PlanId;
 
@@ -36,7 +47,7 @@ internal sealed class SubscriptionService(
         await entitlementService.InvalidateTenantAsync(tenantId, ct);
 
         await db.Entry(subscription).Reference(s => s.Plan).LoadAsync(ct);
-        return subscription;
+        return AssignPlanResult.Success(subscription);
     }
 
     public async Task<TenantSubscription?> GetCurrentSubscriptionAsync(Guid tenantId, CancellationToken ct = default) =>
@@ -53,10 +64,15 @@ internal sealed class SubscriptionService(
             .OrderByDescending(s => s.EffectiveAtUtc)
             .ToListAsync(ct);
 
-    public async Task<TenantEntitlementOverride> UpsertOverrideAsync(
+    public async Task<TenantEntitlementOverride?> UpsertOverrideAsync(
         Guid tenantId, string entitlementKey, string value, string? reason, CancellationToken ct = default)
     {
-        var entitlement = await db.Entitlements.FirstAsync(e => e.Key == entitlementKey && e.IsActive, ct);
+        if (!await db.Tenants.AnyAsync(t => t.Id == tenantId, ct))
+            return null;
+
+        var entitlement = await db.Entitlements.FirstOrDefaultAsync(e => e.Key == entitlementKey && e.IsActive, ct);
+        if (entitlement is null)
+            return null;
 
         var existing = await db.TenantEntitlementOverrides
             .IgnoreQueryFilters()

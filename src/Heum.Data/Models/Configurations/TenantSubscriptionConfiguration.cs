@@ -34,5 +34,10 @@ public class TenantSubscriptionConfiguration : IEntityTypeConfiguration<TenantSu
             .WithMany()
             .HasForeignKey(s => s.PlanId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(s => s.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

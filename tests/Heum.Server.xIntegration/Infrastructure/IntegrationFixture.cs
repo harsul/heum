@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -47,12 +48,15 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
 
         _ = Server;
 
+        await using var scope = Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
+
         if (_postgres is not null)
-        {
-            await using var scope = Services.CreateAsyncScope();
-            var db = scope.ServiceProvider.GetRequiredService<HeumDbContext>();
             await db.Database.MigrateAsync();
-        }
+        else
+            // Applies HasData seeds (Free plan + entitlements) to the in-memory store; without
+            // this, tenant creation fails because the default plan doesn't exist.
+            await db.Database.EnsureCreatedAsync();
     }
 
     public override async ValueTask DisposeAsync()
@@ -102,6 +106,9 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
                     new HeumDbContext(
                         new DbContextOptionsBuilder<HeumDbContext>()
                             .UseInMemoryDatabase(_inMemoryDbName)
+                            // Services use explicit transactions; the in-memory provider
+                            // doesn't support them and throws unless told to ignore them.
+                            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                             .AddInterceptors(
                                 sp.GetRequiredService<AuditingInterceptor>(),
                                 sp.GetRequiredService<DomainEventDispatchingInterceptor>())
@@ -145,7 +152,7 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
         if (_postgres is not null)
         {
             await db.Database.ExecuteSqlRawAsync(
-                """TRUNCATE TABLE "Tenants", "TenantSettings", "Invitations", "AuditTrails", "OutboxMessages" RESTART IDENTITY CASCADE""");
+                """TRUNCATE TABLE "Tenants", "TenantSettings", "Invitations", "TenantSubscriptions", "TenantEntitlementOverrides", "AuditTrails", "OutboxMessages" RESTART IDENTITY CASCADE""");
         }
         else
         {

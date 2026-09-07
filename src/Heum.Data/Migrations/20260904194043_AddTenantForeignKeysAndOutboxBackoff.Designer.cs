@@ -3,6 +3,7 @@ using System;
 using Heum.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Heum.Data.Migrations
 {
     [DbContext(typeof(HeumDbContext))]
-    partial class HeumDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260904194043_AddTenantForeignKeysAndOutboxBackoff")]
+    partial class AddTenantForeignKeysAndOutboxBackoff
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,9 +39,6 @@ namespace Heum.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<DateTime?>("FailedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("LastError")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
@@ -58,7 +58,7 @@ namespace Heum.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProcessedAtUtc", "FailedAtUtc", "OccurredAtUtc");
+                    b.HasIndex("ProcessedAtUtc", "Attempts", "OccurredAtUtc");
 
                     b.ToTable("OutboxMessages", (string)null);
                 });

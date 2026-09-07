@@ -1,3 +1,4 @@
+using Heum.Data.Auditing;
 using Heum.Data.Multitenancy;
 
 namespace Heum.Data.Models;
@@ -16,6 +17,9 @@ public class Invitation : ITenantEntity
     public Guid TenantId { get; private set; }
     public string Email { get; private set; } = string.Empty;
     public InvitationStatus Status { get; private set; } = InvitationStatus.Pending;
+
+    /// <summary>One-time secret that lets the invitee accept; never written to the audit trail.</summary>
+    [AuditRedacted]
     public string Token { get; private set; } = string.Empty;
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime ExpiresAtUtc { get; private set; }

@@ -16,6 +16,10 @@ public class PlanConfiguration : IEntityTypeConfiguration<Plan>
             .IsRequired()
             .HasMaxLength(100);
 
+        // Plan names are what admins pick from; two "Pro" plans would be indistinguishable.
+        builder.HasIndex(p => p.Name)
+            .IsUnique();
+
         builder.Property(p => p.IsActive)
             .HasDefaultValue(true);
 

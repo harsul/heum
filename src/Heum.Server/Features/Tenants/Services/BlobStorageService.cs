@@ -14,9 +14,12 @@ public sealed class BlobStorageService(BlobServiceClient blobServiceClient) : IB
         CancellationToken cancellationToken = default)
     {
         var container = blobServiceClient.GetBlobContainerClient(ContainerName);
+        // Logos are rendered straight from their URL by browsers, so the container stays publicly
+        // readable. The blob name carries a random segment so URLs can't be enumerated by tenant id.
         await container.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: cancellationToken);
 
-        var blobClient = container.GetBlobClient(tenantId.ToString());
+        var blobName = $"{tenantId}/{Guid.NewGuid():N}{ExtensionFor(contentType)}";
+        var blobClient = container.GetBlobClient(blobName);
         await blobClient.UploadAsync(content, new BlobUploadOptions
         {
             HttpHeaders = new BlobHttpHeaders { ContentType = contentType },
@@ -25,10 +28,20 @@ public sealed class BlobStorageService(BlobServiceClient blobServiceClient) : IB
         return blobClient.Uri;
     }
 
-    public async Task DeleteLogoAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    public async Task DeleteLogoAsync(Uri logoUrl, CancellationToken cancellationToken = default)
     {
-        var container = blobServiceClient.GetBlobContainerClient(ContainerName);
-        var blobClient = container.GetBlobClient(tenantId.ToString());
+        var blobName = new BlobUriBuilder(logoUrl).BlobName;
+        if (string.IsNullOrEmpty(blobName))
+            return;
+
+        var blobClient = blobServiceClient.GetBlobContainerClient(ContainerName).GetBlobClient(blobName);
         await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
     }
+
+    private static string ExtensionFor(string contentType) => contentType switch
+    {
+        "image/png" => ".png",
+        "image/jpeg" => ".jpg",
+        _ => string.Empty,
+    };
 }
