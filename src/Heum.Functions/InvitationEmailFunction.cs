@@ -1,18 +1,17 @@
 using Azure.Messaging.ServiceBus;
 using Heum.Contracts.Events;
+using Heum.Functions.Handlers;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System.Net.Mail;
 
 namespace Heum.Functions;
 
 /// <summary>
-/// Consumes InvitationCreatedEvent messages and emails the invited address a link containing
-/// the invitation token so the recipient can accept and complete onboarding.
+/// Service Bus trigger adapter. Deserializes and validates the message, then delegates
+/// all business logic to <see cref="InvitationEmailHandler"/>.
 /// </summary>
 public class InvitationEmailFunction(
-    IOptions<SmtpOptions> smtpOptions,
+    InvitationEmailHandler handler,
     ILogger<InvitationEmailFunction> logger)
 {
     [Function(nameof(InvitationEmailFunction))]
@@ -38,36 +37,13 @@ public class InvitationEmailFunction(
             return;
         }
 
-        var opts = smtpOptions.Value;
-        var acceptUrl = $"{opts.AppBaseUrl.TrimEnd('/')}/accept-invitation?token={Uri.EscapeDataString(@event.Token)}";
-
-        logger.LogInformation(
-            "Sending invitation email for tenant {TenantId} to {Email}.",
-            @event.TenantId, @event.Email);
-
         try
         {
-            using var smtp = new SmtpClient(opts.Host, opts.Port);
-            using var mail = new MailMessage
-            {
-                From = new MailAddress(opts.FromAddress),
-                Subject = "You've been invited",
-                Body = $"""
-                    <p>You have been invited to join an organization.</p>
-                    <p><a href="{acceptUrl}">Accept your invitation</a></p>
-                    <p>This invitation expires in 7 days. If you did not expect this email, you can safely ignore it.</p>
-                    """,
-                IsBodyHtml = true,
-            };
-            mail.To.Add(@event.Email);
-            await smtp.SendMailAsync(mail, cancellationToken);
-
-            logger.LogInformation(
-                "Invitation email sent to {Email} for tenant {TenantId}.",
-                @event.Email, @event.TenantId);
+            await handler.HandleAsync(@event, cancellationToken);
         }
         catch (Exception ex)
         {
+            // Rethrow so Service Bus can retry and eventually dead-letter the message.
             logger.LogError(ex,
                 "Failed to send invitation email to {Email} for tenant {TenantId}.",
                 @event.Email, @event.TenantId);

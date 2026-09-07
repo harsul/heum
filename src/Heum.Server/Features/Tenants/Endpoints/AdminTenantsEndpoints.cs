@@ -107,7 +107,7 @@ public static class AdminTenantsEndpoints
     internal static async Task<Results<Ok<IReadOnlyList<TenantUserResponse>>, NotFound>> GetTenantUsersAsync(
         Guid id,
         ITenantService tenantService,
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
     {
         var tenant = await tenantService.GetTenantAsync(id, cancellationToken);
@@ -143,7 +143,7 @@ public static class AdminTenantsEndpoints
     }
 
     internal static async Task<Ok<IReadOnlyList<string>>> GetAssignableRolesAsync(
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
     {
         var roles = await keycloakService.GetAssignableRolesAsync(cancellationToken);
@@ -177,14 +177,14 @@ public static class AdminTenantsEndpoints
     internal static async Task<Results<NoContent, NotFound>> EnableTenantUserAsync(
         Guid id,
         string userId,
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
         => await SetTenantUserEnabledAsync(id, userId, enabled: true, keycloakService, cancellationToken);
 
     internal static async Task<Results<NoContent, NotFound>> DisableTenantUserAsync(
         Guid id,
         string userId,
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
         => await SetTenantUserEnabledAsync(id, userId, enabled: false, keycloakService, cancellationToken);
 
@@ -192,7 +192,7 @@ public static class AdminTenantsEndpoints
         Guid tenantId,
         string userId,
         bool enabled,
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
     {
         var succeeded = await keycloakService.SetTenantUserEnabledAsync(tenantId, userId, enabled, cancellationToken);

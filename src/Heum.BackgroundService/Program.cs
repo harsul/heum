@@ -11,7 +11,9 @@ builder.Services.AddScoped<ICurrentUserService, SystemCurrentUserService>();
 
 builder.AddDatabase();
 
-builder.AddAzureServiceBusClient("messaging");
+var isInProcess = string.Equals(builder.Configuration["EventBus:Transport"], "InProcess", StringComparison.OrdinalIgnoreCase);
+if (!isInProcess)
+    builder.AddAzureServiceBusClient("messaging");
 builder.AddEventPublishing(topics => topics.MapDomainEvents());
 
 builder.Services.AddOptions<OutboxProcessorOptions>()

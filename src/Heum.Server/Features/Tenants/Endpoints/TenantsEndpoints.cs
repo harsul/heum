@@ -68,7 +68,7 @@ public static class TenantsEndpoints
 
     internal static async Task<Results<Ok<IReadOnlyList<TenantUserResponse>>, BadRequest<ProblemDetails>>> GetMyTenantUsersAsync(
         ITenantContext tenantContext,
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
     {
         if (!tenantContext.HasTenant)
@@ -79,7 +79,7 @@ public static class TenantsEndpoints
     }
 
     internal static async Task<Ok<IReadOnlyList<string>>> GetMyTenantAssignableRolesAsync(
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
     {
         var roles = await keycloakService.GetAssignableRolesAsync(cancellationToken);
@@ -113,7 +113,7 @@ public static class TenantsEndpoints
         ClaimsPrincipal user,
         string userId,
         ITenantContext tenantContext,
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
         => await SetMyTenantUserEnabledAsync(user, userId, enabled: true, tenantContext, keycloakService, cancellationToken);
 
@@ -121,7 +121,7 @@ public static class TenantsEndpoints
         ClaimsPrincipal user,
         string userId,
         ITenantContext tenantContext,
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
         => await SetMyTenantUserEnabledAsync(user, userId, enabled: false, tenantContext, keycloakService, cancellationToken);
 
@@ -130,7 +130,7 @@ public static class TenantsEndpoints
         string userId,
         bool enabled,
         ITenantContext tenantContext,
-        IKeycloakService keycloakService,
+        IIdentityProviderService keycloakService,
         CancellationToken cancellationToken)
     {
         if (!tenantContext.HasTenant)
@@ -234,7 +234,7 @@ public static class TenantsEndpoints
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(logoUrl) || !Uri.TryCreate(logoUrl, UriKind.Absolute, out var uri))
+        if (string.IsNullOrEmpty(logoUrl) || !Uri.TryCreate(logoUrl, UriKind.RelativeOrAbsolute, out var uri))
             return;
 
         try

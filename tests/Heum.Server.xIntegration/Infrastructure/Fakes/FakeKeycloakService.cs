@@ -3,7 +3,7 @@ using Heum.Infrastructure.Keycloak.Services;
 
 namespace Heum.Server.xIntegration.Infrastructure.Fakes;
 
-public sealed class FakeKeycloakService : IKeycloakService
+public sealed class FakeKeycloakService : IIdentityProviderService
 {
     public Exception? ExceptionToThrow { get; set; }
     public string UserIdToReturn { get; set; } = Guid.NewGuid().ToString();

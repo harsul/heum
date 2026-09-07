@@ -19,6 +19,7 @@ internal sealed class RedisTenantRateLimiter(IConnectionMultiplexer redis, ILogg
             var result = await db.ScriptEvaluateAsync(IncrScript, [(RedisKey)key], [(RedisValue)windowSeconds]);
             return (long)result;
         }
+        // Fail open — Redis unavailable should not block requests.
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Redis unavailable for tenant rate limiting — failing open");

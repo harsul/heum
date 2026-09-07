@@ -116,8 +116,8 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
                         sp.GetService<ITenantProvider>()));
             }
 
-            services.RemoveAll<IKeycloakService>();
-            services.AddSingleton<IKeycloakService>(FakeKeycloak);
+            services.RemoveAll<IIdentityProviderService>();
+            services.AddSingleton<IIdentityProviderService>(FakeKeycloak);
 
             services.RemoveAll<IEventPublisher>();
 

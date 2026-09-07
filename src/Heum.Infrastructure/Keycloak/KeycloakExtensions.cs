@@ -34,7 +34,7 @@ public static class KeycloakExtensions
         })
         .AddHttpMessageHandler<KeycloakAdminAuthHandler>();
 
-        builder.Services.AddScoped<IKeycloakService, KeycloakService>();
+        builder.Services.AddScoped<IIdentityProviderService, KeycloakService>();
 
         return builder;
     }

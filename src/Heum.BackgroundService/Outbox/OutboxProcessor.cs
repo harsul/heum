@@ -127,6 +127,8 @@ internal sealed class OutboxProcessor(
                 .ToListAsync(cancellationToken);
         }
 
+        // PostgreSQL-specific: FOR UPDATE SKIP LOCKED and double-quoted identifiers require PostgreSQL.
+        // To support another provider, add a branch here similar to the InMemory branch above.
         return dbContext.OutboxMessages
             .FromSqlInterpolated($"""
                 SELECT * FROM "OutboxMessages"

@@ -6,7 +6,7 @@ namespace Heum.Infrastructure.Keycloak.Clients;
 /// <summary>
 /// Thin wrapper around the Keycloak Admin REST API endpoints. Deliberately has no knowledge
 /// of tenants or any other business concepts - it only knows how to call Keycloak. Business
-/// operations live in <see cref="IKeycloakService"/>, which is the only consumer of this
+/// operations live in <see cref="IIdentityProviderService"/>, which is the only consumer of this
 /// interface (kept internal on purpose so other projects can't bypass that business logic).
 /// </summary>
 internal interface IKeycloakAdminClient

@@ -155,8 +155,8 @@ public sealed class TenantRateLimitingTests : IAsyncLifetime
                             .Options,
                         sp.GetService<Heum.Data.Multitenancy.ITenantProvider>()));
 
-                services.RemoveAll<IKeycloakService>();
-                services.AddSingleton<IKeycloakService>(new FakeKeycloakService());
+                services.RemoveAll<IIdentityProviderService>();
+                services.AddSingleton<IIdentityProviderService>(new FakeKeycloakService());
 
                 services.RemoveAll<IEventPublisher>();
 
