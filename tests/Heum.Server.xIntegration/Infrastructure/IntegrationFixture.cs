@@ -4,7 +4,6 @@ using Heum.Data.Auditing;
 using Heum.Data.Domain;
 using Heum.Data.Models;
 using Heum.Data.Multitenancy;
-using Heum.Data.SoftDelete;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
 using Heum.Server.Features.Plans.Services;
@@ -96,7 +95,6 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
                         new DbContextOptionsBuilder<HeumDbContext>()
                             .UseNpgsql(_postgres.GetConnectionString())
                             .AddInterceptors(
-                                sp.GetRequiredService<SoftDeleteInterceptor>(),
                                 sp.GetRequiredService<AuditingInterceptor>(),
                                 sp.GetRequiredService<DomainEventDispatchingInterceptor>())
                             .Options,
@@ -112,7 +110,6 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
                             // doesn't support them and throws unless told to ignore them.
                             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
                             .AddInterceptors(
-                                sp.GetRequiredService<SoftDeleteInterceptor>(),
                                 sp.GetRequiredService<AuditingInterceptor>(),
                                 sp.GetRequiredService<DomainEventDispatchingInterceptor>())
                             .Options,

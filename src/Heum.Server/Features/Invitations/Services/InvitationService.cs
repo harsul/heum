@@ -39,6 +39,18 @@ internal sealed class InvitationService(
         if (currentUsers.Count >= maxUsers)
             return new InvitationResult(null, DuplicatePending: false, EntitlementExceeded: true);
 
+        var maxInvitationsPerMonth = await entitlementService.GetIntAsync(tenantId, "max_invitations_per_month", fallback: int.MaxValue, cancellationToken);
+        if (maxInvitationsPerMonth < int.MaxValue)
+        {
+            var now = timeProvider.GetUtcNow().UtcDateTime;
+            var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var monthlyCount = await dbContext.Invitations.CountAsync(
+                i => i.TenantId == tenantId && i.CreatedAtUtc >= startOfMonth,
+                cancellationToken);
+            if (monthlyCount >= maxInvitationsPerMonth)
+                return new InvitationResult(null, DuplicatePending: false, EntitlementExceeded: true);
+        }
+
         var invitation = Invitation.Create(tenantId, email, invitedByUserId, InvitationValidity, timeProvider);
         dbContext.Invitations.Add(invitation);
 

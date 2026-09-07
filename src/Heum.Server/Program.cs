@@ -33,8 +33,7 @@ builder.AddServiceDefaults();
 builder.AddDatabase();
 builder.AddKeycloakAdmin();
 builder.AddRedisClientBuilder("cache")
-    .WithDistributedCache()
-    .WithOutputCache();
+    .WithDistributedCache();
 
 builder.AddAzureServiceBusClient("messaging");
 builder.AddAzureBlobServiceClient("blobs");
@@ -114,8 +113,6 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
-
-app.UseOutputCache();
 
 var api = app.MapVersionedApiGroup();
 

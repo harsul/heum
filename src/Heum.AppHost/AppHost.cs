@@ -32,6 +32,7 @@ tenantEventsTopic.AddServiceBusSubscription("db-seeding-sub");
 
 var userEventsTopic = messaging.AddServiceBusTopic("user-events");
 userEventsTopic.AddServiceBusSubscription("user-onboarding-sub");
+userEventsTopic.AddServiceBusSubscription("invitation-email-sub");
 
 var keycloakAdminSecret = builder.AddParameter("KeycloakAdminSecret", secret: true);
 
@@ -74,10 +75,15 @@ builder.AddAzureFunctionsProject<Projects.Heum_Functions>("useronboarding")
     .WithReference(cache)
     .WithReference(keycloak)
     .WithReference(messaging)
+    .WithReference(mailpit)
     .WaitFor(cache)
     .WaitFor(keycloak)
     .WaitFor(messaging)
+    .WaitFor(mailpit)
     .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)
-    .WithEnvironment("KeycloakAdmin__OnboardingRedirectUri", webfrontend.GetEndpoint("http").Property(EndpointProperty.Url));
+    .WithEnvironment("KeycloakAdmin__OnboardingRedirectUri", webfrontend.GetEndpoint("http").Property(EndpointProperty.Url))
+    .WithEnvironment("Smtp__Host", smtpEndpoint.Property(EndpointProperty.Host))
+    .WithEnvironment("Smtp__Port", smtpEndpoint.Property(EndpointProperty.Port))
+    .WithEnvironment("Smtp__AppBaseUrl", webfrontend.GetEndpoint("http").Property(EndpointProperty.Url));
 
 builder.Build().Run();

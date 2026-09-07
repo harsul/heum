@@ -1,12 +1,10 @@
 using System.Security.Claims;
 using Heum.Data;
-using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Server.Common;
 using Heum.Server.Features.Plans.Services;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.Features.Tenants.Services;
-using Heum.Server.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -250,15 +248,4 @@ public static class TenantsEndpoints
 
     private static string? GetKeycloakUserId(ClaimsPrincipal user) =>
         user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
-
-    /// <summary>
-    /// Reads the <see cref="KeycloakClaimTypes.TenantId"/> claim (populated by a Keycloak protocol
-    /// mapper off the user's "tenant_id" attribute) off the caller's token. Accounts without a
-    /// tenant (e.g. SystemAdmin/service accounts) won't have this claim.
-    /// </summary>
-    internal static bool TryGetTenantId(ClaimsPrincipal user, out Guid tenantId)
-    {
-        var claim = user.FindFirst(KeycloakClaimTypes.TenantId)?.Value;
-        return Guid.TryParse(claim, out tenantId);
-    }
 }

@@ -53,7 +53,7 @@ internal sealed class OutboxProcessor(
         var opts = options.Value;
         var now = timeProvider.GetUtcNow().UtcDateTime;
 
-        var pending = await FetchPendingAsync(opts.MaxAttempts, opts.BatchSize, now, cancellationToken);
+        var pending = await FetchPendingAsync(opts.BatchSize, now, cancellationToken);
 
         foreach (var message in pending)
         {
@@ -70,6 +70,7 @@ internal sealed class OutboxProcessor(
                 await (Task)publishMethod.Invoke(eventPublisher, [domainEvent, cancellationToken, message.Id.ToString()])!;
 
                 message.ProcessedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
+                message.FailedAtUtc = null;
                 message.NextAttemptAtUtc = null;
             }
             catch (Exception ex)
@@ -83,10 +84,10 @@ internal sealed class OutboxProcessor(
 
                 if (message.Attempts >= opts.MaxAttempts)
                 {
-                    message.NextAttemptAtUtc = null;
+                    message.FailedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
                     logger.LogCritical(
                         actual,
-                        "Outbox message {OutboxMessageId} ({EventType}) permanently abandoned after {MaxAttempts} attempts. Last error: {LastError}",
+                        "Outbox message {OutboxMessageId} ({EventType}) permanently dead-lettered after {MaxAttempts} attempts. Last error: {LastError}",
                         message.Id, message.EventType, opts.MaxAttempts, message.LastError);
                 }
                 else
@@ -114,14 +115,13 @@ internal sealed class OutboxProcessor(
         return ticks <= 0 || ticks > opts.MaxRetryDelay.Ticks ? opts.MaxRetryDelay : TimeSpan.FromTicks(ticks);
     }
 
-    private Task<List<OutboxMessage>> FetchPendingAsync(int maxAttempts, int batchSize, DateTime now, CancellationToken cancellationToken)
+    private Task<List<OutboxMessage>> FetchPendingAsync(int batchSize, DateTime now, CancellationToken cancellationToken)
     {
         if (IsInMemoryProvider())
         {
             return dbContext.OutboxMessages
-                .Where(m => m.ProcessedAtUtc == null
-                            && m.Attempts < maxAttempts
-                            && (m.NextAttemptAtUtc == null || m.NextAttemptAtUtc <= now))
+                .Where(m => m.ProcessedAtUtc == null && m.FailedAtUtc == null
+                    && (m.NextAttemptAtUtc == null || m.NextAttemptAtUtc <= now))
                 .OrderBy(m => m.OccurredAtUtc)
                 .Take(batchSize)
                 .ToListAsync(cancellationToken);
@@ -130,8 +130,7 @@ internal sealed class OutboxProcessor(
         return dbContext.OutboxMessages
             .FromSqlInterpolated($"""
                 SELECT * FROM "OutboxMessages"
-                WHERE "ProcessedAtUtc" IS NULL
-                  AND "Attempts" < {maxAttempts}
+                WHERE "ProcessedAtUtc" IS NULL AND "FailedAtUtc" IS NULL
                   AND ("NextAttemptAtUtc" IS NULL OR "NextAttemptAtUtc" <= {now})
                 ORDER BY "OccurredAtUtc"
                 LIMIT {batchSize}
