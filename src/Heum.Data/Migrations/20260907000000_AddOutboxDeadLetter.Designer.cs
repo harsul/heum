@@ -46,6 +46,9 @@ namespace Heum.Data.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<DateTime?>("NextAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("OccurredAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -58,7 +61,7 @@ namespace Heum.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProcessedAtUtc", "FailedAtUtc");
+                    b.HasIndex("ProcessedAtUtc", "FailedAtUtc", "OccurredAtUtc");
 
                     b.ToTable("OutboxMessages", (string)null);
                 });

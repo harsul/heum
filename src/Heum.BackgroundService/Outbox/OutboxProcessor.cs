@@ -71,6 +71,7 @@ internal sealed class OutboxProcessor(
 
                 message.ProcessedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
                 message.FailedAtUtc = null;
+                message.NextAttemptAtUtc = null;
             }
             catch (Exception ex)
             {
@@ -119,7 +120,8 @@ internal sealed class OutboxProcessor(
         if (IsInMemoryProvider())
         {
             return dbContext.OutboxMessages
-                .Where(m => m.ProcessedAtUtc == null && m.FailedAtUtc == null)
+                .Where(m => m.ProcessedAtUtc == null && m.FailedAtUtc == null
+                    && (m.NextAttemptAtUtc == null || m.NextAttemptAtUtc <= now))
                 .OrderBy(m => m.OccurredAtUtc)
                 .Take(batchSize)
                 .ToListAsync(cancellationToken);
@@ -129,6 +131,7 @@ internal sealed class OutboxProcessor(
             .FromSqlInterpolated($"""
                 SELECT * FROM "OutboxMessages"
                 WHERE "ProcessedAtUtc" IS NULL AND "FailedAtUtc" IS NULL
+                  AND ("NextAttemptAtUtc" IS NULL OR "NextAttemptAtUtc" <= {now})
                 ORDER BY "OccurredAtUtc"
                 LIMIT {batchSize}
                 FOR UPDATE SKIP LOCKED

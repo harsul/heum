@@ -30,10 +30,14 @@ public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage
         builder.Property(o => o.FailedAtUtc)
             .HasColumnType("timestamp with time zone");
 
+        builder.Property(o => o.NextAttemptAtUtc)
+            .HasColumnType("timestamp with time zone");
+
         builder.Property(o => o.LastError)
             .HasMaxLength(2000);
 
-        // Speeds up the poller's "give me the next pending (not processed and not dead-lettered) batch" query.
-        builder.HasIndex(o => new { o.ProcessedAtUtc, o.FailedAtUtc });
+        // Covers the poller's fetch query: pending (not processed, not dead-lettered) and eligible now.
+        // OccurredAtUtc as the third column lets Postgres sort the eligible set without a separate sort step.
+        builder.HasIndex(o => new { o.ProcessedAtUtc, o.FailedAtUtc, o.OccurredAtUtc });
     }
 }
