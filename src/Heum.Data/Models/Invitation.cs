@@ -35,15 +35,15 @@ public class Invitation : ITenantEntity
         string invitedByUserId,
         TimeSpan validity,
         TimeProvider timeProvider) => new()
-    {
-        Id = Guid.NewGuid(),
-        TenantId = tenantId,
-        Email = email,
-        Token = Guid.NewGuid().ToString("N"),
-        InvitedByUserId = invitedByUserId,
-        CreatedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
-        ExpiresAtUtc = timeProvider.GetUtcNow().UtcDateTime.Add(validity),
-    };
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            Email = email,
+            Token = Guid.NewGuid().ToString("N"),
+            InvitedByUserId = invitedByUserId,
+            CreatedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
+            ExpiresAtUtc = timeProvider.GetUtcNow().UtcDateTime.Add(validity),
+        };
 
     public bool IsExpired(TimeProvider timeProvider) =>
         Status == InvitationStatus.Pending && timeProvider.GetUtcNow().UtcDateTime > ExpiresAtUtc;

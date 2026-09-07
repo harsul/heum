@@ -1,4 +1,4 @@
-﻿using Heum.Data.Auditing;
+using Heum.Data.Auditing;
 using Heum.Data.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

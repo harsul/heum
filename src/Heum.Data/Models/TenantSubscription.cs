@@ -28,14 +28,14 @@ public sealed class TenantSubscription
         string? notes,
         string? changedByUserId,
         TimeProvider timeProvider) => new()
-    {
-        Id = Guid.NewGuid(),
-        TenantId = tenantId,
-        PlanId = planId,
-        Reason = reason,
-        Notes = notes,
-        ChangedByUserId = changedByUserId,
-        EffectiveAtUtc = timeProvider.GetUtcNow().UtcDateTime,
-        CreatedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
-    };
+        {
+            Id = Guid.NewGuid(),
+            TenantId = tenantId,
+            PlanId = planId,
+            Reason = reason,
+            Notes = notes,
+            ChangedByUserId = changedByUserId,
+            EffectiveAtUtc = timeProvider.GetUtcNow().UtcDateTime,
+            CreatedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
+        };
 }

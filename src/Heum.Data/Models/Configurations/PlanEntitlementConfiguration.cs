@@ -21,9 +21,9 @@ public class PlanEntitlementConfiguration : IEntityTypeConfiguration<PlanEntitle
 
         // Seed Free plan entitlement values
         builder.HasData(
-            new { PlanId = WellKnownIds.FreePlanId, EntitlementId = WellKnownIds.MaxUsersEntitlementId,               Value = "5" },
+            new { PlanId = WellKnownIds.FreePlanId, EntitlementId = WellKnownIds.MaxUsersEntitlementId, Value = "5" },
             new { PlanId = WellKnownIds.FreePlanId, EntitlementId = WellKnownIds.MaxInvitationsPerMonthEntitlementId, Value = "20" },
-            new { PlanId = WellKnownIds.FreePlanId, EntitlementId = WellKnownIds.CanUploadLogoEntitlementId,          Value = "false" }
+            new { PlanId = WellKnownIds.FreePlanId, EntitlementId = WellKnownIds.CanUploadLogoEntitlementId, Value = "false" }
         );
     }
 }

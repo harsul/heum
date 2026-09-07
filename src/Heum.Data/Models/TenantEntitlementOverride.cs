@@ -24,13 +24,13 @@ public sealed class TenantEntitlementOverride : ITenantEntity
         string value,
         string? reason,
         TimeProvider timeProvider) => new()
-    {
-        TenantId = tenantId,
-        EntitlementId = entitlementId,
-        Value = value,
-        Reason = reason,
-        CreatedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
-    };
+        {
+            TenantId = tenantId,
+            EntitlementId = entitlementId,
+            Value = value,
+            Reason = reason,
+            CreatedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
+        };
 
     public void SetValue(string value, string? reason) { Value = value; Reason = reason; }
 }

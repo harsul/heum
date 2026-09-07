@@ -28,7 +28,7 @@ public sealed class ServiceBusEventPublisherTests
     {
         var evt = new TenantCreatedEvent(Guid.NewGuid(), "acme", DateTimeOffset.UtcNow);
 
-        await _publisher.PublishAsync(evt);
+        await _publisher.PublishAsync(evt, TestContext.Current.CancellationToken);
 
         var sender = _client.GetSender("tenant-events");
         Assert.Single(sender.SentMessages);
@@ -40,7 +40,7 @@ public sealed class ServiceBusEventPublisherTests
         var evt = new TenantCreatedEvent(Guid.NewGuid(), "acme", DateTimeOffset.UtcNow);
         var messageId = Guid.NewGuid().ToString();
 
-        await _publisher.PublishAsync(evt, messageId: messageId);
+        await _publisher.PublishAsync(evt, TestContext.Current.CancellationToken, messageId: messageId);
 
         var sender = _client.GetSender("tenant-events");
         Assert.Equal(messageId, sender.SentMessages[0].MessageId);
@@ -51,7 +51,7 @@ public sealed class ServiceBusEventPublisherTests
     {
         var evt = new TenantCreatedEvent(Guid.NewGuid(), "acme", DateTimeOffset.UtcNow);
 
-        await _publisher.PublishAsync(evt);
+        await _publisher.PublishAsync(evt, TestContext.Current.CancellationToken);
 
         var sender = _client.GetSender("tenant-events");
         // SDK auto-assigns a MessageId when not set — just confirm the message was sent
@@ -63,8 +63,8 @@ public sealed class ServiceBusEventPublisherTests
     {
         var evt = new TenantCreatedEvent(Guid.NewGuid(), "acme", DateTimeOffset.UtcNow);
 
-        await _publisher.PublishAsync(evt);
-        await _publisher.PublishAsync(evt);
+        await _publisher.PublishAsync(evt, TestContext.Current.CancellationToken);
+        await _publisher.PublishAsync(evt, TestContext.Current.CancellationToken);
 
         // Only one CreateSender call should have been made
         Assert.Equal(1, _client.CreateSenderCallCount);

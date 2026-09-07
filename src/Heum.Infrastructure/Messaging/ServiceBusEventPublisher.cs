@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using Azure.Messaging.ServiceBus;
 
 namespace Heum.Infrastructure.Messaging;

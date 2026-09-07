@@ -4,9 +4,9 @@ using Heum.Data;
 using Heum.Data.Models;
 using Heum.Infrastructure.Keycloak.Services;
 using Heum.Infrastructure.Messaging;
+using Heum.Server.Configuration;
 using Heum.Server.Features.Plans.Services;
 using Heum.Server.Middleware;
-using Heum.Server.Configuration;
 using Heum.Server.xIntegration.Clients;
 using Heum.Server.xIntegration.Infrastructure;
 using Heum.Server.xIntegration.Infrastructure.Fakes;
@@ -139,10 +139,10 @@ public sealed class TenantRateLimitingTests : IAsyncLifetime
 
                 services.PostConfigure<AuthenticationOptions>(opts =>
                 {
-                    opts.DefaultScheme             = TestAuthHandler.SchemeName;
+                    opts.DefaultScheme = TestAuthHandler.SchemeName;
                     opts.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
-                    opts.DefaultChallengeScheme    = TestAuthHandler.SchemeName;
-                    opts.DefaultForbidScheme       = TestAuthHandler.SchemeName;
+                    opts.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                    opts.DefaultForbidScheme = TestAuthHandler.SchemeName;
                 });
 
                 services.RemoveAll<DbContextOptions<HeumDbContext>>();

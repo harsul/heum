@@ -30,7 +30,7 @@ public sealed class OutboxConcurrencyTests : IAsyncLifetime
         if (!UseTestcontainers)
             return;
 
-        _postgres = new PostgreSqlBuilder().WithImage("postgres:17-alpine").Build();
+        _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
         await _postgres.StartAsync();
 
         await using var db = BuildDb(_postgres.GetConnectionString());
@@ -64,7 +64,7 @@ public sealed class OutboxConcurrencyTests : IAsyncLifetime
                 OccurredAtUtc = DateTime.UtcNow,
             });
         }
-        await seedDb.SaveChangesAsync();
+        await seedDb.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var published = new System.Collections.Concurrent.ConcurrentBag<Guid>();
         var publisher = new CollectingPublisher(published);

@@ -29,7 +29,7 @@ public sealed class LocalFileBlobStorageServiceTests : IDisposable
         var tenantId = Guid.NewGuid();
         using var content = new MemoryStream("png-data"u8.ToArray());
 
-        var uri = await _sut.UploadLogoAsync(tenantId, content, "image/png");
+        var uri = await _sut.UploadLogoAsync(tenantId, content, "image/png", TestContext.Current.CancellationToken);
 
         Assert.False(uri.IsAbsoluteUri);
         Assert.StartsWith($"/tenant-logos/{tenantId}/", uri.OriginalString);
@@ -42,7 +42,7 @@ public sealed class LocalFileBlobStorageServiceTests : IDisposable
         var tenantId = Guid.NewGuid();
         using var content = new MemoryStream("img"u8.ToArray());
 
-        var uri = await _sut.UploadLogoAsync(tenantId, content, "image/jpeg");
+        var uri = await _sut.UploadLogoAsync(tenantId, content, "image/jpeg", TestContext.Current.CancellationToken);
 
         var expectedDir = Path.Combine(_tempDir, "tenant-logos", tenantId.ToString());
         Assert.True(Directory.Exists(expectedDir));
@@ -55,9 +55,9 @@ public sealed class LocalFileBlobStorageServiceTests : IDisposable
     {
         var tenantId = Guid.NewGuid();
         using var content = new MemoryStream("data"u8.ToArray());
-        var uri = await _sut.UploadLogoAsync(tenantId, content, "image/png");
+        var uri = await _sut.UploadLogoAsync(tenantId, content, "image/png", TestContext.Current.CancellationToken);
 
-        await _sut.DeleteLogoAsync(uri);
+        await _sut.DeleteLogoAsync(uri, TestContext.Current.CancellationToken);
 
         var relativePath = uri.OriginalString.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
         Assert.False(File.Exists(Path.Combine(_tempDir, relativePath)));
@@ -68,7 +68,7 @@ public sealed class LocalFileBlobStorageServiceTests : IDisposable
     {
         var uri = new Uri("/tenant-logos/nonexistent/file.png", UriKind.Relative);
 
-        var ex = await Record.ExceptionAsync(() => _sut.DeleteLogoAsync(uri));
+        var ex = await Record.ExceptionAsync(() => _sut.DeleteLogoAsync(uri, TestContext.Current.CancellationToken));
 
         Assert.Null(ex);
     }
@@ -78,12 +78,12 @@ public sealed class LocalFileBlobStorageServiceTests : IDisposable
     {
         var tenantId = Guid.NewGuid();
         using var content = new MemoryStream("data"u8.ToArray());
-        var relativeUri = await _sut.UploadLogoAsync(tenantId, content, "image/png");
+        var relativeUri = await _sut.UploadLogoAsync(tenantId, content, "image/png", TestContext.Current.CancellationToken);
 
         // Simulate what the caller might do — build an absolute URL from the relative path
         var absoluteUri = new Uri(new Uri("http://localhost"), relativeUri);
 
-        await _sut.DeleteLogoAsync(absoluteUri);
+        await _sut.DeleteLogoAsync(absoluteUri, TestContext.Current.CancellationToken);
 
         var relativePath = relativeUri.OriginalString.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
         Assert.False(File.Exists(Path.Combine(_tempDir, relativePath)));

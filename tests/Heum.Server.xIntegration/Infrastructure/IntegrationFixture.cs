@@ -79,10 +79,10 @@ public sealed class IntegrationFixture : WebApplicationFactory<Program>, IAsyncL
 
             services.PostConfigure<AuthenticationOptions>(opts =>
             {
-                opts.DefaultScheme             = TestAuthHandler.SchemeName;
+                opts.DefaultScheme = TestAuthHandler.SchemeName;
                 opts.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
-                opts.DefaultChallengeScheme    = TestAuthHandler.SchemeName;
-                opts.DefaultForbidScheme       = TestAuthHandler.SchemeName;
+                opts.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                opts.DefaultForbidScheme = TestAuthHandler.SchemeName;
             });
 
             services.RemoveAll<DbContextOptions<HeumDbContext>>();
