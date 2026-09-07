@@ -16,10 +16,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="xunit.v3" />
+    <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Heum.BackgroundService\Heum.BackgroundService.csproj" />
+    <ProjectReference Include="..\..\src\Heum.Functions\Heum.Functions.csproj" />
     <ProjectReference Include="..\..\src\Heum.Contracts\Heum.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Heum.Data\Heum.Data.csproj" />
     <ProjectReference Include="..\..\src\Heum.Infrastructure\Heum.Infrastructure.csproj" />
