@@ -3,8 +3,8 @@ using Heum.Infrastructure.Keycloak.Models;
 
 namespace Heum.Infrastructure.Keycloak.Services;
 
-/// <inheritdoc cref="IKeycloakService" />
-internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IKeycloakService
+/// <inheritdoc cref="IIdentityProviderService" />
+internal sealed class KeycloakService(IKeycloakAdminClient adminClient) : IIdentityProviderService
 {
     private static readonly string[] OnboardingRequiredActions = ["UPDATE_PASSWORD"];
 

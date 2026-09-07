@@ -16,6 +16,7 @@ public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage
             .IsRequired()
             .HasMaxLength(200);
 
+        // PostgreSQL-specific: jsonb column type requires PostgreSQL; use "nvarchar(max)" / "text" for other providers.
         builder.Property(o => o.Payload)
             .IsRequired()
             .HasColumnType("jsonb");

@@ -37,7 +37,6 @@ builder.AddRedisClientBuilder("cache")
     .WithDistributedCache();
 
 builder.AddAzureServiceBusClient("messaging");
-builder.AddAzureBlobServiceClient("blobs");
 builder.AddEventPublishing(topics => topics.MapDomainEvents());
 
 builder.Services.AddAuthentication()
@@ -66,7 +65,15 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ITenantStatusService, TenantStatusService>();
-builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+if (string.Equals(builder.Configuration["BlobStorage:Provider"], "Local", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddScoped<IBlobStorageService, LocalFileBlobStorageService>();
+}
+else
+{
+    builder.AddAzureBlobServiceClient("blobs");
+    builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
+}
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
 builder.Services.AddScoped<IEntitlementService, EntitlementService>();

@@ -5,6 +5,8 @@ using StackExchange.Redis;
 
 namespace Heum.Server.Features.Plans.Services;
 
+// Redis (IConnectionMultiplexer) is required for caching. All Redis calls are wrapped in
+// try/catch: on failure the service falls back to the database and logs a warning (fail-open).
 internal sealed class EntitlementService(
     HeumDbContext db,
     IConnectionMultiplexer redis,

@@ -24,6 +24,7 @@ public class AuditTrailConfiguration : IEntityTypeConfiguration<AuditTrail>
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        // PostgreSQL-specific: jsonb column type requires PostgreSQL; use "nvarchar(max)" / "text" for other providers.
         builder.Property(a => a.OldValues)
             .HasColumnType("jsonb");
 

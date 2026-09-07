@@ -36,7 +36,16 @@ internal sealed class KeycloakAdminAuthHandler(
 
     private async Task<string> GetAdminAccessTokenAsync(CancellationToken cancellationToken)
     {
-        var cached = await cache.GetStringAsync(AccessTokenCacheKey, cancellationToken);
+        string? cached = null;
+        try
+        {
+            cached = await cache.GetStringAsync(AccessTokenCacheKey, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // IDistributedCache unavailable — fetch token without caching.
+            _ = ex; // swallow; token will be fetched fresh below
+        }
         if (!string.IsNullOrEmpty(cached))
             return cached;
 
@@ -69,7 +78,14 @@ internal sealed class KeycloakAdminAuthHandler(
                 cacheOptions.AbsoluteExpirationRelativeToNow = expiry;
         }
 
-        await cache.SetStringAsync(AccessTokenCacheKey, token.AccessToken, cacheOptions, cancellationToken);
+        try
+        {
+            await cache.SetStringAsync(AccessTokenCacheKey, token.AccessToken, cacheOptions, cancellationToken);
+        }
+        catch
+        {
+            // IDistributedCache unavailable — token will be re-fetched on the next request.
+        }
         return token.AccessToken;
     }
 }

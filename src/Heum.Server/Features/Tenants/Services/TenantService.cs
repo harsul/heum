@@ -13,7 +13,7 @@ namespace Heum.Server.Features.Tenants.Services;
 /// <inheritdoc cref="ITenantService" />
 public sealed partial class TenantService(
     HeumDbContext dbContext,
-    IKeycloakService keycloakService,
+    IIdentityProviderService keycloakService,
     IDomainEventCollector domainEventCollector,
     ISubscriptionService subscriptionService,
     ITenantStatusService tenantStatusService,

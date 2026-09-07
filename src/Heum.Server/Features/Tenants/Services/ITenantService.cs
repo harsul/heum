@@ -22,7 +22,7 @@ public interface ITenantService
     /// </summary>
     /// <param name="role">
     /// An optional realm role to assign on top of the baseline "User" role (e.g. "Admin").
-    /// Must be one of the roles returned by <see cref="IKeycloakService.GetAssignableRolesAsync"/>.
+    /// Must be one of the roles returned by <see cref="IIdentityProviderService.GetAssignableRolesAsync"/>.
     /// Pass <c>null</c> to create a plain user with "User" only.
     /// </param>
     Task<TenantUserProvisionResult> AddTenantUserAsync(

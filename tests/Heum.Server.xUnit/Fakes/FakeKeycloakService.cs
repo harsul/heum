@@ -3,8 +3,8 @@ using Heum.Infrastructure.Keycloak.Services;
 
 namespace Heum.Server.xUnit.Fakes;
 
-/// <summary>Simple hand-written test double for <see cref="IKeycloakService"/> (no mocking library in this project).</summary>
-public sealed class FakeKeycloakService : IKeycloakService
+/// <summary>Simple hand-written test double for <see cref="IIdentityProviderService"/> (no mocking library in this project).</summary>
+public sealed class FakeKeycloakService : IIdentityProviderService
 {
     public Exception? ExceptionToThrow { get; set; }
     public string UserIdToReturn { get; set; } = Guid.NewGuid().ToString();

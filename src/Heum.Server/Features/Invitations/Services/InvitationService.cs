@@ -11,7 +11,7 @@ namespace Heum.Server.Features.Invitations.Services;
 
 internal sealed class InvitationService(
     HeumDbContext dbContext,
-    IKeycloakService keycloakService,
+    IIdentityProviderService keycloakService,
     IDomainEventCollector domainEventCollector,
     IEntitlementService entitlementService,
     TimeProvider timeProvider) : IInvitationService
