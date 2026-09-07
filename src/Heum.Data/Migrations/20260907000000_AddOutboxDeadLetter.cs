@@ -17,14 +17,8 @@ namespace Heum.Data.Migrations
                 type: "timestamp with time zone",
                 nullable: true);
 
-            migrationBuilder.AddColumn<DateTime>(
-                name: "NextAttemptAtUtc",
-                table: "OutboxMessages",
-                type: "timestamp with time zone",
-                nullable: true);
-
             migrationBuilder.DropIndex(
-                name: "IX_OutboxMessages_ProcessedAtUtc_Attempts",
+                name: "IX_OutboxMessages_ProcessedAtUtc_Attempts_OccurredAtUtc",
                 table: "OutboxMessages");
 
             migrationBuilder.CreateIndex(
@@ -44,14 +38,10 @@ namespace Heum.Data.Migrations
                 name: "FailedAtUtc",
                 table: "OutboxMessages");
 
-            migrationBuilder.DropColumn(
-                name: "NextAttemptAtUtc",
-                table: "OutboxMessages");
-
             migrationBuilder.CreateIndex(
-                name: "IX_OutboxMessages_ProcessedAtUtc_Attempts",
+                name: "IX_OutboxMessages_ProcessedAtUtc_Attempts_OccurredAtUtc",
                 table: "OutboxMessages",
-                columns: new[] { "ProcessedAtUtc", "Attempts" });
+                columns: new[] { "ProcessedAtUtc", "Attempts", "OccurredAtUtc" });
         }
     }
 }
