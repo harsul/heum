@@ -4,6 +4,7 @@ using Heum.Server.Common;
 using Heum.Server.Features.Invitations.Models;
 using Heum.Server.Features.Invitations.Services;
 using Heum.Server.Features.Tenants;
+using Heum.Server.Security;
 using Heum.Server.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +22,7 @@ public static class InvitationsEndpoints
             .AllowAnonymous()
             .RequireRateLimiting("registration");
 
-        var managed = invitations.RequireAuthorization("TenantAdmin");
+        var managed = invitations.RequireAuthorization(AuthorizationPolicies.TenantAdmin);
 
         managed.MapGet("/", ListInvitationsAsync)
             .WithName("ListInvitations");

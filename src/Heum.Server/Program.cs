@@ -4,6 +4,7 @@ using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Messaging;
+using Heum.Server.Configuration;
 using Heum.Server.Extensions;
 using Heum.Server.Features.Invitations;
 using Heum.Server.Features.Invitations.Services;
@@ -17,7 +18,7 @@ using Heum.Server.Features.Tenants;
 using Heum.Server.Features.Tenants.Endpoints;
 using Heum.Server.Features.Tenants.Services;
 using Heum.Server.Middleware;
-using Heum.Server.Configuration;
+using Heum.Server.Security;
 using Heum.Server.Services;
 using Heum.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -40,7 +41,7 @@ builder.AddAzureBlobServiceClient("blobs");
 builder.AddEventPublishing(topics => topics.MapDomainEvents());
 
 builder.Services.AddAuthentication()
-    .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>
+    .AddKeycloakJwtBearer("keycloak", realm: builder.Configuration["KeycloakAdmin:Realm"]!, options =>
     {
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
         options.TokenValidationParameters.ValidateAudience = false;
@@ -59,8 +60,8 @@ builder.Services.AddAuthentication()
     });
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("SystemAdmin", policy => policy.RequireRole("SystemAdmin"))
-    .AddPolicy("TenantAdmin", policy => policy.RequireRole("Admin"));
+    .AddPolicy(AuthorizationPolicies.SystemAdmin, policy => policy.RequireRole(AuthorizationRoles.SystemAdmin))
+    .AddPolicy(AuthorizationPolicies.TenantAdmin, policy => policy.RequireRole(AuthorizationRoles.Admin));
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITenantService, TenantService>();
@@ -88,9 +89,13 @@ builder.Services.AddOpenApi();
 builder.Services.AddValidation();
 
 builder.Services.AddHeumApiVersioning();
-builder.Services.AddHeumRateLimiting();
+builder.Services.AddHeumRateLimiting(builder.Configuration);
 builder.Services.AddOptions<TenantRateLimitOptions>()
     .Bind(builder.Configuration.GetSection(TenantRateLimitOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddOptions<GlobalRateLimitOptions>()
+    .Bind(builder.Configuration.GetSection(GlobalRateLimitOptions.SectionName))
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
@@ -121,7 +126,7 @@ api.MapSettingsEndpoints();
 api.MapInvitationsEndpoints();
 api.MapTenantEntitlementsEndpoints();
 
-var admin = api.MapGroup("/admin").RequireAuthorization("SystemAdmin");
+var admin = api.MapGroup("/admin").RequireAuthorization(AuthorizationPolicies.SystemAdmin);
 admin.MapAdminTenantsEndpoints();
 admin.MapAdminPlansEndpoints();
 admin.MapAdminEntitlementsEndpoints();
