@@ -36,13 +36,7 @@ jobs:
       run: dotnet tool install --global dotnet-coverage
 
     - name: Test
-      run: |
-        dotnet-coverage collect \
-          --output ./coverage/coverage.cobertura.xml \
-          --output-format cobertura \
-          --exclude "Heum.AppHost,Heum.MigrationService,Heum.BackgroundService,Heum.Functions,Heum.ServiceDefaults" \
-          --exclude-by-attribute "GeneratedCodeAttribute,ExcludeFromCodeCoverageAttribute" \
-          "dotnet test --no-build --verbosity normal"
+      run: dotnet-coverage collect --output ./coverage/coverage.cobertura.xml --output-format cobertura "dotnet test --no-build --verbosity normal"
 
     - name: Upload coverage
       uses: actions/upload-artifact@v4
