@@ -12,6 +12,11 @@ public class TenantSettingsConfiguration : IEntityTypeConfiguration<TenantSettin
         builder.HasIndex(s => s.TenantId)
             .IsUnique();
 
+        builder.HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(s => s.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Property(s => s.Locale)
             .IsRequired()
             .HasMaxLength(10);

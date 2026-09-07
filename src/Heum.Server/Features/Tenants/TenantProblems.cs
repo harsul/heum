@@ -45,4 +45,25 @@ internal static class TenantProblems
         Detail = "The uploaded file exceeds the 2 MB limit.",
         Status = StatusCodes.Status400BadRequest,
     };
+
+    public static ProblemDetails LogoUploadNotAllowed() => new()
+    {
+        Title = "Logo upload not included in plan",
+        Detail = "Your current plan does not allow uploading a custom logo. Upgrade your plan to enable it.",
+        Status = StatusCodes.Status403Forbidden,
+    };
+
+    public static ProblemDetails TenantDeactivated() => new()
+    {
+        Title = "Tenant deactivated",
+        Detail = "This tenant has been deactivated. Contact support to restore access.",
+        Status = StatusCodes.Status403Forbidden,
+    };
+
+    public static ProblemDetails TenantNotFound(Guid tenantId) => new()
+    {
+        Title = "Tenant not found",
+        Detail = $"No tenant with id '{tenantId}' exists.",
+        Status = StatusCodes.Status404NotFound,
+    };
 }

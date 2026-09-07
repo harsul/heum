@@ -22,6 +22,16 @@ public class InvitationConfiguration : IEntityTypeConfiguration<Invitation>
 
         builder.HasIndex(i => new { i.TenantId, i.Email });
 
+        // Serves the "does this tenant already have a pending invite?" and list-by-tenant queries.
+        builder.HasIndex(i => new { i.TenantId, i.Status });
+
+        // Real FK so an invitation can never reference a tenant that doesn't exist; removing a
+        // tenant takes its invitations with it.
+        builder.HasOne<Tenant>()
+            .WithMany()
+            .HasForeignKey(i => i.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.Property(i => i.Status)
             .HasConversion<string>()
             .HasMaxLength(20);

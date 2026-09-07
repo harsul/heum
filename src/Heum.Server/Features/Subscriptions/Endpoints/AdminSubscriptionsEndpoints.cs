@@ -1,8 +1,11 @@
 using System.Security.Claims;
 using Heum.Data.Models;
+using Heum.Server.Features.Plans;
 using Heum.Server.Features.Subscriptions.Models;
 using Heum.Server.Features.Subscriptions.Services;
+using Heum.Server.Features.Tenants;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Heum.Server.Features.Subscriptions.Endpoints;
 
@@ -10,7 +13,8 @@ public static class AdminSubscriptionsEndpoints
 {
     public static RouteGroupBuilder MapAdminSubscriptionsEndpoints(this RouteGroupBuilder group)
     {
-        // Subscription management nested under /admin/tenants/{id}
+        // Mapped directly on the /admin group, so the routes are /api/admin/{tenantId}/subscription
+        // and /api/admin/{tenantId}/entitlements (the frontend's plansApi.ts relies on this shape).
         group.MapGet("/{id:guid}/subscription", GetCurrentSubscriptionAsync).WithName("GetCurrentSubscription");
         group.MapPost("/{id:guid}/subscription", AssignPlanAsync).WithName("AssignPlan");
         group.MapGet("/{id:guid}/subscription/history", GetSubscriptionHistoryAsync).WithName("GetSubscriptionHistory");
@@ -30,13 +34,20 @@ public static class AdminSubscriptionsEndpoints
         return sub is null ? TypedResults.NotFound() : TypedResults.Ok(ToResponse(sub));
     }
 
-    static async Task<Ok<SubscriptionResponse>> AssignPlanAsync(
+    static async Task<Results<Ok<SubscriptionResponse>, NotFound<ProblemDetails>, BadRequest<ProblemDetails>>> AssignPlanAsync(
         Guid id, AssignPlanRequest request, ISubscriptionService service,
         ClaimsPrincipal user, CancellationToken ct)
     {
-        var changedBy = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var sub = await service.AssignPlanAsync(id, request.PlanId, request.Notes, changedBy, ct);
-        return TypedResults.Ok(ToResponse(sub));
+        var changedBy = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+        var result = await service.AssignPlanAsync(id, request.PlanId, request.Notes, changedBy, ct);
+
+        return result.Failure switch
+        {
+            AssignPlanFailure.TenantNotFound => TypedResults.NotFound(TenantProblems.TenantNotFound(id)),
+            AssignPlanFailure.PlanNotFound => TypedResults.NotFound(PlanProblems.PlanNotFound(request.PlanId)),
+            AssignPlanFailure.PlanInactive => TypedResults.BadRequest(PlanProblems.PlanInactive(request.PlanId)),
+            _ => TypedResults.Ok(ToResponse(result.Subscription!)),
+        };
     }
 
     static async Task<Ok<List<SubscriptionResponse>>> GetSubscriptionHistoryAsync(
@@ -53,12 +64,14 @@ public static class AdminSubscriptionsEndpoints
         return TypedResults.Ok(entitlements.ToDictionary());
     }
 
-    static async Task<Results<NoContent, NotFound>> UpsertOverrideAsync(
+    static async Task<Results<NoContent, NotFound<ProblemDetails>>> UpsertOverrideAsync(
         Guid id, string key, EntitlementOverrideRequest request,
         ISubscriptionService service, CancellationToken ct)
     {
-        await service.UpsertOverrideAsync(id, key, request.Value, request.Reason, ct);
-        return TypedResults.NoContent();
+        var result = await service.UpsertOverrideAsync(id, key, request.Value, request.Reason, ct);
+        return result is null
+            ? TypedResults.NotFound(PlanProblems.EntitlementNotFound(key))
+            : TypedResults.NoContent();
     }
 
     static async Task<Results<NoContent, NotFound>> RemoveOverrideAsync(

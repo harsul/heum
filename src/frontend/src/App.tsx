@@ -10,19 +10,18 @@ import { PlanDetailPage } from './pages/PlanDetailPage';
 import { EntitlementsPage } from './pages/EntitlementsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { setTokenCookie, clearTokenCookie } from './utils/cookie';
 import { setAccessToken } from './lib/apiClient';
 import { SYSTEM_ADMIN_ROLE, TENANT_ADMIN_ROLE } from './auth/roles';
 
 function App() {
   const auth = useAuth();
 
+  // The access token lives in memory only (axios Authorization header). It is deliberately not
+  // persisted to a cookie or storage, where it would be readable by any script on the page.
   useEffect(() => {
     if (auth.user?.access_token) {
-      setTokenCookie(auth.user.access_token);
       setAccessToken(auth.user.access_token);
     } else if (!auth.isLoading && !auth.isAuthenticated) {
-      clearTokenCookie();
       setAccessToken(undefined);
     }
   }, [auth.user?.access_token, auth.isAuthenticated, auth.isLoading]);

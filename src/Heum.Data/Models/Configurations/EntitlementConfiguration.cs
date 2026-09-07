@@ -31,9 +31,9 @@ public class EntitlementConfiguration : IEntityTypeConfiguration<Entitlement>
             .HasDefaultValue(true);
 
         builder.HasData(
-            new { Id = WellKnownIds.MaxUsersEntitlementId,               Key = "max_users",                    Type = EntitlementType.Integer, IsActive = true, Description = (string?)"Maximum number of users allowed in the tenant" },
-            new { Id = WellKnownIds.MaxInvitationsPerMonthEntitlementId, Key = "max_invitations_per_month",     Type = EntitlementType.Integer, IsActive = true, Description = (string?)"Maximum invitations that can be sent per month" },
-            new { Id = WellKnownIds.CanUploadLogoEntitlementId,          Key = "can_upload_logo",              Type = EntitlementType.Boolean, IsActive = true, Description = (string?)"Whether the tenant can upload a custom logo" }
+            new { Id = WellKnownIds.MaxUsersEntitlementId,               Key = EntitlementKeys.MaxUsers,               Type = EntitlementType.Integer, IsActive = true, Description = (string?)"Maximum number of users allowed in the tenant" },
+            new { Id = WellKnownIds.MaxInvitationsPerMonthEntitlementId, Key = EntitlementKeys.MaxInvitationsPerMonth, Type = EntitlementType.Integer, IsActive = true, Description = (string?)"Maximum invitations that can be sent per month" },
+            new { Id = WellKnownIds.CanUploadLogoEntitlementId,          Key = EntitlementKeys.CanUploadLogo,          Type = EntitlementType.Boolean, IsActive = true, Description = (string?)"Whether the tenant can upload a custom logo" }
         );
     }
 }

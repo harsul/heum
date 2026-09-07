@@ -32,6 +32,9 @@ public static class AdminPlansEndpoints
         CreatePlanRequest request, IPlanAdminService service, CancellationToken ct)
     {
         var plan = await service.CreatePlanAsync(request.Name, ct);
+        if (plan is null)
+            return TypedResults.Conflict(PlanProblems.PlanNameConflict(request.Name));
+
         return TypedResults.Created($"/api/admin/plans/{plan.Id}", ToResponse(plan));
     }
 

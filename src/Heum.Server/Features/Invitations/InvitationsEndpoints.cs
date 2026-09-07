@@ -35,7 +35,7 @@ public static class InvitationsEndpoints
         return group;
     }
 
-    internal static async Task<Results<Created<InvitationResponse>, BadRequest<ProblemDetails>, Conflict<ProblemDetails>, ForbidHttpResult>> CreateInvitationAsync(
+    internal static async Task<Results<Created<InvitationResponse>, BadRequest<ProblemDetails>, Conflict<ProblemDetails>, ProblemHttpResult>> CreateInvitationAsync(
         ITenantContext tenantContext,
         CreateInvitationRequest request,
         IInvitationService invitationService,
@@ -45,11 +45,11 @@ public static class InvitationsEndpoints
         if (!tenantContext.HasTenant)
             return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        var invitedBy = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+        var invitedBy = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value ?? "unknown";
         var result = await invitationService.CreateAsync(tenantContext.TenantId, request.Email, invitedBy, cancellationToken);
 
         if (result.EntitlementExceeded)
-            return TypedResults.Forbid();
+            return TypedResults.Problem(InvitationProblems.UserLimitReached());
 
         if (result.DuplicatePending)
             return TypedResults.Conflict(InvitationProblems.DuplicatePending(request.Email));
@@ -87,8 +87,9 @@ public static class InvitationsEndpoints
     {
         var result = await invitationService.AcceptAsync(request.Token, cancellationToken);
 
+        // Never echo the token back: it's the secret that authorises the accept.
         if (result.EmailConflict)
-            return TypedResults.Conflict(TenantProblems.EmailConflict(request.Token));
+            return TypedResults.Conflict(InvitationProblems.EmailAlreadyRegistered());
 
         if (!result.Accepted)
             return TypedResults.BadRequest(InvitationProblems.InvalidToken());

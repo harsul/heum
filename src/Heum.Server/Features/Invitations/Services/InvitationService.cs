@@ -34,7 +34,7 @@ internal sealed class InvitationService(
         if (hasPending)
             return new InvitationResult(null, DuplicatePending: true);
 
-        var maxUsers = await entitlementService.GetIntAsync(tenantId, "max_users", fallback: int.MaxValue, cancellationToken);
+        var maxUsers = await entitlementService.GetIntAsync(tenantId, EntitlementKeys.MaxUsers, fallback: int.MaxValue, cancellationToken);
         var currentUsers = await keycloakService.ListTenantUsersAsync(tenantId, cancellationToken);
         if (currentUsers.Count >= maxUsers)
             return new InvitationResult(null, DuplicatePending: false, EntitlementExceeded: true);

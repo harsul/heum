@@ -1,5 +1,5 @@
+using System.Text.Json.Serialization;
 using Heum.Application;
-using Heum.Contracts.Events;
 using Heum.Data;
 using Heum.Data.Auditing;
 using Heum.Infrastructure.Keycloak;
@@ -16,6 +16,8 @@ using Heum.Server.Features.Subscriptions.Services;
 using Heum.Server.Features.Tenants;
 using Heum.Server.Features.Tenants.Endpoints;
 using Heum.Server.Features.Tenants.Services;
+using Heum.Server.Middleware;
+using Heum.Server.Configuration;
 using Heum.Server.Services;
 using Heum.ServiceDefaults;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,10 +38,7 @@ builder.AddRedisClientBuilder("cache")
 
 builder.AddAzureServiceBusClient("messaging");
 builder.AddAzureBlobServiceClient("blobs");
-builder.AddEventPublishing(topics => topics
-    .MapTopic<TenantCreatedEvent>("tenant-events")
-    .MapTopic<UserOnboardingRequestedEvent>("user-events")
-    .MapTopic<InvitationCreatedEvent>("user-events"));
+builder.AddEventPublishing(topics => topics.MapDomainEvents());
 
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer("keycloak", realm: "saas-app", options =>
@@ -66,6 +65,7 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<ITenantStatusService, TenantStatusService>();
 builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IInvitationService, InvitationService>();
@@ -80,14 +80,20 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // Add services to the container.
+// Request DTOs carry enums (e.g. CreateEntitlementRequest.Type) that the frontend sends by name
+// ("Integer"); without this converter the body fails to bind and the API answers 400 with no body.
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddValidation();
 
 builder.Services.AddHeumApiVersioning();
 builder.Services.AddHeumRateLimiting();
-builder.Services.Configure<Heum.Server.Configuration.TenantRateLimitOptions>(
-    builder.Configuration.GetSection("RateLimiting:Tenant"));
+builder.Services.AddOptions<TenantRateLimitOptions>()
+    .Bind(builder.Configuration.GetSection(TenantRateLimitOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 var app = builder.Build();
 
@@ -100,6 +106,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseHeumTenantRateLimiting();
 app.UseRateLimiter();
+// After rate limiting so a deactivated tenant can't use the (cached) status lookup to bypass limits.
+app.UseMiddleware<TenantStatusMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
