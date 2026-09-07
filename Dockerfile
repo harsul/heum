@@ -2,6 +2,9 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy project files first for better layer caching on restore
+COPY Directory.Build.props .
+COPY Directory.Packages.props .
+
 COPY src/Heum.Contracts/Heum.Contracts.csproj            src/Heum.Contracts/
 COPY src/Heum.Application/Heum.Application.csproj        src/Heum.Application/
 COPY src/Heum.Data/Heum.Data.csproj                      src/Heum.Data/
