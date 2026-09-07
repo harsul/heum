@@ -8,6 +8,9 @@ export default defineConfig({
     __KEYCLOAK_URL__: JSON.stringify(
       process.env['KEYCLOAK_HTTP'] ?? 'http://localhost:8080'
     ),
+    __KEYCLOAK_REALM__: JSON.stringify(
+      process.env['KEYCLOAK_REALM'] ?? 'saas-app'
+    ),
   },
   server: {
     proxy: {

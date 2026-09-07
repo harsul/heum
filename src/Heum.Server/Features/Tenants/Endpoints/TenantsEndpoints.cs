@@ -5,6 +5,7 @@ using Heum.Server.Common;
 using Heum.Server.Features.Plans.Services;
 using Heum.Server.Features.Tenants.Models;
 using Heum.Server.Features.Tenants.Services;
+using Heum.Server.Security;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,7 +21,7 @@ public static class TenantsEndpoints
         // whichever tenant the caller's token says they belong to (never a path parameter) -
         // gated by the "TenantAdmin" policy (the "Admin" realm role) so plain tenant users
         // can't reach this at all.
-        var myTenant = tenants.MapGroup("/me").RequireAuthorization("TenantAdmin");
+        var myTenant = tenants.MapGroup("/me").RequireAuthorization(AuthorizationPolicies.TenantAdmin);
 
         myTenant.MapGet("/", GetMyTenantAsync)
             .WithName("GetMyTenant");

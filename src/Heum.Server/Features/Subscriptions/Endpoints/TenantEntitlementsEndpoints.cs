@@ -3,6 +3,7 @@ using Heum.Server.Features.Plans.Services;
 using Heum.Server.Features.Subscriptions.Models;
 using Heum.Server.Features.Subscriptions.Services;
 using Heum.Server.Features.Tenants;
+using Heum.Server.Security;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,11 +15,11 @@ public static class TenantEntitlementsEndpoints
     {
         group.MapGet("/plan", GetMyPlanAsync)
             .WithName("GetMyPlan")
-            .RequireAuthorization("TenantAdmin");
+            .RequireAuthorization(AuthorizationPolicies.TenantAdmin);
 
         group.MapGet("/plan/history", GetMySubscriptionHistoryAsync)
             .WithName("GetMySubscriptionHistory")
-            .RequireAuthorization("TenantAdmin");
+            .RequireAuthorization(AuthorizationPolicies.TenantAdmin);
 
         return group;
     }

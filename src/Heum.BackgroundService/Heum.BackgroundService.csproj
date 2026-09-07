@@ -1,15 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-Heum.BackgroundService-5116c08b-e327-482d-bf17-60eadd44ceaf</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Azure.Messaging.ServiceBus" Version="13.5.3" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+        <PackageReference Include="Aspire.Azure.Messaging.ServiceBus" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
     </ItemGroup>
 
     <ItemGroup>
@@ -22,4 +19,5 @@
       <ProjectReference Include="..\Heum.Infrastructure\Heum.Infrastructure.csproj" />
       <ProjectReference Include="..\Heum.ServiceDefaults\Heum.ServiceDefaults.csproj" />
     </ItemGroup>
+
 </Project>

@@ -1,9 +1,10 @@
 import type { AuthProviderProps } from 'react-oidc-context';
 
 declare const __KEYCLOAK_URL__: string;
+declare const __KEYCLOAK_REALM__: string;
 
 export const oidcConfig: AuthProviderProps = {
-  authority: `${__KEYCLOAK_URL__}/realms/saas-app`,
+  authority: `${__KEYCLOAK_URL__}/realms/${__KEYCLOAK_REALM__}`,
   client_id: 'react-frontend',
   redirect_uri: window.location.origin,
   post_logout_redirect_uri: window.location.origin,

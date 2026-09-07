@@ -1,6 +1,7 @@
 using Heum.Server.Features.Settings.Models;
 using Heum.Server.Features.Settings.Services;
 using Heum.Server.Features.Tenants;
+using Heum.Server.Security;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +11,7 @@ public static class SettingsEndpoints
 {
     public static RouteGroupBuilder MapSettingsEndpoints(this RouteGroupBuilder group)
     {
-        var settings = group.MapGroup("/settings").RequireAuthorization("TenantAdmin");
+        var settings = group.MapGroup("/settings").RequireAuthorization(AuthorizationPolicies.TenantAdmin);
 
         settings.MapGet("/", GetSettingsAsync)
             .WithName("GetSettings");
