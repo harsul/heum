@@ -126,7 +126,7 @@ export function TenantOverridesTable({
                       {key}
                     </Typography>
                     {catalog?.description && (
-                      <Typography variant="caption" color="text.secondary" display="block">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         {catalog.description}
                       </Typography>
                     )}
@@ -139,7 +139,7 @@ export function TenantOverridesTable({
                       {resolvedValue}
                     </Typography>
                     {isOverride && planEntry && (
-                      <Typography variant="caption" color="text.secondary" display="block">
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                         Plan default: {planEntry.value}
                       </Typography>
                     )}
@@ -152,7 +152,7 @@ export function TenantOverridesTable({
                     )}
                   </TableCell>
                   <TableCell align="right">
-                    <Stack direction="row" justifyContent="flex-end" spacing={0.5}>
+                    <Stack direction="row" sx={{ justifyContent: 'flex-end' }} spacing={0.5}>
                       {isOverride && (
                         <Tooltip title="Reset to plan default">
                           <span>
@@ -182,7 +182,7 @@ export function TenantOverridesTable({
 
       <Dialog open={!!editing} onClose={() => setEditing(null)} fullWidth maxWidth="xs">
         <DialogTitle>
-          <Stack direction="row" spacing={1} alignItems="baseline">
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'baseline' }}>
             <span>Edit override</span>
             <Box component="span" sx={{ fontFamily: 'monospace', fontSize: '0.9em', color: 'text.secondary' }}>
               {editing?.key}

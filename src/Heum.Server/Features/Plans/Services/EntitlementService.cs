@@ -69,10 +69,26 @@ internal sealed class EntitlementService(
         {
             var redisDb = redis.GetDatabase();
             var members = await redisDb.SetMembersAsync(PlanMembersKey(planId));
-            if (members.Length == 0) return;
 
-            var keys = members.Select(m => (RedisKey)TenantKey(Guid.Parse(m.ToString()))).ToArray();
-            await redisDb.KeyDeleteAsync(keys);
+            IEnumerable<Guid> tenantIds;
+            if (members.Length > 0)
+            {
+                tenantIds = members.Select(m => Guid.Parse(m.ToString()));
+            }
+            else
+            {
+                // Set is gone (Redis restart or never populated) — fall back to DB.
+                tenantIds = await db.TenantSubscriptions
+                    .IgnoreQueryFilters()
+                    .Where(s => s.PlanId == planId)
+                    .Select(s => s.TenantId)
+                    .Distinct()
+                    .ToListAsync(ct);
+            }
+
+            var keys = tenantIds.Select(id => (RedisKey)TenantKey(id)).ToArray();
+            if (keys.Length > 0)
+                await redisDb.KeyDeleteAsync(keys);
         }
         catch (Exception ex)
         {
@@ -85,14 +101,9 @@ internal sealed class EntitlementService(
         try
         {
             var redisDb = redis.GetDatabase();
-            var batch = redisDb.CreateBatch();
-
             if (previousPlanId.HasValue)
-                _ = batch.SetRemoveAsync(PlanMembersKey(previousPlanId.Value), tenantId.ToString());
-
-            _ = batch.SetAddAsync(PlanMembersKey(newPlanId), tenantId.ToString());
-
-            batch.Execute();
+                await redisDb.SetRemoveAsync(PlanMembersKey(previousPlanId.Value), tenantId.ToString());
+            await redisDb.SetAddAsync(PlanMembersKey(newPlanId), tenantId.ToString());
         }
         catch (Exception ex)
         {

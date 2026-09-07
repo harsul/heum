@@ -1,6 +1,8 @@
-﻿using Heum.Infrastructure.Keycloak;
+﻿using Heum.Functions;
+using Heum.Infrastructure.Keycloak;
 using Heum.ServiceDefaults;
 using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 var builder = FunctionsApplication.CreateBuilder(args);
@@ -14,5 +16,7 @@ builder.AddRedisClientBuilder("cache")
     .WithDistributedCache();
 
 builder.AddKeycloakAdmin();
+
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 
 builder.Build().Run();

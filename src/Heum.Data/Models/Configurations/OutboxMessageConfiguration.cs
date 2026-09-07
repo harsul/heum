@@ -27,10 +27,13 @@ public class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage
         builder.Property(o => o.ProcessedAtUtc)
             .HasColumnType("timestamp with time zone");
 
+        builder.Property(o => o.FailedAtUtc)
+            .HasColumnType("timestamp with time zone");
+
         builder.Property(o => o.LastError)
             .HasMaxLength(2000);
 
-        // Speeds up the poller's "give me the next unprocessed batch" query.
-        builder.HasIndex(o => new { o.ProcessedAtUtc, o.Attempts });
+        // Speeds up the poller's "give me the next pending (not processed and not dead-lettered) batch" query.
+        builder.HasIndex(o => new { o.ProcessedAtUtc, o.FailedAtUtc });
     }
 }

@@ -28,7 +28,7 @@ internal sealed class OutboxProcessor(
     {
         var opts = options.Value;
 
-        var pending = await FetchPendingAsync(opts.MaxAttempts, opts.BatchSize, cancellationToken);
+        var pending = await FetchPendingAsync(opts.BatchSize, cancellationToken);
 
         foreach (var message in pending)
         {
@@ -57,9 +57,10 @@ internal sealed class OutboxProcessor(
 
                 if (message.Attempts >= opts.MaxAttempts)
                 {
+                    message.FailedAtUtc = timeProvider.GetUtcNow().UtcDateTime;
                     logger.LogCritical(
                         actual,
-                        "Outbox message {OutboxMessageId} ({EventType}) permanently abandoned after {MaxAttempts} attempts. Last error: {LastError}",
+                        "Outbox message {OutboxMessageId} ({EventType}) permanently dead-lettered after {MaxAttempts} attempts. Last error: {LastError}",
                         message.Id, message.EventType, opts.MaxAttempts, message.LastError);
                 }
                 else
@@ -78,12 +79,12 @@ internal sealed class OutboxProcessor(
         await CleanupProcessedAsync(cancellationToken);
     }
 
-    private Task<List<OutboxMessage>> FetchPendingAsync(int maxAttempts, int batchSize, CancellationToken cancellationToken)
+    private Task<List<OutboxMessage>> FetchPendingAsync(int batchSize, CancellationToken cancellationToken)
     {
         if (IsInMemoryProvider())
         {
             return dbContext.OutboxMessages
-                .Where(m => m.ProcessedAtUtc == null && m.Attempts < maxAttempts)
+                .Where(m => m.ProcessedAtUtc == null && m.FailedAtUtc == null)
                 .OrderBy(m => m.OccurredAtUtc)
                 .Take(batchSize)
                 .ToListAsync(cancellationToken);
@@ -92,7 +93,7 @@ internal sealed class OutboxProcessor(
         return dbContext.OutboxMessages
             .FromSqlInterpolated($"""
                 SELECT * FROM "OutboxMessages"
-                WHERE "ProcessedAtUtc" IS NULL AND "Attempts" < {maxAttempts}
+                WHERE "ProcessedAtUtc" IS NULL AND "FailedAtUtc" IS NULL
                 ORDER BY "OccurredAtUtc"
                 LIMIT {batchSize}
                 FOR UPDATE SKIP LOCKED

@@ -21,6 +21,9 @@ public class OutboxMessage
 
     public DateTime? ProcessedAtUtc { get; set; }
 
+    /// <summary>Set when <see cref="Attempts"/> reaches the configured maximum; the message will not be retried.</summary>
+    public DateTime? FailedAtUtc { get; set; }
+
     public int Attempts { get; set; }
 
     public string? LastError { get; set; }
