@@ -8,9 +8,11 @@ import { MyCompanyPage } from './pages/MyCompanyPage';
 import { PlansPage } from './pages/PlansPage';
 import { PlanDetailPage } from './pages/PlanDetailPage';
 import { EntitlementsPage } from './pages/EntitlementsPage';
+import { FeaturesPage } from './pages/FeaturesPage';
 import { AcceptInvitationPage } from './pages/AcceptInvitationPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { FeatureFlagProvider } from './features/features/context/FeatureFlagContext';
 import { setAccessToken } from './lib/apiClient';
 import { SYSTEM_ADMIN_ROLE, TENANT_ADMIN_ROLE } from './auth/roles';
 
@@ -28,6 +30,7 @@ function App() {
   }, [auth.user?.access_token, auth.isAuthenticated, auth.isLoading]);
 
   return (
+    <FeatureFlagProvider>
     <Routes>
       <Route
         path="/"
@@ -85,9 +88,18 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/features"
+        element={
+          <ProtectedRoute requireRole={SYSTEM_ADMIN_ROLE}>
+            <FeaturesPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </FeatureFlagProvider>
   );
 }
 

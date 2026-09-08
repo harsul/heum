@@ -21,6 +21,12 @@ var keycloak = builder.AddKeycloak("keycloak", 8080)
     .WithEnvironment("KC_SMTP_HOST", smtpEndpoint.Property(EndpointProperty.Host))
     .WithEnvironment("KC_SMTP_PORT", smtpEndpoint.Property(EndpointProperty.Port));
 
+// Azure App Configuration — provisioned as a managed resource via `azd`.
+// For local development without provisioning, set ConnectionStrings:appconfig in user secrets
+// pointing to a free-tier Azure App Configuration instance.
+// Feature flags fall back to appsettings.Development.json when not configured.
+var appConfig = builder.AddAzureAppConfiguration("appconfig");
+
 var storage = builder.AddAzureStorage("storage").RunAsEmulator();
 var blobs = storage.AddBlobs("blobs");
 
@@ -65,6 +71,7 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WithReference(keycloak)
     .WithReference(messaging)
     .WithReference(blobs)
+    .WithReference(appConfig)
     .WaitFor(cache)
     .WaitFor(database)
     .WaitFor(keycloak)

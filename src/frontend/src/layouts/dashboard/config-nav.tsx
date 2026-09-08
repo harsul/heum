@@ -1,6 +1,7 @@
 ﻿import DashboardIcon from '@mui/icons-material/DashboardOutlined';
 import PeopleAltIcon from '@mui/icons-material/PeopleAltOutlined';
 import BusinessIcon from '@mui/icons-material/BusinessOutlined';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import LayersIcon from '@mui/icons-material/LayersOutlined';
 import TuneIcon from '@mui/icons-material/TuneOutlined';
 import type { SvgIconComponent } from '@mui/icons-material';
@@ -26,6 +27,7 @@ export function getNavConfig(isSystemAdmin: boolean, isTenantAdmin: boolean): Na
           { title: 'Tenants', path: '/tenants', icon: PeopleAltIcon },
           { title: 'Plans', path: '/admin/plans', icon: LayersIcon },
           { title: 'Entitlements', path: '/admin/entitlements', icon: TuneIcon },
+          { title: 'Features', path: '/admin/features', icon: FlagOutlinedIcon },
         ]
       : []),
     ...(isTenantAdmin ? [{ title: 'My Company', path: '/company', icon: BusinessIcon }] : [])
