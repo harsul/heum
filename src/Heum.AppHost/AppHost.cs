@@ -21,11 +21,9 @@ var keycloak = builder.AddKeycloak("keycloak", 8080)
     .WithEnvironment("KC_SMTP_HOST", smtpEndpoint.Property(EndpointProperty.Host))
     .WithEnvironment("KC_SMTP_PORT", smtpEndpoint.Property(EndpointProperty.Port));
 
-// Azure App Configuration — provisioned as a managed resource via `azd`.
-// For local development without provisioning, set ConnectionStrings:appconfig in user secrets
-// pointing to a free-tier Azure App Configuration instance.
-// Feature flags fall back to appsettings.Development.json when not configured.
-var appConfig = builder.AddAzureAppConfiguration("appconfig");
+// Azure App Configuration — uses a local emulator container for development (no Azure subscription
+// needed). For staging/production the emulator is replaced by a real provisioned resource via azd.
+var appConfig = builder.AddAzureAppConfiguration("appconfig").RunAsEmulator();
 
 var storage = builder.AddAzureStorage("storage").RunAsEmulator();
 var blobs = storage.AddBlobs("blobs");
