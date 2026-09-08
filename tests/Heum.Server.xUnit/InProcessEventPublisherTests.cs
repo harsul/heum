@@ -18,7 +18,7 @@ public sealed class InProcessEventPublisherTests
         var publisher = MakePublisher();
         var evt = new TenantCreatedEvent(Guid.NewGuid(), "acme", DateTimeOffset.UtcNow);
 
-        await publisher.PublishAsync(evt);
+        await publisher.PublishAsync(evt, TestContext.Current.CancellationToken);
 
         Assert.True(publisher.Reader.TryRead(out _));
     }
@@ -29,7 +29,7 @@ public sealed class InProcessEventPublisherTests
         var publisher = MakePublisher();
         var evt = new TenantCreatedEvent(Guid.NewGuid(), "acme", DateTimeOffset.UtcNow);
 
-        await publisher.PublishAsync(evt);
+        await publisher.PublishAsync(evt, TestContext.Current.CancellationToken);
 
         publisher.Reader.TryRead(out var item);
         Assert.Equal("tenant-events", item.Topic);
@@ -41,9 +41,9 @@ public sealed class InProcessEventPublisherTests
         var publisher = MakePublisher();
         var evt = new TenantCreatedEvent(Guid.NewGuid(), "acme", DateTimeOffset.UtcNow);
 
-        await publisher.PublishAsync(evt);
-        await publisher.PublishAsync(evt);
-        await publisher.PublishAsync(evt);
+        await publisher.PublishAsync(evt, TestContext.Current.CancellationToken);
+        await publisher.PublishAsync(evt, TestContext.Current.CancellationToken);
+        await publisher.PublishAsync(evt, TestContext.Current.CancellationToken);
 
         var count = 0;
         while (publisher.Reader.TryRead(out _)) count++;
@@ -59,6 +59,6 @@ public sealed class InProcessEventPublisherTests
 
         var evt = new TenantCreatedEvent(Guid.NewGuid(), "acme", DateTimeOffset.UtcNow);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => publisher.PublishAsync(evt));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => publisher.PublishAsync(evt, TestContext.Current.CancellationToken));
     }
 }

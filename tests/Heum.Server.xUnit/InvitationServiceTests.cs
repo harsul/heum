@@ -44,7 +44,7 @@ public sealed class InvitationServiceTests : IDisposable
     {
         // seed a pending invitation
         _db.Invitations.Add(Invitation.Create(TenantId, "dup@corp.com", "admin", TimeSpan.FromDays(7), TimeProvider.System));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.CreateAsync(TenantId, "dup@corp.com", "admin", TestContext.Current.CancellationToken);
 
@@ -69,7 +69,7 @@ public sealed class InvitationServiceTests : IDisposable
         var otherTenant = Guid.NewGuid();
         _db.Invitations.Add(Invitation.Create(TenantId, "a@corp.com", "admin", TimeSpan.FromDays(7), TimeProvider.System));
         _db.Invitations.Add(Invitation.Create(otherTenant, "b@other.com", "admin", TimeSpan.FromDays(7), TimeProvider.System));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var (items, total) = await _service.ListAsync(TenantId, null, 1, 10, TestContext.Current.CancellationToken);
 
@@ -82,7 +82,7 @@ public sealed class InvitationServiceTests : IDisposable
     {
         _db.Invitations.Add(Invitation.Create(TenantId, "alice@corp.com", "admin", TimeSpan.FromDays(7), TimeProvider.System));
         _db.Invitations.Add(Invitation.Create(TenantId, "bob@corp.com", "admin", TimeSpan.FromDays(7), TimeProvider.System));
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var (items, total) = await _service.ListAsync(TenantId, "alice", 1, 10, TestContext.Current.CancellationToken);
 
@@ -112,7 +112,7 @@ public sealed class InvitationServiceTests : IDisposable
             .GetProperty(nameof(Invitation.ExpiresAtUtc))!
             .SetValue(invitation, DateTime.UtcNow.AddDays(-1));
         _db.Invitations.Add(invitation);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.AcceptAsync(invitation.Token, TestContext.Current.CancellationToken);
 
@@ -124,7 +124,7 @@ public sealed class InvitationServiceTests : IDisposable
     {
         var invitation = Invitation.Create(TenantId, "valid@corp.com", "admin", TimeSpan.FromDays(7), TimeProvider.System);
         _db.Invitations.Add(invitation);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.AcceptAsync(invitation.Token, TestContext.Current.CancellationToken);
 
@@ -137,7 +137,7 @@ public sealed class InvitationServiceTests : IDisposable
     {
         var invitation = Invitation.Create(TenantId, "conflict@corp.com", "admin", TimeSpan.FromDays(7), TimeProvider.System);
         _db.Invitations.Add(invitation);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
         _keycloak.ExceptionToThrow = new HttpRequestException("Conflict", null, HttpStatusCode.Conflict);
 
         var result = await _service.AcceptAsync(invitation.Token, TestContext.Current.CancellationToken);
@@ -151,7 +151,7 @@ public sealed class InvitationServiceTests : IDisposable
     {
         var invitation = Invitation.Create(TenantId, "revoke@corp.com", "admin", TimeSpan.FromDays(7), TimeProvider.System);
         _db.Invitations.Add(invitation);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.RevokeAsync(TenantId, invitation.Id, TestContext.Current.CancellationToken);
 
@@ -172,7 +172,7 @@ public sealed class InvitationServiceTests : IDisposable
         var invitation = Invitation.Create(TenantId, "done@corp.com", "admin", TimeSpan.FromDays(7), TimeProvider.System);
         invitation.Accept(TimeProvider.System);
         _db.Invitations.Add(invitation);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.RevokeAsync(TenantId, invitation.Id, TestContext.Current.CancellationToken);
 

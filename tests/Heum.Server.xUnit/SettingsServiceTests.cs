@@ -37,7 +37,7 @@ public sealed class SettingsServiceTests : IDisposable
     {
         var settings = TenantSettings.CreateDefault(TenantId, TimeProvider.System);
         _db.TenantSettings.Add(settings);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.GetAsync(TenantId, TestContext.Current.CancellationToken);
 
@@ -58,7 +58,7 @@ public sealed class SettingsServiceTests : IDisposable
     {
         var settings = TenantSettings.CreateDefault(TenantId, TimeProvider.System);
         _db.TenantSettings.Add(settings);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var result = await _service.UpdateAsync(TenantId, "de", "Europe/Berlin", TestContext.Current.CancellationToken);
 

@@ -30,7 +30,7 @@ public sealed class SubscriptionServiceTests : IDisposable
     {
         var tenant = Tenant.Register("Test Corp", "test-corp", TimeProvider.System);
         _db.Tenants.Add(tenant);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return tenant;
     }
 
@@ -39,7 +39,7 @@ public sealed class SubscriptionServiceTests : IDisposable
         var plan = Plan.Create("Starter", TimeProvider.System);
         if (!isActive) plan.SetActive(false, TimeProvider.System);
         _db.Plans.Add(plan);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return plan;
     }
 
@@ -106,7 +106,7 @@ public sealed class SubscriptionServiceTests : IDisposable
         var plan1 = await SeedPlanAsync();
         var plan2 = Plan.Create("Pro", TimeProvider.System);
         _db.Plans.Add(plan2);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await _service.AssignPlanAsync(tenant.Id, plan1.Id, null, null, TestContext.Current.CancellationToken);
         var result = await _service.AssignPlanAsync(tenant.Id, plan2.Id, null, null, TestContext.Current.CancellationToken);

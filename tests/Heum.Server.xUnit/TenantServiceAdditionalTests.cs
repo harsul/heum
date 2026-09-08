@@ -117,7 +117,7 @@ public sealed class TenantServiceAdditionalTests : IDisposable
             TimestampUtc = DateTime.UtcNow,
             UserId = "test",
         });
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var (items, total) = await _service.GetTenantHistoryAsync(tenant.Id, 1, 10, TestContext.Current.CancellationToken);
 
