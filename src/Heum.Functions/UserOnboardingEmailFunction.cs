@@ -20,6 +20,12 @@ public class UserOnboardingEmailFunction(
         ServiceBusReceivedMessage message,
         CancellationToken cancellationToken)
     {
+        if (message.Subject != nameof(UserOnboardingRequestedEvent))
+        {
+            logger.LogDebug("Skipping message {MessageId} with subject {Subject}.", message.MessageId, message.Subject);
+            return;
+        }
+
         UserOnboardingRequestedEvent? @event;
         try
         {

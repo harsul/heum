@@ -20,6 +20,12 @@ public class InvitationEmailFunction(
         ServiceBusReceivedMessage message,
         CancellationToken cancellationToken)
     {
+        if (message.Subject != nameof(InvitationCreatedEvent))
+        {
+            logger.LogDebug("Skipping message {MessageId} with subject {Subject}.", message.MessageId, message.Subject);
+            return;
+        }
+
         InvitationCreatedEvent? @event;
         try
         {
@@ -31,7 +37,7 @@ public class InvitationEmailFunction(
             return;
         }
 
-        if (@event is null || string.IsNullOrWhiteSpace(@event.Email))
+        if (@event is null || string.IsNullOrWhiteSpace(@event.Email) || string.IsNullOrWhiteSpace(@event.Token))
         {
             logger.LogError("Message {MessageId} did not contain a valid invitation; skipping.", message.MessageId);
             return;
