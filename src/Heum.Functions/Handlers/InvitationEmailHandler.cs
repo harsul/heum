@@ -17,24 +17,22 @@ public sealed class InvitationEmailHandler(
     public async Task HandleAsync(InvitationCreatedEvent evt, CancellationToken ct)
     {
         var opts = smtpOptions.Value;
-        var acceptUrl = $"{opts.AppBaseUrl.TrimEnd('/')}/accept-invitation?token={Uri.EscapeDataString(evt.Token)}";
+        string acceptUrl = $"{opts.AppBaseUrl.TrimEnd('/')}/accept-invitation?token={Uri.EscapeDataString(evt.Token)}";
 
         logger.LogInformation(
             "Sending invitation email for tenant {TenantId} to {Email}.",
             evt.TenantId, evt.Email);
 
         using var smtp = new SmtpClient(opts.Host, opts.Port);
-        using var mail = new MailMessage
-        {
-            From = new MailAddress(opts.FromAddress),
-            Subject = "You've been invited",
-            Body = $"""
-                <p>You have been invited to join an organization.</p>
-                <p><a href="{acceptUrl}">Accept your invitation</a></p>
-                <p>This invitation expires in 7 days. If you did not expect this email, you can safely ignore it.</p>
-                """,
-            IsBodyHtml = true,
-        };
+        using var mail = new MailMessage();
+        mail.From = new MailAddress(opts.FromAddress);
+        mail.Subject = "You've been invited";
+        mail.Body = $"""
+                     <p>You have been invited to join an organization.</p>
+                     <p><a href="{acceptUrl}">Accept your invitation</a></p>
+                     <p>This invitation expires in 7 days. If you did not expect this email, you can safely ignore it.</p>
+                     """;
+        mail.IsBodyHtml = true;
         mail.To.Add(evt.Email);
         await smtp.SendMailAsync(mail, ct);
 

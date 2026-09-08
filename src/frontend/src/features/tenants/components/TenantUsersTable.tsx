@@ -14,12 +14,17 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import { formatDate, tenantInitials } from '../../../utils/format';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import { AddUserByEmailDialog } from '../../../components/AddUserByEmailDialog';
 import { useTenantUsers } from '../hooks/useTenantUsers';
 import { useAddTenantUser } from '../hooks/useAddTenantUser';
 import { useAdminAssignableRoles } from '../hooks/useAdminAssignableRoles';
+import { useSetTenantUserEnabled } from '../hooks/useSetTenantUserEnabled';
 
 interface TenantUsersTableProps {
   tenantId: string;
@@ -31,6 +36,7 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
   const { data: users = [], isLoading, isError } = useTenantUsers(tenantId);
   const addTenantUser = useAddTenantUser(tenantId);
   const { data: roles, isLoading: rolesLoading } = useAdminAssignableRoles();
+  const setUserEnabled = useSetTenantUserEnabled(tenantId);
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -61,6 +67,7 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
                 <TableCell align="center">Status</TableCell>
                 <TableCell align="center">Email verified</TableCell>
                 <TableCell>Created</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -79,6 +86,7 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
                   <TableCell align="center"><Skeleton variant="rounded" width={60} height={24} /></TableCell>
                   <TableCell align="center"><Skeleton variant="rounded" width={70} height={24} /></TableCell>
                   <TableCell><Skeleton variant="text" width={80} /></TableCell>
+                  <TableCell align="right"><Skeleton variant="circular" width={28} height={28} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -87,6 +95,12 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
       )}
 
       {isError && <Alert severity="error">Failed to load users from Keycloak. Please try again.</Alert>}
+
+      {!isLoading && !isError && setUserEnabled.isError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {getApiErrorMessage(setUserEnabled.error, 'Failed to update this user.')}
+        </Alert>
+      )}
 
       {!isLoading && !isError && users.length === 0 && (
         <Box sx={{ py: 6, textAlign: 'center' }}>
@@ -108,6 +122,7 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
                   <TableCell align="center">Status</TableCell>
                   <TableCell align="center">Email verified</TableCell>
                   <TableCell>Created</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -153,6 +168,26 @@ export function TenantUsersTable({ tenantId }: TenantUsersTableProps) {
                         />
                       </TableCell>
                       <TableCell>{formatDate(user.createdAtUtc)}</TableCell>
+                      <TableCell align="right">
+                        <Tooltip title={user.enabled ? 'Disable user' : 'Enable user'}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={setUserEnabled.isPending}
+                              color={user.enabled ? 'error' : 'success'}
+                              onClick={() =>
+                                setUserEnabled.mutate({ userId: user.id, enabled: !user.enabled })
+                              }
+                            >
+                              {user.enabled ? (
+                                <BlockOutlinedIcon fontSize="small" />
+                              ) : (
+                                <CheckCircleOutlineIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </TableCell>
                     </TableRow>
                   );
                 })}

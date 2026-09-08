@@ -24,7 +24,7 @@ internal sealed class InvitationService(
         string invitedByUserId,
         CancellationToken cancellationToken = default)
     {
-        var hasPending = await dbContext.Invitations.AnyAsync(
+        bool hasPending = await dbContext.Invitations.AnyAsync(
             i => i.TenantId == tenantId
                  && i.Email == email
                  && i.Status == InvitationStatus.Pending
@@ -34,17 +34,17 @@ internal sealed class InvitationService(
         if (hasPending)
             return new InvitationResult(null, DuplicatePending: true);
 
-        var maxUsers = await entitlementService.GetIntAsync(tenantId, EntitlementKeys.MaxUsers, fallback: int.MaxValue, cancellationToken);
+        int maxUsers = await entitlementService.GetIntAsync(tenantId, EntitlementKeys.MaxUsers, fallback: int.MaxValue, cancellationToken);
         var currentUsers = await keycloakService.ListTenantUsersAsync(tenantId, cancellationToken);
         if (currentUsers.Count >= maxUsers)
             return new InvitationResult(null, DuplicatePending: false, EntitlementExceeded: true);
 
-        var maxInvitationsPerMonth = await entitlementService.GetIntAsync(tenantId, "max_invitations_per_month", fallback: int.MaxValue, cancellationToken);
+        int maxInvitationsPerMonth = await entitlementService.GetIntAsync(tenantId, "max_invitations_per_month", fallback: int.MaxValue, cancellationToken);
         if (maxInvitationsPerMonth < int.MaxValue)
         {
             var now = timeProvider.GetUtcNow().UtcDateTime;
             var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            var monthlyCount = await dbContext.Invitations.CountAsync(
+            int monthlyCount = await dbContext.Invitations.CountAsync(
                 i => i.TenantId == tenantId && i.CreatedAtUtc >= startOfMonth,
                 cancellationToken);
             if (monthlyCount >= maxInvitationsPerMonth)

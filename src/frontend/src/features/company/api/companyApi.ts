@@ -1,5 +1,5 @@
 import { apiClient } from '../../../lib/apiClient';
-import type { Tenant, TenantUser } from '../../tenants/types/tenant';
+import type { Page, Tenant, TenantHistoryEntry, TenantUser } from '../../tenants/types/tenant';
 import type { MyPlanResponse, TenantSubscription } from '../../plans/types/plan';
 
 export interface AddMyTenantUserPayload {
@@ -42,5 +42,12 @@ export async function fetchMyPlan(): Promise<MyPlanResponse> {
 
 export async function fetchMySubscriptionHistory(): Promise<TenantSubscription[]> {
   const { data } = await apiClient.get<TenantSubscription[]>('/plan/history');
+  return data;
+}
+
+export async function fetchMyTenantHistory(page: number, pageSize: number): Promise<Page<TenantHistoryEntry>> {
+  const { data } = await apiClient.get<Page<TenantHistoryEntry>>('/tenants/me/history', {
+    params: { page, pageSize },
+  });
   return data;
 }

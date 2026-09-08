@@ -8,6 +8,7 @@ import { MyCompanyPage } from './pages/MyCompanyPage';
 import { PlansPage } from './pages/PlansPage';
 import { PlanDetailPage } from './pages/PlanDetailPage';
 import { EntitlementsPage } from './pages/EntitlementsPage';
+import { AcceptInvitationPage } from './pages/AcceptInvitationPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { setAccessToken } from './lib/apiClient';
@@ -84,6 +85,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
