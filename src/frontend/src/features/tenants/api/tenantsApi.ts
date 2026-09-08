@@ -46,6 +46,14 @@ export async function addTenantUser(
   return data;
 }
 
+export async function enableTenantUser(tenantId: string, userId: string): Promise<void> {
+  await apiClient.post(`/admin/tenants/${tenantId}/users/${userId}/enable`);
+}
+
+export async function disableTenantUser(tenantId: string, userId: string): Promise<void> {
+  await apiClient.post(`/admin/tenants/${tenantId}/users/${userId}/disable`);
+}
+
 export async function createTenant(payload: CreateTenantPayload): Promise<Tenant> {
   const { data } = await apiClient.post<Tenant>('/admin/tenants', payload);
   return data;

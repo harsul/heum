@@ -1,51 +1,105 @@
+import { useAuth } from 'react-oidc-context';
 import Grid from '@mui/material/Grid';
-import PeopleAltIcon from '@mui/icons-material/PeopleAltOutlined';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCartOutlined';
-import PaidIcon from '@mui/icons-material/PaidOutlined';
-import TrendingUpIcon from '@mui/icons-material/TrendingUpOutlined';
+import Skeleton from '@mui/material/Skeleton';
+import BusinessIcon from '@mui/icons-material/BusinessOutlined';
+import CheckCircleIcon from '@mui/icons-material/CheckCircleOutlined';
+import LayersIcon from '@mui/icons-material/LayersOutlined';
+import TuneIcon from '@mui/icons-material/TuneOutlined';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { AppWidgetSummary } from '../components/widgets/AppWidgetSummary';
-import { AppTasks } from '../components/widgets/AppTasks';
-import { AppOrderTimeline } from '../components/widgets/AppOrderTimeline';
+import { RecentTenantsCard } from '../features/dashboard/components/RecentTenantsCard';
+import { QuickLinksCard } from '../features/dashboard/components/QuickLinksCard';
+import { useAdminStats } from '../features/dashboard/hooks/useAdminStats';
+import { isSystemAdmin } from '../auth/roles';
 
-const tasks = [
-  { id: '1', name: 'Review pull requests' },
-  { id: '2', name: 'Deploy latest release' },
-  { id: '3', name: 'Update onboarding docs' },
-  { id: '4', name: 'Follow up with customers' },
-];
-
-const timelineEvents = [
-  { id: '1', title: 'New order placed (#1832)', time: 'a few seconds ago', color: 'primary' as const },
-  { id: '2', title: 'Server maintenance completed', time: '10 minutes ago', color: 'success' as const },
-  { id: '3', title: 'New user registered', time: '1 hour ago', color: 'info' as const },
-  { id: '4', title: 'Payment failed for invoice #221', time: '3 hours ago', color: 'error' as const },
-];
+function StatSkeleton() {
+  return <Skeleton variant="rounded" height={104} />;
+}
 
 export function DashboardPage() {
+  const { user } = useAuth();
+  const sysAdmin = isSystemAdmin(user);
+  const { data: stats, isLoading } = useAdminStats();
+
+  if (!sysAdmin) {
+    return (
+      <DashboardLayout>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12 }}>
+            <AppWidgetSummary
+              title="Welcome to Heum"
+              total="Your workspace is ready"
+              icon={BusinessIcon}
+              color="primary"
+            />
+          </Grid>
+        </Grid>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AppWidgetSummary title="Total Users" total="2,431" icon={PeopleAltIcon} color="primary" />
+          {isLoading ? (
+            <StatSkeleton />
+          ) : (
+            <AppWidgetSummary
+              title="Total Tenants"
+              total={stats?.totalTenants ?? 0}
+              icon={BusinessIcon}
+              color="primary"
+            />
+          )}
         </Grid>
+
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AppWidgetSummary title="Orders" total="912" icon={ShoppingCartIcon} color="secondary" />
+          {isLoading ? (
+            <StatSkeleton />
+          ) : (
+            <AppWidgetSummary
+              title="Active Tenants"
+              total={stats?.activeTenants ?? 0}
+              icon={CheckCircleIcon}
+              color="success"
+            />
+          )}
         </Grid>
+
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AppWidgetSummary title="Revenue" total="$48.2k" icon={PaidIcon} color="success" />
+          {isLoading ? (
+            <StatSkeleton />
+          ) : (
+            <AppWidgetSummary
+              title="Plans"
+              total={stats?.totalPlans ?? 0}
+              icon={LayersIcon}
+              color="secondary"
+            />
+          )}
         </Grid>
+
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <AppWidgetSummary title="Growth" total="+18%" icon={TrendingUpIcon} color="warning" />
+          {isLoading ? (
+            <StatSkeleton />
+          ) : (
+            <AppWidgetSummary
+              title="Entitlements"
+              total={stats?.totalEntitlements ?? 0}
+              icon={TuneIcon}
+              color="warning"
+            />
+          )}
         </Grid>
       </Grid>
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <AppTasks title="Tasks" list={tasks} />
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <RecentTenantsCard tenants={stats?.recentTenants} loading={isLoading} />
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <AppOrderTimeline title="Recent Activity" list={timelineEvents} />
+        <Grid size={{ xs: 12, md: 4 }}>
+          <QuickLinksCard />
         </Grid>
       </Grid>
     </DashboardLayout>

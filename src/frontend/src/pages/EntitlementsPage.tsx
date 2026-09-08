@@ -13,7 +13,9 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import TuneIcon from '@mui/icons-material/TuneOutlined';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
+import { EmptyState } from '../components/EmptyState';
 import { NewEntitlementDialog } from '../features/plans/components/NewEntitlementDialog';
 import { useEntitlements } from '../features/plans/hooks/usePlans';
 import { useCreateEntitlement } from '../features/plans/hooks/useEntitlementMutations';
@@ -79,7 +81,10 @@ export function EntitlementsPage() {
                 entitlements.map((e) => (
                   <TableRow key={e.id}>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontFamily: 'monospace', fontWeight: 500, fontSize: '0.8125rem' }}
+                      >
                         {e.key}
                       </Typography>
                     </TableCell>
@@ -97,13 +102,26 @@ export function EntitlementsPage() {
                   </TableRow>
                 ))}
 
-              {!isLoading && entitlements.length === 0 && (
+              {!isLoading && entitlements.length === 0 && !isError && (
                 <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                    <Typography variant="subtitle1">No entitlements yet</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Define your first feature flag or limit.
-                    </Typography>
+                  <TableCell colSpan={4} sx={{ border: 0 }}>
+                    <EmptyState
+                      icon={TuneIcon}
+                      title="No entitlements yet"
+                      description="Define your first feature flag or numeric limit."
+                      action={
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            createEntitlement.reset();
+                            setIsNewOpen(true);
+                          }}
+                        >
+                          New entitlement
+                        </Button>
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               )}

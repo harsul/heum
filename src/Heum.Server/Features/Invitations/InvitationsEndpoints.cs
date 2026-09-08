@@ -46,7 +46,7 @@ public static class InvitationsEndpoints
         if (!tenantContext.HasTenant)
             return TypedResults.BadRequest(TenantProblems.NoTenant());
 
-        var invitedBy = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value ?? "unknown";
+        string invitedBy = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value ?? "unknown";
         var result = await invitationService.CreateAsync(tenantContext.TenantId, request.Email, invitedBy, cancellationToken);
 
         if (result.EntitlementExceeded)

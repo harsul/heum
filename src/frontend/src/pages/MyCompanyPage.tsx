@@ -18,11 +18,13 @@ import { CompanySettingsPanel } from '../features/company/components/CompanySett
 import { CompanyUsersTable } from '../features/company/components/CompanyUsersTable';
 import { TenantLogoPanel } from '../features/company/components/TenantLogoPanel';
 import { SubscriptionTabContent } from '../features/plans/components/SubscriptionTabContent';
+import { InvitationsTable } from '../features/invitations/components/InvitationsTable';
+import { MyCompanyHistoryTable } from '../features/company/components/MyCompanyHistoryTable';
 import { useMyTenant } from '../features/company/hooks/useMyTenant';
 import { useMyPlan, useMySubscriptionHistory } from '../features/company/hooks/useMyPlan';
 import { formatDate, tenantInitials } from '../utils/format';
 
-type TabValue = 'overview' | 'users' | 'settings' | 'subscription';
+type TabValue = 'overview' | 'users' | 'invitations' | 'history' | 'settings' | 'subscription';
 
 export function MyCompanyPage() {
   const { data: tenant, isLoading, isError } = useMyTenant();
@@ -105,6 +107,8 @@ export function MyCompanyPage() {
             >
               <Tab label="Overview" value="overview" />
               <Tab label="Users" value="users" />
+              <Tab label="Invitations" value="invitations" />
+              <Tab label="History" value="history" />
               <Tab label="Settings" value="settings" />
               <Tab label="Subscription" value="subscription" />
             </Tabs>
@@ -131,6 +135,18 @@ export function MyCompanyPage() {
             {activeTab === 'users' && (
               <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
                 <CompanyUsersTable />
+              </Paper>
+            )}
+
+            {activeTab === 'invitations' && (
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                <InvitationsTable />
+              </Paper>
+            )}
+
+            {activeTab === 'history' && (
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                <MyCompanyHistoryTable />
               </Paper>
             )}
 

@@ -23,7 +23,38 @@ function NavContent() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-<List sx={{ px: 1.5, flex: 1 }}>
+      <Box
+        sx={{
+          px: 2.5,
+          py: 3,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+        }}
+      >
+        <Box
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: 1.5,
+            bgcolor: 'primary.main',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'primary.contrastText',
+            fontWeight: 800,
+            fontSize: 18,
+            fontFamily: 'Public Sans, sans-serif',
+            flexShrink: 0,
+          }}
+        >
+          H
+        </Box>
+        <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.5px' }}>
+          Heum
+        </Typography>
+      </Box>
+      <List sx={{ px: 1.5, flex: 1 }}>
         {navConfig.map((item) => (
           <ListItemButton
             key={item.title}

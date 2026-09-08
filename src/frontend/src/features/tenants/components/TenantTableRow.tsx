@@ -17,6 +17,7 @@ import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import type { Tenant } from '../types/tenant';
 import { formatDate, tenantInitials } from '../../../utils/format';
+import { stringToColor } from '../../../utils/avatarColor';
 
 interface TenantTableRowProps {
   tenant: Tenant;
@@ -38,7 +39,7 @@ export function TenantTableRow({ tenant, onEdit, onToggleActive, toggleActiveDis
           sx={{ alignItems: 'center', cursor: 'pointer', width: 'fit-content' }}
           onClick={() => navigate(`/tenants/${tenant.id}`)}
         >
-          <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 14 }}>
+          <Avatar sx={{ width: 36, height: 36, bgcolor: stringToColor(tenant.name), fontSize: 14 }}>
             {tenantInitials(tenant.name)}
           </Avatar>
           <Typography variant="subtitle2" noWrap sx={{ '&:hover': { textDecoration: 'underline' } }}>

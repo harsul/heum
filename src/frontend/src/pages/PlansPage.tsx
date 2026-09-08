@@ -14,7 +14,9 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import LayersIcon from '@mui/icons-material/LayersOutlined';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
+import { EmptyState } from '../components/EmptyState';
 import { NewPlanDialog } from '../features/plans/components/NewPlanDialog';
 import { usePlans } from '../features/plans/hooks/usePlans';
 import { useCreatePlan } from '../features/plans/hooks/usePlanMutations';
@@ -103,13 +105,26 @@ export function PlansPage() {
                   </TableRow>
                 ))}
 
-              {!isLoading && plans.length === 0 && (
+              {!isLoading && plans.length === 0 && !isError && (
                 <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                    <Typography variant="subtitle1">No plans yet</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Create your first billing plan to get started.
-                    </Typography>
+                  <TableCell colSpan={4} sx={{ border: 0 }}>
+                    <EmptyState
+                      icon={LayersIcon}
+                      title="No plans yet"
+                      description="Create your first billing plan to get started."
+                      action={
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            createPlan.reset();
+                            setIsNewOpen(true);
+                          }}
+                        >
+                          New plan
+                        </Button>
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               )}
