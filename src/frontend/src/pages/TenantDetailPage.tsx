@@ -15,6 +15,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DetailField } from '../components/DetailField';
 import { EditTenantDialog } from '../features/tenants/components/EditTenantDialog';
 import { TenantHistoryTable } from '../features/tenants/components';
@@ -41,6 +42,7 @@ export function TenantDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
   const [isAssigningPlan, setIsAssigningPlan] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
   const activeOnSub = activeTab === 'subscription' ? id : undefined;
   const { data: currentSub, isLoading: subLoading } = useCurrentSubscription(activeOnSub);
@@ -202,9 +204,13 @@ export function TenantDetailPage() {
                       variant="outlined"
                       color={tenant.isActive ? 'error' : 'success'}
                       disabled={setTenantActive.isPending}
-                      onClick={() =>
-                        setTenantActive.mutate({ id: tenant.id, isActive: !tenant.isActive })
-                      }
+                      onClick={() => {
+                        if (tenant.isActive) {
+                          setConfirmDeactivate(true);
+                        } else {
+                          setTenantActive.mutate({ id: tenant.id, isActive: true });
+                        }
+                      }}
                     >
                       {tenant.isActive ? 'Deactivate' : 'Activate'}
                     </Button>
@@ -226,6 +232,23 @@ export function TenantDetailPage() {
           updateTenant.mutate(
             { id: tenant.id, payload: values },
             { onSuccess: () => setIsEditing(false) },
+          );
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmDeactivate}
+        title="Deactivate tenant"
+        description={`Are you sure you want to deactivate "${tenant?.name}"? This will prevent all its users from accessing the platform.`}
+        confirmLabel="Deactivate"
+        confirmColor="error"
+        loading={setTenantActive.isPending}
+        onClose={() => setConfirmDeactivate(false)}
+        onConfirm={() => {
+          if (!tenant) return;
+          setTenantActive.mutate(
+            { id: tenant.id, isActive: false },
+            { onSuccess: () => setConfirmDeactivate(false) },
           );
         }}
       />

@@ -11,7 +11,6 @@ import TableRow from '@mui/material/TableRow';
 import Chip from '@mui/material/Chip';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import ButtonBase from '@mui/material/ButtonBase';
 import type { RecentTenantEntry } from '../api/dashboardApi';
 
 interface RecentTenantsCardProps {
@@ -51,7 +50,6 @@ export function RecentTenantsCard({ tenants, loading }: RecentTenantsCardProps) 
                       key={t.id}
                       hover
                       sx={{ cursor: 'pointer' }}
-                      component={ButtonBase}
                       onClick={() => navigate(`/tenants/${t.id}`)}
                     >
                       <TableCell>

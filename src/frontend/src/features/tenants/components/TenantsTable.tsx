@@ -12,8 +12,10 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import PeopleAltIcon from '@mui/icons-material/PeopleAltOutlined';
 import type { Tenant, TenantOrder } from '../types/tenant';
 import { getApiErrorMessage } from '../../../utils/apiError';
+import { EmptyState } from '../../../components/EmptyState';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { useTenants } from '../hooks/useTenants';
 import { useCreateTenant } from '../hooks/useCreateTenant';
@@ -144,15 +146,26 @@ export function TenantsTable() {
 
             {isNotFound && (
               <TableRow>
-                <TableCell colSpan={headCells.length} align="center" sx={{ py: 6 }}>
-                  <Box>
-                    <Typography variant="subtitle1">No tenants found</Typography>
-                    {searchInput && (
-                      <Typography variant="body2" color="text.secondary">
-                        No results found for &quot;{searchInput}&quot;. Try a different search.
-                      </Typography>
-                    )}
-                  </Box>
+                <TableCell colSpan={headCells.length} sx={{ border: 0 }}>
+                  <EmptyState
+                    icon={PeopleAltIcon}
+                    title={searchInput ? `No results for "${searchInput}"` : 'No tenants yet'}
+                    description={searchInput ? 'Try a different search term.' : 'Create your first tenant to get started.'}
+                    action={
+                      !searchInput ? (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            createTenant.reset();
+                            setIsNewTenantOpen(true);
+                          }}
+                        >
+                          New tenant
+                        </Button>
+                      ) : undefined
+                    }
+                  />
                 </TableCell>
               </TableRow>
             )}

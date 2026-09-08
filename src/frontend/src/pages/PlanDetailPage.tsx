@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -14,7 +13,6 @@ import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import MuiLink from '@mui/material/Link';
 import { DashboardLayout } from '../layouts/dashboard/DashboardLayout';
 import { PlanEntitlementsTable } from '../features/plans/components/PlanEntitlementsTable';
 import { useEntitlements, usePlan } from '../features/plans/hooks/usePlans';
@@ -57,13 +55,6 @@ export function PlanDetailPage() {
 
   return (
     <DashboardLayout>
-      <Breadcrumbs sx={{ mb: 2 }}>
-        <MuiLink component={Link} to="/admin/plans" underline="hover" color="inherit">
-          Plans
-        </MuiLink>
-        <Typography color="text.primary">{plan?.name ?? '…'}</Typography>
-      </Breadcrumbs>
-
       {isError && <Alert severity="error">Failed to load plan. Please try again.</Alert>}
 
       {isLoading && (
