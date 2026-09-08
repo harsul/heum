@@ -76,6 +76,7 @@ var server = builder.AddProject<Projects.Heum_Server>("server")
     .WaitFor(mailpit)
     .WaitFor(messaging)
     .WaitFor(blobs)
+    .WaitFor(appConfig)
     .WaitForCompletion(migrations)
     .WithEnvironment("KeycloakAdmin__ClientSecret", keycloakAdminSecret)
     .WithExternalHttpEndpoints();

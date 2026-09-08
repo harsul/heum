@@ -45,7 +45,8 @@ if (hasAzureAppConfig)
 {
     builder.Configuration.AddAzureAppConfiguration(options =>
         options.Connect(appConfigCs!)
-               .UseFeatureFlags(ff => ff.SetRefreshInterval(TimeSpan.FromMinutes(5))));
+               .UseFeatureFlags(ff => ff.SetRefreshInterval(TimeSpan.FromMinutes(5))),
+        optional: true);
 
     builder.Services.AddAzureAppConfiguration();
     // Register ConfigurationClient directly from the connection string for admin CRUD operations.
