@@ -6,6 +6,7 @@ using Heum.Infrastructure.Keycloak;
 using Heum.Infrastructure.Messaging;
 using Heum.Server.Configuration;
 using Heum.Server.Extensions;
+using Heum.Server.Features.Dashboard.Endpoints;
 using Heum.Server.Features.Invitations;
 using Heum.Server.Features.Invitations.Services;
 using Heum.Server.Features.Plans.Endpoints;
@@ -134,6 +135,7 @@ api.MapInvitationsEndpoints();
 api.MapTenantEntitlementsEndpoints();
 
 var admin = api.MapGroup("/admin").RequireAuthorization(AuthorizationPolicies.SystemAdmin);
+admin.MapAdminDashboardEndpoints();
 admin.MapAdminTenantsEndpoints();
 admin.MapAdminPlansEndpoints();
 admin.MapAdminEntitlementsEndpoints();
