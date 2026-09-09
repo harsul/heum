@@ -59,7 +59,7 @@ else
 }
 
 builder.Services.AddFeatureManagement().AddFeatureFilter<TargetingFilter>();
-builder.Services.AddScoped<ITargetingContextAccessor, HeumTargetingContextAccessor>();
+builder.Services.AddSingleton<ITargetingContextAccessor, HeumTargetingContextAccessor>();
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
